@@ -1,4 +1,4 @@
-package com.vio.userservice;
+package com.vio.userservice.model;
 
 public enum UserRole {
     CLIENT,
