@@ -1,0 +1,72 @@
+services:
+  credentials_db:
+    image: mysql:latest
+    container_name: credentials_db
+    environment:
+      MYSQL_DATABASE: credentials_db
+      MYSQL_USER: credentials_user
+      MYSQL_PASSWORD: credentials_pass
+      MYSQL_ROOT_PASSWORD: root_password
+    ports:
+      - "4000:3306"
+    volumes:
+      - credentials_data:/var/lib/mysql
+    networks:
+      - energy_management_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  users_db:
+    image: mysql:latest
+    container_name: users_db
+    environment:
+      MYSQL_DATABASE: users_db
+      MYSQL_USER: users_user
+      MYSQL_PASSWORD: users_pass
+      MYSQL_ROOT_PASSWORD: root_password
+    ports:
+      - "4001:3306"
+    volumes:
+      - users_data:/var/lib/mysql
+    networks:
+      - energy_management_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  devices_db:
+    image: mysql:latest
+    container_name: devices_db
+    environment:
+      MYSQL_DATABASE: devices_db
+      MYSQL_USER: devices_user
+      MYSQL_PASSWORD: devices_pass
+      MYSQL_ROOT_PASSWORD: root_password
+    ports:
+      - "4002:3306"
+    volumes:
+      - devices_data:/var/lib/mysql
+    networks:
+      - energy_management_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  credentials_data:
+  users_data:
+  devices_data:
+
+networks:
+  energy_management_network:
+    driver: bridge
