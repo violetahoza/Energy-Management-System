@@ -5,6 +5,8 @@ import com.vio.userservice.dto.UserDTOResponse;
 import com.vio.userservice.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -16,27 +18,34 @@ public class UserController {
     private final UserService service;
 
     @GetMapping
-    public List<UserDTOResponse> getAllUsers() {
-        return service.getAllUsers();
+    public ResponseEntity<List<UserDTOResponse>> getAllUsers() {
+        List<UserDTOResponse> users = service.getAllUsers();
+        return ResponseEntity.ok(users);
     }
 
     @GetMapping("/id={userId}")
-    public UserDTOResponse findById(@PathVariable Long userId) {
-        return service.findById(userId);
+    public ResponseEntity<UserDTOResponse> findById(@PathVariable Long userId) {
+        UserDTOResponse user = service.findById(userId);
+        return ResponseEntity.ok(user);
     }
 
     @PostMapping
-    public UserDTOResponse createUser(@RequestBody @Valid UserDTORequest request) {
-        return service.createUser(request);
+    public ResponseEntity<UserDTOResponse> createUser(@RequestBody @Valid UserDTORequest request) {
+        UserDTOResponse user = service.createUser(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(user);
     }
 
     @PutMapping("/id={userId}")
-    public UserDTOResponse updateById(@PathVariable Long userId, @RequestBody @Valid UserDTORequest request) {
-        return service.updateById(userId, request);
+    public ResponseEntity<UserDTOResponse> updateById(
+            @PathVariable Long userId,
+            @RequestBody @Valid UserDTORequest request) {
+        UserDTOResponse user = service.updateById(userId, request);
+        return ResponseEntity.ok(user);
     }
 
     @DeleteMapping("/id={userId}")
-    public void deleteById(@PathVariable Long userId) {
+    public ResponseEntity<Void> deleteById(@PathVariable Long userId) {
         service.deleteById(userId);
+        return ResponseEntity.noContent().build();
     }
 }

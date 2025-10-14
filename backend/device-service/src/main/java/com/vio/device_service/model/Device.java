@@ -1,9 +1,6 @@
 package com.vio.device_service.model;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
@@ -19,17 +16,22 @@ public class Device {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long deviceId;
 
-
+    @Column(nullable = false, length = 100)
     private String name;
 
+    @Column(nullable = false, length = 200)
     private String description;
 
+    @Column(nullable = false, length = 100)
     private String location;
 
-    private Double maximumConsumption;
+    @Column(nullable = false)
+    private Double maxConsumption;
 
+    @Column(name = "user_id")
     private Long userId;
 
+    @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;
