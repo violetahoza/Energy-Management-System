@@ -3,7 +3,7 @@ spring:
     name: authorization-service
 
   datasource:
-    url: jdbc:mysql://localhost:4000/credentials_db
+    url: jdbc:mysql://credentials_db:3306/credentials_db
     username: credentials_user
     password: credentials_pass
     driver-class-name: com.mysql.cj.jdbc.Driver
@@ -17,4 +17,4 @@ spring:
         dialect: org.hibernate.dialect.MySQLDialect
 
 server:
-  port: 8080
+  port: 8083

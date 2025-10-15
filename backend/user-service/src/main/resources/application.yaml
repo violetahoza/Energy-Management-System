@@ -3,7 +3,7 @@ spring:
     name: user-service
 
   datasource:
-    url: jdbc:mysql://localhost:4001/users_db
+    url: jdbc:mysql://users_db:3306/users_db
     username: users_user
     password: users_pass
     driver-class-name: com.mysql.cj.jdbc.Driver
@@ -17,4 +17,4 @@ spring:
         dialect: org.hibernate.dialect.MySQLDialect
 
 server:
-  port: 8080
+  port: 8081
