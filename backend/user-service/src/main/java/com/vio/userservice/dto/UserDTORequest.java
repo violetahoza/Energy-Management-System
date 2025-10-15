@@ -20,6 +20,6 @@ public record UserDTORequest(
         String address,
 
         @NotNull(message = "Role is required")
-        UserRole role
+        String role
 ) {
 }

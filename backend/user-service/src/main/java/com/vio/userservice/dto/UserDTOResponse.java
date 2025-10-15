@@ -9,7 +9,7 @@ public record UserDTOResponse(
         String name,
         String email,
         String address,
-        UserRole role,
+        String role,
         LocalDateTime createdAt,
         LocalDateTime updatedAt
 ) {

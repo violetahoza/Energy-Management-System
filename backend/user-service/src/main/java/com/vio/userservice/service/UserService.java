@@ -4,6 +4,7 @@ import com.vio.userservice.dto.UserDTORequest;
 import com.vio.userservice.dto.UserDTOResponse;
 import com.vio.userservice.handler.UserEmailAlreadyExistsException;
 import com.vio.userservice.handler.UserNotFoundException;
+import com.vio.userservice.model.UserRole;
 import com.vio.userservice.repository.UserRepository;
 import com.vio.userservice.model.User;
 import lombok.RequiredArgsConstructor;
@@ -47,7 +48,7 @@ public class UserService {
                 .name(request.name())
                 .email(request.email())
                 .address(request.address())
-                .role(request.role())
+                .role(UserRole.valueOf(request.role()))
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
                 .build();
@@ -73,7 +74,7 @@ public class UserService {
         user.setName(request.name());
         user.setEmail(request.email());
         user.setAddress(request.address());
-        user.setRole(request.role());
+        user.setRole(UserRole.valueOf(request.role()));
         user.setUpdatedAt(LocalDateTime.now());
 
         User updatedUser = repository.save(user);
@@ -98,7 +99,7 @@ public class UserService {
                 user.getName(),
                 user.getEmail(),
                 user.getAddress(),
-                user.getRole(),
+                user.getRole().toString(),
                 user.getCreatedAt(),
                 user.getUpdatedAt()
         );
