@@ -27,7 +27,7 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class AdminUserService {
+public class AdminService {
     private final UserRepository userRepository;
     private final RestTemplate restTemplate = new RestTemplate();
 

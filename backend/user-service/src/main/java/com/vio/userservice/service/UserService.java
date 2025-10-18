@@ -1,6 +1,5 @@
 package com.vio.userservice.service;
 
-import com.vio.userservice.dto.UserDTORequest;
 import com.vio.userservice.dto.UserDTOResponse;
 import com.vio.userservice.handler.UserEmailAlreadyExistsException;
 import com.vio.userservice.handler.UserNotFoundException;
@@ -12,7 +11,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.Map;
 
 @Service
@@ -20,18 +18,18 @@ import java.util.Map;
 @Slf4j
 public class UserService {
     private final UserRepository repository;
-    private final RestTemplate restTemplate = new RestTemplate();
+    //private final RestTemplate restTemplate = new RestTemplate();
 
-    private static final String AUTH_SERVICE_URL = "http://authorization-service:8083/api/auth";
+    //private static final String AUTH_SERVICE_URL = "http://authorization-service:8083/api/auth";
 
-    public List<UserDTOResponse> getAllUsers() {
-        log.info("Fetching all users");
-        return repository
-                .findAll()
-                .stream()
-                .map(this::mapToResponse)
-                .toList();
-    }
+//    public List<UserDTOResponse> getAllUsers() {
+//        log.info("Fetching all users");
+//        return repository
+//                .findAll()
+//                .stream()
+//                .map(this::mapToResponse)
+//                .toList();
+//    }
 
     public UserDTOResponse findById(Long userId) {
         log.info("Fetching user with id: {}", userId);
@@ -41,24 +39,24 @@ public class UserService {
         return mapToResponse(user);
     }
 
-    public UserDTOResponse createUser(UserDTORequest request) {
-        log.info("Creating new user with email: {}", request.email());
-
-        if (repository.existsByEmail(request.email())) {
-            throw new UserEmailAlreadyExistsException(request.email());
-        }
-
-        User user = User.builder()
-                .firstName(request.firstName())
-                .lastName(request.lastName())
-                .email(request.email())
-                .address(request.address())
-                .build();
-
-        User savedUser = repository.save(user);
-        log.info("User created successfully with id: {}", savedUser.getUserId());
-        return mapToResponse(savedUser);
-    }
+//    public UserDTOResponse createUser(UserDTORequest request) {
+//        log.info("Creating new user with email: {}", request.email());
+//
+//        if (repository.existsByEmail(request.email())) {
+//            throw new UserEmailAlreadyExistsException(request.email());
+//        }
+//
+//        User user = User.builder()
+//                .firstName(request.firstName())
+//                .lastName(request.lastName())
+//                .email(request.email())
+//                .address(request.address())
+//                .build();
+//
+//        User savedUser = repository.save(user);
+//        log.info("User created successfully with id: {}", savedUser.getUserId());
+//        return mapToResponse(savedUser);
+//    }
 
     public UserDTOResponse updateById(Long userId, Map<String, Object> updates) {
         log.info("Partial update for user: {}", userId);
@@ -92,27 +90,27 @@ public class UserService {
     }
 
 
-    public void deleteById(Long userId) {
-        log.info("Deleting user with id: {}", userId);
+//    public void deleteById(Long userId) {
+//        log.info("Deleting user with id: {}", userId);
+//
+//        User user = repository
+//                .findById(userId)
+//                .orElseThrow(() -> new UserNotFoundException(userId));
+//
+//        repository.delete(user);
+//        log.info("User deleted successfully with id: {}", userId);
+//
+//        syncCredentialDelete(userId);
+//    }
 
-        User user = repository
-                .findById(userId)
-                .orElseThrow(() -> new UserNotFoundException(userId));
-
-        repository.delete(user);
-        log.info("User deleted successfully with id: {}", userId);
-
-        syncCredentialDelete(userId);
-    }
-
-    private void syncCredentialDelete(Long userId) {
-        try {
-            restTemplate.delete(AUTH_SERVICE_URL + "/sync/delete/" + userId);
-            log.info("Successfully synced credential deletion for user: {}", userId);
-        } catch (Exception e) {
-            log.error("Failed to sync credential deletion: {}", e.getMessage());
-        }
-    }
+//    private void syncCredentialDelete(Long userId) {
+//        try {
+//            restTemplate.delete(AUTH_SERVICE_URL + "/sync/delete/" + userId);
+//            log.info("Successfully synced credential deletion for user: {}", userId);
+//        } catch (Exception e) {
+//            log.error("Failed to sync credential deletion: {}", e.getMessage());
+//        }
+//    }
 
     private UserDTOResponse mapToResponse(User user) {
         return new UserDTOResponse(
