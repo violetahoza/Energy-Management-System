@@ -20,11 +20,5 @@ spring:
     secret: my_jwt_very_very_secret_key_for_jwt_token_generation
     expiration: 86400000  # 24 hours in milliseconds
 
-  web:
-    cors:
-        allowed-origins: *
-        allowed-methods: GET, POST, PUT, DELETE, OPTIONS
-        allowed-headers: *
-
 server:
   port: 8083

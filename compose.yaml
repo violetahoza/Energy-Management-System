@@ -1,4 +1,25 @@
 services:
+  # Traefik Reverse Proxy
+  reverse-proxy:
+    image: traefik:v3.2
+    container_name: reverse-proxy
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker"
+      - "--accesslog=true"
+      - "--accesslog.filepath=/var/log/traefik/access.log"
+      - "--log.level=DEBUG"
+      - "--entrypoints.web.address=:80"
+    ports:
+      - "80:80"      # HTTP entry point
+      - "8080:8080"  # Traefik dashboard
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - traefik_logs:/var/log/traefik
+    networks:
+      - energy_management_network
+    restart: always
+
   # Databases
   credentials_db:
     image: mysql
@@ -63,6 +84,11 @@ services:
       - credentials_db
     networks:
       - energy_management_network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.auth.rule=PathPrefix(`/api/auth`)"
+      - "traefik.http.routers.auth.entrypoints=web"
+      - "traefik.http.services.auth.loadbalancer.server.port=8083"
     restart: always
 
   user-service:
@@ -79,6 +105,11 @@ services:
       - users_db
     networks:
       - energy_management_network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.users.rule=PathPrefix(`/api/users`)"
+      - "traefik.http.routers.users.entrypoints=web"
+      - "traefik.http.services.users.loadbalancer.server.port=8081"
     restart: always
 
   device-service:
@@ -95,13 +126,19 @@ services:
       - devices_db
     networks:
       - energy_management_network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.devices.rule=PathPrefix(`/api/devices`)"
+      - "traefik.http.routers.devices.entrypoints=web"
+      - "traefik.http.services.devices.loadbalancer.server.port=8082"
     restart: always
 
 volumes:
   credentials_data:
   users_data:
   devices_data:
+  traefik_logs:
 
 networks:
   energy_management_network:
-    external: true
+    driver: bridge
