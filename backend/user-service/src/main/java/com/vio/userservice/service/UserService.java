@@ -4,20 +4,14 @@ import com.vio.userservice.dto.UserDTORequest;
 import com.vio.userservice.dto.UserDTOResponse;
 import com.vio.userservice.handler.UserEmailAlreadyExistsException;
 import com.vio.userservice.handler.UserNotFoundException;
-import com.vio.userservice.handler.UsernameAlreadyExistsException;
-import com.vio.userservice.model.UserRole;
 import com.vio.userservice.repository.UserRepository;
 import com.vio.userservice.model.User;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.MediaType;
+
 import java.time.LocalDateTime;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -48,12 +42,6 @@ public class UserService {
     }
 
     public UserDTOResponse createUser(UserDTORequest request) {
-        log.info("Creating new user with username: {}", request.username());
-
-        if (repository.existsByUsername(request.username())) {
-            throw new UsernameAlreadyExistsException(request.username());
-        }
-
         log.info("Creating new user with email: {}", request.email());
 
         if (repository.existsByEmail(request.email())) {
@@ -61,14 +49,10 @@ public class UserService {
         }
 
         User user = User.builder()
-                .username(request.username())
                 .firstName(request.firstName())
                 .lastName(request.lastName())
                 .email(request.email())
                 .address(request.address())
-                .role(UserRole.valueOf(request.role()))
-                .createdAt(LocalDateTime.now())
-                .updatedAt(LocalDateTime.now())
                 .build();
 
         User savedUser = repository.save(user);
@@ -76,45 +60,37 @@ public class UserService {
         return mapToResponse(savedUser);
     }
 
-    public UserDTOResponse updateById(Long userId, UserDTORequest request) {
-        log.info("Updating user with id: {}", userId);
+    public UserDTOResponse updateById(Long userId, Map<String, Object> updates) {
+        log.info("Partial update for user: {}", userId);
 
-        User user =
-                repository
+        User user = repository
                 .findById(userId)
-                .orElseThrow(() -> new UserNotFoundException(userId));
+                .orElseThrow(() -> new UserNotFoundException("User not found with id: " + userId));
 
-        if (!user.getUsername().equals(request.username()) &&
-                repository.existsByUsername(request.username())) {
-            throw new UsernameAlreadyExistsException(request.username());
+        if (updates.containsKey("firstName")) {
+            user.setFirstName((String) updates.get("firstName"));
+        }
+        if (updates.containsKey("lastName")) {
+            user.setLastName((String) updates.get("lastName"));
+        }
+        if (updates.containsKey("email")) {
+            String newEmail = (String) updates.get("email");
+            if (!user.getEmail().equals(newEmail) && repository.existsByEmail(newEmail)) {
+                throw new UserEmailAlreadyExistsException("Email already exists: " + newEmail);
+            }
+            user.setEmail(newEmail);
+        }
+        if (updates.containsKey("address")) {
+            user.setAddress((String) updates.get("address"));
         }
 
-        if (!user.getEmail().equals(request.email()) &&
-                repository.existsByEmail(request.email())) {
-            throw new UserEmailAlreadyExistsException(request.email());
-        }
-
-        boolean usernameChanged = !user.getUsername().equals(request.username());
-        boolean roleChanged = !user.getRole().toString().equals(request.role());
-
-        user.setUsername(request.username());
-        user.setFirstName(request.firstName());
-        user.setLastName(request.lastName());
-        user.setEmail(request.email());
-        user.setAddress(request.address());
-        user.setRole(UserRole.valueOf(request.role()));
         user.setUpdatedAt(LocalDateTime.now());
-
         User updatedUser = repository.save(user);
 
-        // Synchronize changes with Authorization Service
-        if (usernameChanged || roleChanged) {
-            syncCredentialUpdate(userId, request.username(), request.role());
-        }
-
-        log.info("User updated successfully with id: {}", updatedUser.getUserId());
+        log.info("User profile partially updated: {}", userId);
         return mapToResponse(updatedUser);
     }
+
 
     public void deleteById(Long userId) {
         log.info("Deleting user with id: {}", userId);
@@ -123,36 +99,10 @@ public class UserService {
                 .findById(userId)
                 .orElseThrow(() -> new UserNotFoundException(userId));
 
-        // Delete from Authorization Service first
-        syncCredentialDelete(userId);
-
         repository.delete(user);
         log.info("User deleted successfully with id: {}", userId);
-    }
 
-    private void syncCredentialUpdate(Long userId, String username, String role) {
-        try {
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_JSON);
-
-            Map<String, Object> updateRequest = new HashMap<>();
-            updateRequest.put("userId", userId);
-            updateRequest.put("username", username);
-            updateRequest.put("role", role);
-
-            HttpEntity<Map<String, Object>> entity = new HttpEntity<>(updateRequest, headers);
-
-            restTemplate.exchange(
-                    AUTH_SERVICE_URL + "/sync/update/" + userId,
-                    HttpMethod.PUT,
-                    entity,
-                    Void.class
-            );
-
-            log.info("Successfully synced credential update for user: {}", userId);
-        } catch (Exception e) {
-            log.error("Failed to sync credential update: {}", e.getMessage());
-        }
+        syncCredentialDelete(userId);
     }
 
     private void syncCredentialDelete(Long userId) {
@@ -167,12 +117,10 @@ public class UserService {
     private UserDTOResponse mapToResponse(User user) {
         return new UserDTOResponse(
                 user.getUserId(),
-                user.getUsername(),
                 user.getFirstName(),
                 user.getLastName(),
                 user.getEmail(),
                 user.getAddress(),
-                user.getRole().toString(),
                 user.getCreatedAt(),
                 user.getUpdatedAt()
         );

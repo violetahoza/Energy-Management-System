@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/users")
@@ -35,11 +36,11 @@ public class UserController {
         return ResponseEntity.status(HttpStatus.CREATED).body(user);
     }
 
-    @PutMapping("/id={userId}")
+    @PatchMapping("/id={userId}")
     public ResponseEntity<UserDTOResponse> updateById(
             @PathVariable Long userId,
-            @RequestBody @Valid UserDTORequest request) {
-        UserDTOResponse user = service.updateById(userId, request);
+            @RequestBody Map<String, Object> updates) {
+        UserDTOResponse user = service.updateById(userId, updates);
         return ResponseEntity.ok(user);
     }
 

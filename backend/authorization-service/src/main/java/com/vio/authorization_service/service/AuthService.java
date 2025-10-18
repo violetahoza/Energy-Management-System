@@ -45,12 +45,6 @@ public class AuthService {
             throw new RuntimeException("Username already exists");
         }
 
-        // Check if email already exists
-        existingCredential = credentialRepository.findByEmail(request.email());
-        if (existingCredential.isPresent()) {
-            throw new RuntimeException("Email already exists");
-        }
-
         // Create user in User Service first
         Long userId = createUserInUserService(request);
 
@@ -59,13 +53,13 @@ public class AuthService {
                 .userId(userId)
                 .username(request.username())
                 .password(passwordEncoder.encode(request.password()))
-                .role(request.role() != null ? request.role() : "CLIENT")
+                .role(request.role() != null ? request.role().toUpperCase() : "CLIENT")
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
                 .build();
 
         Credential savedCredential = credentialRepository.save(credential);
-        log.info("User registered successfully with id: {}", userId);
+        log.info("Credential created for user: {}", savedCredential.getUsername());
 
         // Generate JWT token
         String token = jwtUtil.generateToken(
@@ -87,13 +81,11 @@ public class AuthService {
         log.info("User login attempt: {}", request.username());
 
         Credential credential = credentialRepository.findByUsername(request.username())
-                .orElseThrow(() -> new RuntimeException("Invalid username or password"));
+                .orElseThrow(() -> new RuntimeException("Invalid username"));
 
         if (!passwordEncoder.matches(request.password(), credential.getPassword())) {
-            throw new RuntimeException("Invalid username or password");
+            throw new RuntimeException("Invalid password");
         }
-
-        log.info("User logged in successfully: {}", request.username());
 
         // Generate JWT token
         String token = jwtUtil.generateToken(
@@ -101,6 +93,8 @@ public class AuthService {
                 credential.getUsername(),
                 credential.getRole()
         );
+
+        log.info("User logged in successfully: {}", request.username());
 
         return new AuthResponse(
                 token,
@@ -159,15 +153,13 @@ public class AuthService {
             headers.setContentType(MediaType.APPLICATION_JSON);
 
             Map<String, Object> userRequest = new HashMap<>();
-            userRequest.put("username", request.username());
-            userRequest.put("email", request.email());
-            userRequest.put("role", request.role() != null ? request.role() : "CLIENT");
 
             // Parse fullName into firstName and lastName
             String[] nameParts = request.fullName() != null ?
                     request.fullName().split(" ", 2) : new String[]{"", ""};
             userRequest.put("firstName", nameParts.length > 0 ? nameParts[0] : "");
             userRequest.put("lastName", nameParts.length > 1 ? nameParts[1] : "");
+            userRequest.put("email", request.email());
             userRequest.put("address", request.address());
 
             HttpEntity<Map<String, Object>> entity = new HttpEntity<>(userRequest, headers);

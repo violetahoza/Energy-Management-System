@@ -21,6 +21,6 @@ public record RegisterRequest(
 
         String address,
 
-        String role // optional, defaults to CLIENT
+        String role
 ) {
 }
