@@ -4,6 +4,7 @@ import com.vio.userservice.dto.UserDTORequest;
 import com.vio.userservice.dto.UserDTOResponse;
 import com.vio.userservice.handler.UserEmailAlreadyExistsException;
 import com.vio.userservice.handler.UserNotFoundException;
+import com.vio.userservice.handler.UsernameAlreadyExistsException;
 import com.vio.userservice.model.UserRole;
 import com.vio.userservice.repository.UserRepository;
 import com.vio.userservice.model.User;
@@ -38,6 +39,12 @@ public class UserService {
     }
 
     public UserDTOResponse createUser(UserDTORequest request) {
+        log.info("Creating new user with username: {}", request.username());
+
+        if (repository.existsByUsername(request.username())) {
+            throw new UsernameAlreadyExistsException(request.username());
+        }
+
         log.info("Creating new user with email: {}", request.email());
 
         if (repository.existsByEmail(request.email())) {
@@ -45,7 +52,9 @@ public class UserService {
         }
 
         User user = User.builder()
-                .name(request.name())
+                .username(request.username())
+                .firstName(request.firstName())
+                .lastName(request.lastName())
                 .email(request.email())
                 .address(request.address())
                 .role(UserRole.valueOf(request.role()))
@@ -66,12 +75,19 @@ public class UserService {
                 .findById(userId)
                 .orElseThrow(() -> new UserNotFoundException(userId));
 
+        if (!user.getUsername().equals(request.username()) &&
+                repository.existsByUsername(request.username())) {
+            throw new UsernameAlreadyExistsException(request.username());
+        }
+
         if (!user.getEmail().equals(request.email()) &&
                 repository.existsByEmail(request.email())) {
             throw new UserEmailAlreadyExistsException(request.email());
         }
 
-        user.setName(request.name());
+        user.setUsername(request.username());
+        user.setFirstName(request.firstName());
+        user.setLastName(request.lastName());
         user.setEmail(request.email());
         user.setAddress(request.address());
         user.setRole(UserRole.valueOf(request.role()));
@@ -96,7 +112,9 @@ public class UserService {
     private UserDTOResponse mapToResponse(User user) {
         return new UserDTOResponse(
                 user.getUserId(),
-                user.getName(),
+                user.getUsername(),
+                user.getFirstName(),
+                user.getLastName(),
                 user.getEmail(),
                 user.getAddress(),
                 user.getRole().toString(),
