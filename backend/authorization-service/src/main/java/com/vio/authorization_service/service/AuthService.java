@@ -18,6 +18,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 
 import java.time.LocalDateTime;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -28,6 +29,7 @@ import java.util.Optional;
 public class AuthService {
     private final CredentialRepository credentialRepository;
     private final JwtUtil jwtUtil;
+    private final TokenBlackListService tokenBlacklistService;
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
     private final RestTemplate restTemplate = new RestTemplate();
 
@@ -109,7 +111,27 @@ public class AuthService {
         );
     }
 
+    public void logout(String token) {
+        log.info("Processing logout request");
+
+        if (!jwtUtil.validateToken(token)) {
+            throw new RuntimeException("Invalid token");
+        }
+
+        // Add token to blacklist
+        Date expirationDate = jwtUtil.extractExpiration(token);
+        tokenBlacklistService.blacklistToken(token, expirationDate);
+
+        log.info("User logged out successfully");
+    }
+
     public boolean validateToken(String token) {
+        // Check if token is blacklisted
+        if (tokenBlacklistService.isTokenBlacklisted(token)) {
+            log.warn("Token is blacklisted");
+            return false;
+        }
+
         return jwtUtil.validateToken(token);
     }
 
