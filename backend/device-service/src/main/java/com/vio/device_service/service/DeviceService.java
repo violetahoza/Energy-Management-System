@@ -8,6 +8,8 @@ import com.vio.device_service.repository.DeviceRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.http.ResponseEntity;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -17,6 +19,9 @@ import java.util.List;
 @Slf4j
 public class DeviceService {
     private final DeviceRepository repository;
+    private final RestTemplate restTemplate = new RestTemplate();
+
+    private static final String USER_SERVICE_URL = "http://user-service:8081/api/users";
 
     public List<DeviceDTOResponse> getAllDevices() {
         log.info("Fetching all devices");
@@ -37,6 +42,10 @@ public class DeviceService {
 
     public List<DeviceDTOResponse> findByUserId(Long userId) {
         log.info("Fetching devices for user with id: {}", userId);
+
+        // Validate user exists
+        validateUserExists(userId);
+
         return repository
                 .findByUserId(userId)
                 .stream()
@@ -46,6 +55,11 @@ public class DeviceService {
 
     public DeviceDTOResponse createDevice(DeviceDTORequest request) {
         log.info("Creating new device with name: {}", request.name());
+
+        // Validate user if userId is provided
+        if (request.userId() != null) {
+            validateUserExists(request.userId());
+        }
 
         Device device = Device.builder()
                 .name(request.name())
@@ -68,6 +82,11 @@ public class DeviceService {
         Device device = repository
                 .findById(deviceId)
                 .orElseThrow(() -> new DeviceNotFoundException(deviceId));
+
+        // Validate user if userId is provided and changed
+        if (request.userId() != null && !request.userId().equals(device.getUserId())) {
+            validateUserExists(request.userId());
+        }
 
         device.setName(request.name());
         device.setDescription(request.description());
@@ -95,6 +114,9 @@ public class DeviceService {
     public DeviceDTOResponse assignDeviceToUser(Long deviceId, Long userId) {
         log.info("Assigning device {} to user {}", deviceId, userId);
 
+        // Validate user exists
+        validateUserExists(userId);
+
         Device device = repository
                 .findById(deviceId)
                 .orElseThrow(() -> new DeviceNotFoundException(deviceId));
@@ -105,6 +127,21 @@ public class DeviceService {
         Device updatedDevice = repository.save(device);
         log.info("Device assigned successfully");
         return mapToResponse(updatedDevice);
+    }
+
+    private void validateUserExists(Long userId) {
+        try {
+            ResponseEntity<Void> response = restTemplate.getForEntity(
+                    USER_SERVICE_URL + "/id=" + userId,
+                    Void.class
+            );
+            if (!response.getStatusCode().is2xxSuccessful()) {
+                throw new RuntimeException("User with id " + userId + " does not exist");
+            }
+        } catch (Exception e) {
+            log.error("Failed to validate user existence: {}", e.getMessage());
+            throw new RuntimeException("User with id " + userId + " does not exist or User Service is unavailable");
+        }
     }
 
     private DeviceDTOResponse mapToResponse(Device device) {
