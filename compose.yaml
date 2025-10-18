@@ -109,6 +109,8 @@ services:
       - "traefik.enable=true"
       - "traefik.http.routers.users.rule=PathPrefix(`/api/users`)"
       - "traefik.http.routers.users.entrypoints=web"
+      - "traefik.http.routers.admin.rule=PathPrefix(`/api/admin`)"
+      - "traefik.http.routers.admin.entrypoints=web"
       - "traefik.http.services.users.loadbalancer.server.port=8081"
     restart: always
 

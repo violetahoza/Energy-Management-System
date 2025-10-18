@@ -1,4 +1,4 @@
-package com.vio.authorization_service.dto;
+package com.vio.userservice.dto;
 
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.Size;
