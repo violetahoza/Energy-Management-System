@@ -2,6 +2,7 @@ package com.vio.authorization_service.controller;
 
 import com.vio.authorization_service.dto.CredentialRequest;
 import com.vio.authorization_service.dto.CredentialResponse;
+import com.vio.authorization_service.dto.CredentialUpdateRequest;
 import com.vio.authorization_service.service.CredentialService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -39,7 +40,7 @@ public class CredentialController {
     @PatchMapping("/user/{userId}")
     public ResponseEntity<CredentialResponse> updateCredential(
             @PathVariable Long userId,
-            @Valid @RequestBody CredentialRequest request) {
+            @Valid @RequestBody CredentialUpdateRequest request) {
         log.info("Updating credentials for userId: {}", userId);
         CredentialResponse credential = credentialService.updateCredential(userId, request);
         return ResponseEntity.ok(credential);

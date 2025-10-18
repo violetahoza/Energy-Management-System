@@ -1,8 +1,11 @@
 package com.vio.userservice.controller;
 
+import com.vio.userservice.dto.UserDTORequest;
 import com.vio.userservice.dto.UserDTOResponse;
 import com.vio.userservice.service.UserService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -34,11 +37,11 @@ public class UserController {
         return ResponseEntity.ok(user);
     }
 
-//    @PostMapping
-//    public ResponseEntity<UserDTOResponse> createUser(@RequestBody @Valid UserDTORequest request) {
-//        UserDTOResponse user = service.createUser(request);
-//        return ResponseEntity.status(HttpStatus.CREATED).body(user);
-//    }
+    @PostMapping
+    public ResponseEntity<UserDTOResponse> createUser(@RequestBody @Valid UserDTORequest request) {
+        UserDTOResponse user = service.createUser(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(user);
+    }
 
 
 //    @DeleteMapping("/id={userId}")

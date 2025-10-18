@@ -2,6 +2,7 @@ package com.vio.device_service.controller;
 
 import com.vio.device_service.dto.DeviceDTORequest;
 import com.vio.device_service.dto.DeviceDTOResponse;
+import com.vio.device_service.dto.DeviceUpdateRequest;
 import com.vio.device_service.service.DeviceService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -41,15 +42,15 @@ public class DeviceController {
         return ResponseEntity.status(HttpStatus.CREATED).body(device);
     }
 
-    @PutMapping("/id={deviceId}")
+    @PatchMapping("/id={deviceId}")
     public ResponseEntity<DeviceDTOResponse> updateById(
             @PathVariable Long deviceId,
-            @RequestBody @Valid DeviceDTORequest request) {
+            @RequestBody @Valid DeviceUpdateRequest request) {
         DeviceDTOResponse device = service.updateById(deviceId, request);
         return ResponseEntity.ok(device);
     }
 
-    @PutMapping("/id={deviceId}/assign/{userId}")
+    @PatchMapping("/id={deviceId}/assign/{userId}")
     public ResponseEntity<DeviceDTOResponse> assignDeviceToUser(
             @PathVariable Long deviceId,
             @PathVariable Long userId) {

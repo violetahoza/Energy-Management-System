@@ -2,6 +2,7 @@ package com.vio.authorization_service.service;
 
 import com.vio.authorization_service.dto.CredentialRequest;
 import com.vio.authorization_service.dto.CredentialResponse;
+import com.vio.authorization_service.dto.CredentialUpdateRequest;
 import com.vio.authorization_service.model.Credential;
 import com.vio.authorization_service.repository.CredentialRepository;
 import lombok.RequiredArgsConstructor;
@@ -53,7 +54,7 @@ public class CredentialService {
     }
 
     @Transactional
-    public CredentialResponse updateCredential(Long userId, CredentialRequest request) {
+    public CredentialResponse updateCredential(Long userId, CredentialUpdateRequest request) {
         log.info("Updating credentials for userId: {}", userId);
 
         Credential credential = credentialRepository.findByUserId(userId)

@@ -29,7 +29,7 @@ import java.util.stream.Collectors;
 @Slf4j
 public class AdminService {
     private final UserRepository userRepository;
-    private final RestTemplate restTemplate = new RestTemplate();
+    private final RestTemplate restTemplate;
 
     private static final String AUTH_SERVICE_URL = "http://authorization-service:8083/api/auth/internal/credentials";
 
@@ -144,6 +144,23 @@ public class AdminService {
             log.info("Credentials deleted for user: {}", userId);
         } catch (Exception e) {
             log.warn("Credentials not found or already deleted for user: {}", userId);
+        }
+
+        // Notify Device Service to unassign devices (devices persist, just unassigned)
+        try {
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            HttpEntity<Void> entity = new HttpEntity<>(headers);
+
+            restTemplate.postForEntity(
+                    "http://device-service:8082/api/devices/sync/unassign-user/" + userId,
+                    entity,
+                    Void.class
+            );
+            log.info("Device unassignment triggered for user: {}", userId);
+        } catch (Exception e) {
+            log.warn("Failed to notify Device Service about user deletion: {}", e.getMessage());
+            // Continue with user deletion even if device sync fails
         }
 
         // Delete user profile

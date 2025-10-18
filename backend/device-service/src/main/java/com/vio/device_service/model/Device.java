@@ -11,6 +11,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
+@Table(name = "devices")
 public class Device {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -35,6 +36,4 @@ public class Device {
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;
-
-    private boolean isActive;
 }

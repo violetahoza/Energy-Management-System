@@ -1,5 +1,6 @@
 package com.vio.userservice.service;
 
+import com.vio.userservice.dto.UserDTORequest;
 import com.vio.userservice.dto.UserDTOResponse;
 import com.vio.userservice.handler.UserEmailAlreadyExistsException;
 import com.vio.userservice.handler.UserNotFoundException;
@@ -39,24 +40,24 @@ public class UserService {
         return mapToResponse(user);
     }
 
-//    public UserDTOResponse createUser(UserDTORequest request) {
-//        log.info("Creating new user with email: {}", request.email());
-//
-//        if (repository.existsByEmail(request.email())) {
-//            throw new UserEmailAlreadyExistsException(request.email());
-//        }
-//
-//        User user = User.builder()
-//                .firstName(request.firstName())
-//                .lastName(request.lastName())
-//                .email(request.email())
-//                .address(request.address())
-//                .build();
-//
-//        User savedUser = repository.save(user);
-//        log.info("User created successfully with id: {}", savedUser.getUserId());
-//        return mapToResponse(savedUser);
-//    }
+    public UserDTOResponse createUser(UserDTORequest request) {
+        log.info("Creating new user with email: {}", request.email());
+
+        if (repository.existsByEmail(request.email())) {
+            throw new UserEmailAlreadyExistsException(request.email());
+        }
+
+        User user = User.builder()
+                .firstName(request.firstName())
+                .lastName(request.lastName())
+                .email(request.email())
+                .address(request.address())
+                .build();
+
+        User savedUser = repository.save(user);
+        log.info("User created successfully with id: {}", savedUser.getUserId());
+        return mapToResponse(savedUser);
+    }
 
     public UserDTOResponse updateById(Long userId, Map<String, Object> updates) {
         log.info("Partial update for user: {}", userId);

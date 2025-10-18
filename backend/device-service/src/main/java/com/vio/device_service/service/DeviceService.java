@@ -2,12 +2,14 @@ package com.vio.device_service.service;
 
 import com.vio.device_service.dto.DeviceDTORequest;
 import com.vio.device_service.dto.DeviceDTOResponse;
+import com.vio.device_service.dto.DeviceUpdateRequest;
 import com.vio.device_service.handler.DeviceNotFoundException;
 import com.vio.device_service.model.Device;
 import com.vio.device_service.repository.DeviceRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.http.ResponseEntity;
 
@@ -19,7 +21,7 @@ import java.util.List;
 @Slf4j
 public class DeviceService {
     private final DeviceRepository repository;
-    private final RestTemplate restTemplate = new RestTemplate();
+    private final RestTemplate restTemplate;
 
     private static final String USER_SERVICE_URL = "http://user-service:8081/api/users";
 
@@ -53,6 +55,7 @@ public class DeviceService {
                 .toList();
     }
 
+    @Transactional
     public DeviceDTOResponse createDevice(DeviceDTORequest request) {
         log.info("Creating new device with name: {}", request.name());
 
@@ -76,30 +79,54 @@ public class DeviceService {
         return mapToResponse(savedDevice);
     }
 
-    public DeviceDTOResponse updateById(Long deviceId, DeviceDTORequest request) {
+    @Transactional
+    public DeviceDTOResponse updateById(Long deviceId, DeviceUpdateRequest request) {
         log.info("Updating device with id: {}", deviceId);
 
         Device device = repository
                 .findById(deviceId)
                 .orElseThrow(() -> new DeviceNotFoundException(deviceId));
 
-        // Validate user if userId is provided and changed
-        if (request.userId() != null && !request.userId().equals(device.getUserId())) {
-            validateUserExists(request.userId());
+        boolean updated = false;
+
+        if (request.name() != null && !request.name().equals(device.getName())) {
+            device.setName(request.name());
+            updated = true;
         }
 
-        device.setName(request.name());
-        device.setDescription(request.description());
-        device.setLocation(request.location());
-        device.setMaxConsumption(request.maximumConsumption());
-        device.setUserId(request.userId());
-        device.setUpdatedAt(LocalDateTime.now());
+        if (request.description() != null && !request.description().equals(device.getDescription())) {
+            device.setDescription(request.description());
+            updated = true;
+        }
 
-        Device updatedDevice = repository.save(device);
-        log.info("Device updated successfully with id: {}", updatedDevice.getDeviceId());
-        return mapToResponse(updatedDevice);
+        if (request.location() != null && !request.location().equals(device.getLocation())) {
+            device.setLocation(request.location());
+            updated = true;
+        }
+
+        if (request.maximumConsumption() != null && !request.maximumConsumption().equals(device.getMaxConsumption())) {
+            device.setMaxConsumption(request.maximumConsumption());
+            updated = true;
+        }
+
+        if (request.userId() != null && !request.userId().equals(device.getUserId())) {
+            validateUserExists(request.userId());
+            device.setUserId(request.userId());
+            updated = true;
+        }
+
+        if (updated) {
+            device.setUpdatedAt(LocalDateTime.now());
+            Device updatedDevice = repository.save(device);
+            log.info("Device updated successfully with id: {}", updatedDevice.getDeviceId());
+            return mapToResponse(updatedDevice);
+        }
+
+        log.info("No changes detected for device with id: {}", deviceId);
+        return mapToResponse(device);
     }
 
+    @Transactional
     public void deleteById(Long deviceId) {
         log.info("Deleting device with id: {}", deviceId);
 
@@ -111,6 +138,7 @@ public class DeviceService {
         log.info("Device deleted successfully with id: {}", deviceId);
     }
 
+    @Transactional
     public DeviceDTOResponse assignDeviceToUser(Long deviceId, Long userId) {
         log.info("Assigning device {} to user {}", deviceId, userId);
 
@@ -130,6 +158,8 @@ public class DeviceService {
     }
 
     private void validateUserExists(Long userId) {
+        log.info("Validating user exists with id: {}", userId);
+
         try {
             ResponseEntity<Void> response = restTemplate.getForEntity(
                     USER_SERVICE_URL + "/id=" + userId,
@@ -153,8 +183,7 @@ public class DeviceService {
                 device.getMaxConsumption(),
                 device.getUserId(),
                 device.getCreatedAt(),
-                device.getUpdatedAt(),
-                device.isActive()
+                device.getUpdatedAt()
         );
     }
 }

@@ -17,8 +17,6 @@ public record DeviceDTORequest(
         @Positive(message = "Maximum consumption must be positive")
         Double maximumConsumption,
 
-        Long userId,
-
-        Boolean isActive
+        Long userId
 ) {
 }

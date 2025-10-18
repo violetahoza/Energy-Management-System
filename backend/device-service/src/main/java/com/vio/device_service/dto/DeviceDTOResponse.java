@@ -10,7 +10,6 @@ public record DeviceDTOResponse(
         Double maximumConsumption,
         Long userId,
         LocalDateTime createdAt,
-        LocalDateTime updatedAt,
-        boolean isActive
+        LocalDateTime updatedAt
 ) {
 }
