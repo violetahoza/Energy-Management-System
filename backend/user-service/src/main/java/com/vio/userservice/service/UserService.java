@@ -3,6 +3,7 @@ package com.vio.userservice.service;
 import com.vio.userservice.dto.UserDTORequest;
 import com.vio.userservice.dto.UserDTOResponse;
 import com.vio.userservice.handler.UserEmailAlreadyExistsException;
+import com.vio.userservice.handler.InvalidUpdateException;
 import com.vio.userservice.handler.UserNotFoundException;
 import com.vio.userservice.repository.UserRepository;
 import com.vio.userservice.model.User;
@@ -34,9 +35,16 @@ public class UserService {
 
     public UserDTOResponse findById(Long userId) {
         log.info("Fetching user with id: {}", userId);
+
+        if (userId == null || userId <= 0) {
+            throw new IllegalArgumentException("User ID must be a positive number");
+        }
+
         User user = repository
                 .findById(userId)
                 .orElseThrow(() -> new UserNotFoundException(userId));
+
+        log.debug("User found: {}", user.getEmail());
         return mapToResponse(user);
     }
 
@@ -44,52 +52,103 @@ public class UserService {
         log.info("Creating new user with email: {}", request.email());
 
         if (repository.existsByEmail(request.email())) {
+            log.warn("Attempt to create user with existing email: {}", request.email());
             throw new UserEmailAlreadyExistsException(request.email());
         }
 
-        User user = User.builder()
-                .firstName(request.firstName())
-                .lastName(request.lastName())
-                .email(request.email())
-                .address(request.address())
-                .build();
+        try {
+            User user = User.builder()
+                    .firstName(request.firstName())
+                    .lastName(request.lastName())
+                    .email(request.email())
+                    .address(request.address())
+                    .build();
 
-        User savedUser = repository.save(user);
-        log.info("User created successfully with id: {}", savedUser.getUserId());
-        return mapToResponse(savedUser);
+            User savedUser = repository.save(user);
+            log.info("User created successfully with id: {}", savedUser.getUserId());
+
+            return mapToResponse(savedUser);
+        } catch (Exception e) {
+            log.error("Unexpected error creating user: {}", e.getMessage(), e);
+            throw new RuntimeException("Failed to create user: " + e.getMessage(), e);
+        }
     }
 
     public UserDTOResponse updateById(Long userId, Map<String, Object> updates) {
-        log.info("Partial update for user: {}", userId);
+        log.info("Update for user: {} with {} fields", userId, updates.size());
 
-        User user = repository
-                .findById(userId)
-                .orElseThrow(() -> new UserNotFoundException("User not found with id: " + userId));
+        if (userId == null || userId <= 0) {
+            throw new IllegalArgumentException("User ID must be a positive number");
+        }
+
+        if (updates == null || updates.isEmpty()) {
+            throw new InvalidUpdateException("No fields provided for update");
+        }
+
+        User user = repository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException(userId));
+
+        boolean hasUpdates = false;
 
         if (updates.containsKey("firstName")) {
-            user.setFirstName((String) updates.get("firstName"));
+            String firstName = (String) updates.get("firstName");
+            if (firstName == null || firstName.trim().isEmpty()) {
+                throw new IllegalArgumentException("First name cannot be empty");
+            }
+            user.setFirstName(firstName);
+            hasUpdates = true;
+            log.debug("Updating firstName for user: {}", userId);
         }
+
         if (updates.containsKey("lastName")) {
-            user.setLastName((String) updates.get("lastName"));
+            String lastName = (String) updates.get("lastName");
+            if (lastName == null || lastName.trim().isEmpty()) {
+                throw new IllegalArgumentException("Last name cannot be empty");
+            }
+            user.setLastName(lastName);
+            hasUpdates = true;
+            log.debug("Updating lastName for user: {}", userId);
         }
+
         if (updates.containsKey("email")) {
             String newEmail = (String) updates.get("email");
-            if (!user.getEmail().equals(newEmail) && repository.existsByEmail(newEmail)) {
-                throw new UserEmailAlreadyExistsException("Email already exists: " + newEmail);
+            if (newEmail == null || newEmail.trim().isEmpty()) {
+                throw new IllegalArgumentException("Email cannot be empty");
             }
-            user.setEmail(newEmail);
+
+            if (!user.getEmail().equals(newEmail)) {
+                if (repository.existsByEmail(newEmail)) {
+                    log.warn("Attempt to update to existing email: {}", newEmail);
+                    throw new UserEmailAlreadyExistsException(newEmail);
+                }
+                user.setEmail(newEmail);
+                hasUpdates = true;
+                log.debug("Updating email for user: {}", userId);
+            }
         }
+
         if (updates.containsKey("address")) {
-            user.setAddress((String) updates.get("address"));
+            String address = (String) updates.get("address");
+            user.setAddress(address);
+            hasUpdates = true;
+            log.debug("Updating address for user: {}", userId);
+        }
+
+        if (!hasUpdates) {
+            throw new InvalidUpdateException("No valid fields provided for update");
         }
 
         user.setUpdatedAt(LocalDateTime.now());
-        User updatedUser = repository.save(user);
 
-        log.info("User profile partially updated: {}", userId);
-        return mapToResponse(updatedUser);
+        try {
+            User updatedUser = repository.save(user);
+            log.info("User profile partially updated: {}", userId);
+            return mapToResponse(updatedUser);
+        } catch (Exception e) {
+            log.error("Error updating user {}: {}", userId, e.getMessage(), e);
+            throw new RuntimeException("Failed to update user: " + e.getMessage(), e);
+        }
     }
-
 
 //    public void deleteById(Long userId) {
 //        log.info("Deleting user with id: {}", userId);

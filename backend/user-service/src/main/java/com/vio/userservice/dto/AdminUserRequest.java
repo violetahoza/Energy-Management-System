@@ -4,9 +4,7 @@ import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.Size;
 import jakarta.validation.constraints.Email;
 
-/**
- * DTO for admin to create a complete user with both profile and credentials
- */
+// DTO for admin to create a complete user with both profile and credentials
 public record AdminUserRequest(
         // Profile data
         @NotEmpty(message = "First name is required")

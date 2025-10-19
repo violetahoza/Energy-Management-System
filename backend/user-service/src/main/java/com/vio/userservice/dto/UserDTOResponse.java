@@ -4,12 +4,10 @@ import java.time.LocalDateTime;
 
 public record UserDTOResponse(
         Long userId,
-        //String username,
         String firstName,
         String lastName,
         String email,
         String address,
-        //String role,
         LocalDateTime createdAt,
         LocalDateTime updatedAt
 ) {

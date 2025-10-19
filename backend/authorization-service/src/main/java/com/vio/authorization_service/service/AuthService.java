@@ -3,6 +3,7 @@ package com.vio.authorization_service.service;
 import com.vio.authorization_service.dto.AuthResponse;
 import com.vio.authorization_service.dto.LoginRequest;
 import com.vio.authorization_service.dto.RegisterRequest;
+import com.vio.authorization_service.handler.*;
 import com.vio.authorization_service.model.Credential;
 import com.vio.authorization_service.repository.CredentialRepository;
 import com.vio.authorization_service.util.JwtUtil;
@@ -11,6 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -21,7 +23,6 @@ import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -39,55 +40,54 @@ public class AuthService {
     public AuthResponse register(RegisterRequest request) {
         log.info("Registering new user: {}", request.username());
 
-        // Check if username already exists
-        Optional<Credential> existingCredential = credentialRepository.findByUsername(request.username());
-        if (existingCredential.isPresent()) {
-            throw new RuntimeException("Username already exists");
+        if (credentialRepository.existsByUsername(request.username())) {
+            throw new UsernameAlreadyExistsException(request.username());
         }
 
-        // Create user in User Service first
         Long userId = createUserInUserService(request);
 
-        // Create credentials
-        Credential credential = Credential.builder()
-                .userId(userId)
-                .username(request.username())
-                .password(passwordEncoder.encode(request.password()))
-                .role(request.role() != null ? request.role().toUpperCase() : "CLIENT")
-                .createdAt(LocalDateTime.now())
-                .updatedAt(LocalDateTime.now())
-                .build();
+        try {
+            Credential credential = Credential.builder()
+                    .userId(userId)
+                    .username(request.username())
+                    .password(passwordEncoder.encode(request.password()))
+                    .role(request.role() != null ? request.role().toUpperCase() : "CLIENT")
+                    .createdAt(LocalDateTime.now())
+                    .updatedAt(LocalDateTime.now())
+                    .build();
 
-        Credential savedCredential = credentialRepository.save(credential);
-        log.info("Credential created for user: {}", savedCredential.getUsername());
+            Credential savedCredential = credentialRepository.save(credential);
+            log.info("Credential created for user: {}", savedCredential.getUsername());
 
-        // Generate JWT token
-        String token = jwtUtil.generateToken(
-                savedCredential.getUserId(),
-                savedCredential.getUsername(),
-                savedCredential.getRole()
-        );
+            String token = jwtUtil.generateToken(
+                    savedCredential.getUserId(),
+                    savedCredential.getUsername(),
+                    savedCredential.getRole()
+            );
 
-        return new AuthResponse(
-                token,
-                savedCredential.getUserId(),
-                savedCredential.getUsername(),
-                savedCredential.getRole(),
-                "Registration successful"
-        );
+            return new AuthResponse(
+                    token,
+                    savedCredential.getUserId(),
+                    savedCredential.getUsername(),
+                    savedCredential.getRole(),
+                    "Registration successful"
+            );
+        } catch (Exception e) {
+            log.error("Failed to create credentials for userId: {}", userId, e);
+            throw new AuthorizationException("Failed to complete registration: " + e.getMessage(), e);
+        }
     }
 
     public AuthResponse login(LoginRequest request) {
         log.info("User login attempt: {}", request.username());
 
         Credential credential = credentialRepository.findByUsername(request.username())
-                .orElseThrow(() -> new RuntimeException("Invalid username"));
+                .orElseThrow(() -> new InvalidCredentialsException("Invalid username or password"));
 
         if (!passwordEncoder.matches(request.password(), credential.getPassword())) {
-            throw new RuntimeException("Invalid password");
+            throw new InvalidCredentialsException("Invalid username or password");
         }
 
-        // Generate JWT token
         String token = jwtUtil.generateToken(
                 credential.getUserId(),
                 credential.getUsername(),
@@ -109,10 +109,9 @@ public class AuthService {
         log.info("Processing logout request");
 
         if (!jwtUtil.validateToken(token)) {
-            throw new RuntimeException("Invalid token");
+            throw new InvalidTokenException("Invalid or expired token");
         }
 
-        // Add token to blacklist
         Date expirationDate = jwtUtil.extractExpiration(token);
         tokenBlacklistService.blacklistToken(token, expirationDate);
 
@@ -120,18 +119,26 @@ public class AuthService {
     }
 
     public boolean validateToken(String token) {
-        // Check if token is blacklisted
-        if (tokenBlacklistService.isTokenBlacklisted(token)) {
-            log.warn("Token is blacklisted");
+        try {
+            if (tokenBlacklistService.isTokenBlacklisted(token)) {
+                log.warn("Token is blacklisted");
+                return false;
+            }
+
+            return jwtUtil.validateToken(token);
+        } catch (Exception e) {
+            log.error("Error validating token: {}", e.getMessage());
             return false;
         }
-
-        return jwtUtil.validateToken(token);
     }
 
     public AuthResponse getUserFromToken(String token) {
+        if (tokenBlacklistService.isTokenBlacklisted(token)) {
+            throw new TokenBlacklistedException();
+        }
+
         if (!jwtUtil.validateToken(token)) {
-            throw new RuntimeException("Invalid or expired token");
+            throw new InvalidTokenException("Invalid or expired token");
         }
 
         String username = jwtUtil.extractUsername(token);
@@ -154,7 +161,6 @@ public class AuthService {
 
             Map<String, Object> userRequest = new HashMap<>();
 
-            // Parse fullName into firstName and lastName
             String[] nameParts = request.fullName() != null ?
                     request.fullName().split(" ", 2) : new String[]{"", ""};
             userRequest.put("firstName", nameParts.length > 0 ? nameParts[0] : "");
@@ -175,10 +181,14 @@ public class AuthService {
                 return ((Number) responseBody.get("userId")).longValue();
             }
 
-            throw new RuntimeException("Failed to create user in User Service");
+            throw new ExternalServiceException("User Service", "Invalid response format");
+
+        } catch (RestClientException e) {
+            log.error("Error communicating with User Service: {}", e.getMessage(), e);
+            throw new ExternalServiceException("User Service", e);
         } catch (Exception e) {
-            log.error("Error creating user in User Service: {}", e.getMessage());
-            throw new RuntimeException("Failed to create user: " + e.getMessage());
+            log.error("Unexpected error creating user in User Service: {}", e.getMessage(), e);
+            throw new ExternalServiceException("User Service", e);
         }
     }
 }
