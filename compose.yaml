@@ -36,6 +36,11 @@ services:
     networks:
       - energy_management_network
     restart: always
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   users_db:
     image: mysql
@@ -52,6 +57,11 @@ services:
     networks:
       - energy_management_network
     restart: always
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   devices_db:
     image: mysql
@@ -68,6 +78,11 @@ services:
     networks:
       - energy_management_network
     restart: always
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   # Backend Services
   authorization-service:
@@ -81,14 +96,15 @@ services:
       DB_PASS: credentials_pass
       DB_NAME: credentials_db
     depends_on:
-      - credentials_db
+      credentials_db:
+        condition: service_healthy
     networks:
       - energy_management_network
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.auth.rule=PathPrefix(`/api/auth`)"
-      - "traefik.http.routers.auth.entrypoints=web"
-      - "traefik.http.services.auth.loadbalancer.server.port=8083"
+#    labels:
+#      - "traefik.enable=true"
+#      - "traefik.http.routers.auth.rule=PathPrefix(`/api/auth`)"
+#      - "traefik.http.routers.auth.entrypoints=web"
+#      - "traefik.http.services.auth.loadbalancer.server.port=8083"
     restart: always
 
   user-service:
@@ -102,16 +118,17 @@ services:
       DB_PASS: users_pass
       DB_NAME: users_db
     depends_on:
-      - users_db
+      users_db:
+        condition: service_healthy
     networks:
       - energy_management_network
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.users.rule=PathPrefix(`/api/users`)"
-      - "traefik.http.routers.users.entrypoints=web"
-      - "traefik.http.routers.admin.rule=PathPrefix(`/api/admin`)"
-      - "traefik.http.routers.admin.entrypoints=web"
-      - "traefik.http.services.users.loadbalancer.server.port=8081"
+#    labels:
+#      - "traefik.enable=true"
+#      - "traefik.http.routers.users.rule=PathPrefix(`/api/users`)"
+#      - "traefik.http.routers.users.entrypoints=web"
+#      - "traefik.http.routers.admin.rule=PathPrefix(`/api/admin`)"
+#      - "traefik.http.routers.admin.entrypoints=web"
+#      - "traefik.http.services.users.loadbalancer.server.port=8081"
     restart: always
 
   device-service:
@@ -125,14 +142,33 @@ services:
       DB_PASS: devices_pass
       DB_NAME: devices_db
     depends_on:
-      - devices_db
+      devices_db:
+        condition: service_healthy
+    networks:
+      - energy_management_network
+#    labels:
+#      - "traefik.enable=true"
+#      - "traefik.http.routers.devices.rule=PathPrefix(`/api/devices`)"
+#      - "traefik.http.routers.devices.entrypoints=web"
+#      - "traefik.http.services.devices.loadbalancer.server.port=8082"
+    restart: always
+
+  api-gateway:
+    build: ./backend/api-gateway
+    container_name: api-gateway
+    ports:
+      - "9090:8080"
+    depends_on:
+      - authorization-service
+      - user-service
+      - device-service
     networks:
       - energy_management_network
     labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.devices.rule=PathPrefix(`/api/devices`)"
-      - "traefik.http.routers.devices.entrypoints=web"
-      - "traefik.http.services.devices.loadbalancer.server.port=8082"
+        - "traefik.enable=true"
+        - "traefik.http.routers.api-gateway.rule=PathPrefix(`/api`)"
+        - "traefik.http.routers.api-gateway.entrypoints=web"
+        - "traefik.http.services.api-gateway.loadbalancer.server.port=8080"
     restart: always
 
 volumes:
