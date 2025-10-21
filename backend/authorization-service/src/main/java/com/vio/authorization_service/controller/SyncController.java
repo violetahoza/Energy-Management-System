@@ -1,14 +1,10 @@
 package com.vio.authorization_service.controller;
 
-import com.vio.authorization_service.model.Credential;
 import com.vio.authorization_service.repository.CredentialRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.time.LocalDateTime;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/auth/sync")

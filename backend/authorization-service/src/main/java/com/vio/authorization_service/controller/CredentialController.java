@@ -11,10 +11,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-/**
- * Internal controller for credential management
- * Used by user-service for admin operations
- */
 @RestController
 @RequestMapping("/api/auth/internal/credentials")
 @RequiredArgsConstructor

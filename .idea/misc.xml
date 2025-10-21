@@ -11,6 +11,7 @@
         <option value="$PROJECT_DIR$/backend/user-service/pom.xml" />
         <option value="$PROJECT_DIR$/backend/device-service/pom.xml" />
         <option value="$PROJECT_DIR$/backend/authorization-service/pom.xml" />
+        <option value="$PROJECT_DIR$/backend/api-gateway/pom.xml" />
       </list>
     </option>
     <option name="ignoredFiles">
