@@ -29,7 +29,7 @@ public class DeviceController {
         return ResponseEntity.ok(devices);
     }
 
-    @GetMapping("/id={deviceId}")
+    @GetMapping("/{deviceId}")
     @PreAuthorize("hasRole('ADMIN') or @deviceSecurityService.isDeviceOwnedByUser(#deviceId, principal)")
     public ResponseEntity<DeviceResponse> findById(@PathVariable Long deviceId) {
         log.info("Fetching device by id: {}", deviceId);
@@ -65,7 +65,7 @@ public class DeviceController {
         return ResponseEntity.status(HttpStatus.CREATED).body(device);
     }
 
-    @PatchMapping("/id={deviceId}")
+    @PatchMapping("/{deviceId}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<DeviceResponse> updateById(
             @PathVariable Long deviceId,
@@ -75,7 +75,7 @@ public class DeviceController {
         return ResponseEntity.ok(device);
     }
 
-    @PatchMapping("/id={deviceId}/assign/{userId}")
+    @PatchMapping("/{deviceId}/assign/{userId}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<DeviceResponse> assignDeviceToUser(
             @PathVariable Long deviceId,
@@ -85,7 +85,7 @@ public class DeviceController {
         return ResponseEntity.ok(device);
     }
 
-    @PatchMapping("/id={deviceId}/unassign")
+    @PatchMapping("/{deviceId}/unassign")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<DeviceResponse> unassignDevice(@PathVariable Long deviceId) {
         log.info("Admin unassigning device: {}", deviceId);
@@ -93,7 +93,7 @@ public class DeviceController {
         return ResponseEntity.ok(device);
     }
 
-    @DeleteMapping("/id={deviceId}")
+    @DeleteMapping("/{deviceId}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> deleteById(@PathVariable Long deviceId) {
         log.info("Admin deleting device: {}", deviceId);

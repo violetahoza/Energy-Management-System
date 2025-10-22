@@ -99,18 +99,17 @@ services:
       - energy_management_network
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.auth-login.rule=PathPrefix(`/api/auth/login`)"
-      - "traefik.http.routers.auth-login.entrypoints=web"
-      - "traefik.http.routers.auth-login.priority=100"
-      - "traefik.http.routers.auth-login.middlewares=cors-headers"
-      - "traefik.http.routers.auth-register.rule=PathPrefix(`/api/auth/register`)"
-      - "traefik.http.routers.auth-register.entrypoints=web"
-      - "traefik.http.routers.auth-register.priority=99"
-      - "traefik.http.routers.auth-register.middlewares=cors-headers"
-      - "traefik.http.routers.auth-protected.rule=PathPrefix(`/api/auth`) && !PathPrefix(`/api/auth/login`) && !PathPrefix(`/api/auth/register`) && !PathPrefix(`/api/auth/internal`)"
+      # Public endpoints (login, register) - no auth required
+      - "traefik.http.routers.auth-public.rule=PathPrefix(`/api/auth`) && (Path(`/api/auth/login`) || Path(`/api/auth/register`))"
+      - "traefik.http.routers.auth-public.entrypoints=web"
+      - "traefik.http.routers.auth-public.priority=100"
+      - "traefik.http.routers.auth-public.middlewares=cors-headers"
+      # Protected endpoints (logout, user) - require auth
+      - "traefik.http.routers.auth-protected.rule=PathPrefix(`/api/auth`) && !PathPrefix(`/api/auth/internal`) && !(Path(`/api/auth/login`) || Path(`/api/auth/register`))"
       - "traefik.http.routers.auth-protected.entrypoints=web"
-      - "traefik.http.routers.auth-protected.priority=98"
+      - "traefik.http.routers.auth-protected.priority=99"
       - "traefik.http.routers.auth-protected.middlewares=auth-middleware,cors-headers"
+      # Internal endpoints - no auth, higher priority
       - "traefik.http.routers.auth-internal.rule=PathPrefix(`/api/auth/internal`)"
       - "traefik.http.routers.auth-internal.entrypoints=web"
       - "traefik.http.routers.auth-internal.priority=101"
@@ -141,16 +140,19 @@ services:
       - energy_management_network
     labels:
       - "traefik.enable=true"
+      # Internal endpoints - highest priority, no auth
       - "traefik.http.routers.users-internal.rule=PathPrefix(`/api/users/internal`)"
       - "traefik.http.routers.users-internal.entrypoints=web"
       - "traefik.http.routers.users-internal.priority=101"
       - "traefik.http.routers.users-internal.middlewares=cors-headers"
+      # Regular endpoints - require auth
       - "traefik.http.routers.users.rule=PathPrefix(`/api/users`) && !PathPrefix(`/api/users/internal`)"
       - "traefik.http.routers.users.entrypoints=web"
       - "traefik.http.routers.users.priority=50"
       - "traefik.http.routers.users.middlewares=auth-middleware,cors-headers"
       - "traefik.http.services.user-service.loadbalancer.server.port=8081"
     restart: always
+
 
   device-service:
     build: ./backend/device-service
@@ -169,14 +171,16 @@ services:
       - energy_management_network
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.devices.rule=PathPrefix(`/api/devices`) && !PathPrefix(`/api/devices/sync`)"
-      - "traefik.http.routers.devices.entrypoints=web"
-      - "traefik.http.routers.devices.priority=100"
-      - "traefik.http.routers.devices.middlewares=auth-middleware,cors-headers"
+      # Sync endpoints - highest priority, no auth (for service-to-service)
       - "traefik.http.routers.devices-sync.rule=PathPrefix(`/api/devices/sync`)"
       - "traefik.http.routers.devices-sync.entrypoints=web"
       - "traefik.http.routers.devices-sync.priority=101"
       - "traefik.http.routers.devices-sync.middlewares=cors-headers"
+      # Regular device endpoints - require auth
+      - "traefik.http.routers.devices.rule=PathPrefix(`/api/devices`) && !PathPrefix(`/api/devices/sync`)"
+      - "traefik.http.routers.devices.entrypoints=web"
+      - "traefik.http.routers.devices.priority=100"
+      - "traefik.http.routers.devices.middlewares=auth-middleware,cors-headers"
       - "traefik.http.services.devices.loadbalancer.server.port=8082"
     restart: always
 

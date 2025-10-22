@@ -68,8 +68,6 @@ public class UserService {
             throw new UserEmailAlreadyExistsException(request.email());
         }
 
-        validateUsernameUniqueness(request.username());
-
         User user = User.builder()
                 .firstName(request.firstName())
                 .lastName(request.lastName())
@@ -207,18 +205,6 @@ public class UserService {
         log.info("User profile updated successfully: {}", user.getUserId());
     }
 
-    private void validateUsernameUniqueness(String username) {
-        try {
-            ResponseEntity<Void> response = restTemplate.getForEntity(
-                    AUTH_SERVICE_URL + "/username/" + username,
-                    Void.class
-            );
-            throw new UsernameAlreadyExistsException(username);
-        } catch (HttpClientErrorException.NotFound e) {
-            log.debug("Username is available: {}", username);
-        }
-    }
-
     private Map<String, Object> createCredentialsInAuthService(
             Long userId, String username, String password, String role) {
         try {
@@ -245,6 +231,10 @@ public class UserService {
             }
 
             return response.getBody();
+        } catch (HttpClientErrorException.Conflict e) {
+            log.error("Username already taken: {}", e.getMessage());
+            throw new UsernameAlreadyExistsException(username);
+
         } catch (HttpClientErrorException e) {
             log.error("HTTP error creating credentials: {} - {}", e.getStatusCode(), e.getMessage());
             throw new ServiceCommunicationException("authorization-service",

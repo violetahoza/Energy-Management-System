@@ -31,7 +31,7 @@ public class UserController {
         return ResponseEntity.ok(userService.getAllUsers());
     }
 
-    @GetMapping("/id={userId}")
+    @GetMapping("/{userId}")
     @PreAuthorize("hasRole('ADMIN') or (hasRole('CLIENT') and principal == #userId.toString())")
     public ResponseEntity<UserResponse> getUserById(@PathVariable Long userId) {
         return ResponseEntity.ok(userService.getUserById(userId));
@@ -45,7 +45,7 @@ public class UserController {
         return ResponseEntity.status(HttpStatus.CREATED).body(user);
     }
 
-    @PatchMapping("/id={userId}")
+    @PatchMapping("/{userId}")
     @PreAuthorize("hasRole('ADMIN') or (hasRole('CLIENT') and principal == #userId.toString())")
     public ResponseEntity<UserResponse> updateUser(
             @PathVariable Long userId,
@@ -54,7 +54,7 @@ public class UserController {
         return ResponseEntity.ok(user);
     }
 
-    @DeleteMapping("/id={userId}")
+    @DeleteMapping("/{userId}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> deleteUser(@PathVariable Long userId) {
         userService.deleteUser(userId);
@@ -81,5 +81,12 @@ public class UserController {
     public ResponseEntity<Void> deleteUserProfile(@PathVariable Long userId) {
         userService.deleteUserProfile(userId);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/internal/validate/{userId}")
+    public ResponseEntity<Void> validateUserExists(@PathVariable Long userId) {
+        log.info("Internal validation request for userId: {}", userId);
+        userService.getUserById(userId); // this will throw UserNotFoundException if not found
+        return ResponseEntity.ok().build();
     }
 }

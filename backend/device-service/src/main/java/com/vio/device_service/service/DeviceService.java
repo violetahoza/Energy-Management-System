@@ -28,7 +28,7 @@ public class DeviceService {
     private final DeviceRepository repository;
     private final RestTemplate restTemplate;
 
-    private static final String USER_SERVICE_URL = "http://user-service:8081/api/users";
+    private static final String USER_SERVICE_URL = "http://user-service:8081/api/users/internal/validate";
 
     public List<DeviceResponse> getAllDevices() {
         log.info("Fetching all devices");
@@ -261,42 +261,22 @@ public class DeviceService {
         log.debug("Validating user exists with id: {}", userId);
 
         try {
-            // Get the authentication token from the security context
-            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-
-            HttpHeaders headers = new HttpHeaders();
-            if (authentication != null && authentication.getDetails() instanceof Map) {
-                Map<?, ?> details = (Map<?, ?>) authentication.getDetails();
-                String token = (String) details.get("token");
-                if (token != null) {
-                    headers.set("Authorization", "Bearer " + token);
-                }
-            }
-
-            HttpEntity<?> entity = new HttpEntity<>(headers);
-
-            ResponseEntity<Void> response = restTemplate.exchange(
-                    USER_SERVICE_URL + "/id=" + userId,
-                    HttpMethod.GET,
-                    entity,
+            // Simple call to internal validation endpoint (no auth needed)
+            restTemplate.getForEntity(
+                    USER_SERVICE_URL + "/" + userId,
                     Void.class
             );
 
-            if (!response.getStatusCode().is2xxSuccessful()) {
-                throw new UserServiceException(userId);
-            }
+            log.debug("User validation successful for id: {}", userId);
+        } catch (HttpClientErrorException.NotFound e) {
+            log.error("User not found with id: {}", userId);
+            throw new UserServiceException("User with id " + userId + " does not exist");
         } catch (HttpClientErrorException e) {
-            if (e.getStatusCode() == HttpStatus.NOT_FOUND) {
-                log.error("User not found with id: {}", userId);
-                throw new UserServiceException("User with id " + userId + " does not exist");
-            }
-            log.error("HTTP error while validating user {}: {}", userId, e.getMessage());
+            log.error("HTTP error while validating user {}: {} - {}", userId, e.getStatusCode(), e.getMessage());
             throw new UserServiceException("Error validating user: " + e.getMessage(), e);
         } catch (ResourceAccessException e) {
             log.error("User Service is unavailable: {}", e.getMessage());
             throw new UserServiceException("User Service is currently unavailable. Please try again later.", e);
-        } catch (UserServiceException e) {
-            throw e;
         } catch (Exception e) {
             log.error("Unexpected error while validating user {}: {}", userId, e.getMessage());
             throw new UserServiceException("Failed to validate user existence", e);
