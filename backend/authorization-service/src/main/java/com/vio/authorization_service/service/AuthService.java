@@ -132,6 +132,63 @@ public class AuthService {
         }
     }
 
+    public AuthResponse validateAuthorizationHeader(String authorizationHeader) {
+        log.info("Validating authorization header");
+
+        // Check if Authorization header is present
+        if (authorizationHeader == null || authorizationHeader.trim().isEmpty()) {
+            log.warn("Missing Authorization header");
+            throw new InvalidTokenException("Missing Authorization header");
+        }
+
+        // Check if token has Bearer prefix
+        if (!authorizationHeader.startsWith("Bearer ")) {
+            log.warn("Invalid Authorization header format");
+            throw new InvalidTokenException("Invalid Authorization header format");
+        }
+
+        // Extract JWT token
+        String jwtToken = authorizationHeader.substring(7);
+
+        // Validate token is not empty after removing Bearer prefix
+        if (jwtToken.trim().isEmpty()) {
+            log.warn("Empty JWT token");
+            throw new InvalidTokenException("Empty token");
+        }
+
+        // Check if token is blacklisted
+        if (tokenBlacklistService.isTokenBlacklisted(jwtToken)) {
+            log.warn("Token is blacklisted");
+            throw new TokenBlacklistedException();
+        }
+
+        // Validate token structure and expiration
+        if (!jwtUtil.validateToken(jwtToken)) {
+            log.warn("Token validation failed");
+            throw new InvalidTokenException("Invalid or expired token");
+        }
+
+        // Extract user information from token
+        try {
+            String username = jwtUtil.extractUsername(jwtToken);
+            Long userId = jwtUtil.extractUserId(jwtToken);
+            String role = jwtUtil.extractRole(jwtToken);
+
+            log.info("Token validated successfully for user: {} (role: {})", username, role);
+
+            return new AuthResponse(
+                    jwtToken,
+                    userId,
+                    username,
+                    role,
+                    "Token is valid"
+            );
+        } catch (Exception e) {
+            log.error("Error extracting user info from token: {}", e.getMessage());
+            throw new InvalidTokenException("Failed to extract user information from token");
+        }
+    }
+
     public AuthResponse getUserFromToken(String token) {
         if (tokenBlacklistService.isTokenBlacklisted(token)) {
             throw new TokenBlacklistedException();

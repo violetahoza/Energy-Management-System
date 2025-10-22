@@ -43,14 +43,41 @@ public class AuthController {
     }
 
     @GetMapping("/validate")
-    public ResponseEntity<Boolean> validateToken(@RequestHeader("Authorization") String token) {
-        String jwtToken = token.startsWith("Bearer ") ? token.substring(7) : token;
-        boolean isValid = authService.validateToken(jwtToken);
-        return ResponseEntity.ok(isValid);
+    public ResponseEntity<?> validateToken(
+            @RequestHeader(value = "Authorization", required = false) String authorizationHeader) {
+
+        log.info("ForwardAuth validation request received");
+
+        try {
+            AuthResponse userInfo = authService.validateAuthorizationHeader(authorizationHeader);
+
+            log.info("Request authorized for user: {} (role: {})",
+                    userInfo.username(), userInfo.role());
+
+            // Return 200 OK with user information in headers
+            // These headers will be forwarded to downstream services by Traefik
+            return ResponseEntity.ok()
+                    .header("X-User-Id", userInfo.userId().toString())
+                    .header("X-Username", userInfo.username())
+                    .header("X-User-Role", userInfo.role())
+                    .body(Map.of(
+                            "valid", true,
+                            "userId", userInfo.userId(),
+                            "username", userInfo.username(),
+                            "role", userInfo.role()
+                    ));
+
+        } catch (Exception e) {
+            log.error("Token validation failed: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", e.getMessage()));
+        }
     }
+
 
     @GetMapping("/user")
     public ResponseEntity<AuthResponse> getUserFromToken(@RequestHeader("Authorization") String token) {
+        log.info("Get user from token request");
         String jwtToken = token.startsWith("Bearer ") ? token.substring(7) : token;
         AuthResponse response = authService.getUserFromToken(jwtToken);
         return ResponseEntity.ok(response);

@@ -8,13 +8,13 @@ services:
       - "--providers.docker"
       - "--accesslog=true"
       - "--accesslog.filepath=/var/log/traefik/access.log"
-      - "--log.level=DEBUG"
+      - "--log.level=INFO"
       - "--entrypoints.web.address=:80"
     ports:
       - "80:80"      # HTTP entry point
       - "8080:8080"  # Traefik dashboard
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro # partea de network cu docker
       - traefik_logs:/var/log/traefik
     networks:
       - energy_management_network
@@ -100,11 +100,45 @@ services:
         condition: service_healthy
     networks:
       - energy_management_network
-#    labels:
-#      - "traefik.enable=true"
-#      - "traefik.http.routers.auth.rule=PathPrefix(`/api/auth`)"
-#      - "traefik.http.routers.auth.entrypoints=web"
-#      - "traefik.http.services.auth.loadbalancer.server.port=8083"
+    labels:
+      - "traefik.enable=true"
+
+      # Login endpoint - public
+      - "traefik.http.routers.auth-login.rule=PathPrefix(`/api/auth/login`)"
+      - "traefik.http.routers.auth-login.entrypoints=web"
+      - "traefik.http.routers.auth-login.priority=100"
+      - "traefik.http.routers.auth-login.middlewares=cors-headers"
+
+      # Register endpoint - public
+      - "traefik.http.routers.auth-register.rule=PathPrefix(`/api/auth/register`)"
+      - "traefik.http.routers.auth-register.entrypoints=web"
+      - "traefik.http.routers.auth-register.priority=99"
+      - "traefik.http.routers.auth-register.middlewares=cors-headers"
+
+      # Other auth endpoints (logout, validate, user) - require authentication
+      - "traefik.http.routers.auth-protected.rule=PathPrefix(`/api/auth`) && !PathPrefix(`/api/auth/login`) && !PathPrefix(`/api/auth/register`) && !PathPrefix(`/api/auth/internal`)"
+      - "traefik.http.routers.auth-protected.entrypoints=web"
+      - "traefik.http.routers.auth-protected.priority=98"
+      - "traefik.http.routers.auth-protected.middlewares=auth-middleware,cors-headers"
+
+      # Internal endpoints - not exposed through gateway
+      - "traefik.http.routers.auth-internal.rule=PathPrefix(`/api/auth/internal`)"
+      - "traefik.http.routers.auth-internal.entrypoints=web"
+      - "traefik.http.routers.auth-internal.priority=101"
+      - "traefik.http.routers.auth-internal.middlewares=cors-headers"
+
+      # Service configuration
+      - "traefik.http.services.auth.loadbalancer.server.port=8083"
+
+      # CORS middleware
+      - "traefik.http.middlewares.cors-headers.headers.accessControlAllowOriginList=http://localhost:3000,http://localhost:4200"
+      - "traefik.http.middlewares.cors-headers.headers.accessControlAllowMethods=GET,POST,PUT,PATCH,DELETE,OPTIONS"
+      - "traefik.http.middlewares.cors-headers.headers.accessControlAllowHeaders=Content-Type,Authorization"
+      - "traefik.http.middlewares.cors-headers.headers.accessControlAllowCredentials=true"
+
+      # Auth middleware - uses ForwardAuth to validate tokens
+      - "traefik.http.middlewares.auth-middleware.forwardauth.address=http://authorization-service:8083/api/auth/validate"
+      - "traefik.http.middlewares.auth-middleware.forwardauth.authResponseHeaders=X-User-Id,X-Username,X-User-Role"
     restart: always
 
   user-service:
@@ -122,13 +156,26 @@ services:
         condition: service_healthy
     networks:
       - energy_management_network
-#    labels:
-#      - "traefik.enable=true"
-#      - "traefik.http.routers.users.rule=PathPrefix(`/api/users`)"
-#      - "traefik.http.routers.users.entrypoints=web"
-#      - "traefik.http.routers.admin.rule=PathPrefix(`/api/admin`)"
-#      - "traefik.http.routers.admin.entrypoints=web"
-#      - "traefik.http.services.users.loadbalancer.server.port=8081"
+    labels:
+      - "traefik.enable=true"
+
+      # Admin endpoints - require authentication
+      - "traefik.http.routers.admin.rule=PathPrefix(`/api/admin`)"
+      - "traefik.http.routers.admin.entrypoints=web"
+      - "traefik.http.routers.admin.priority=100"
+      - "traefik.http.routers.admin.middlewares=auth-middleware,admin-only,cors-headers"
+
+      # Regular user endpoints - require authentication
+      - "traefik.http.routers.users.rule=PathPrefix(`/api/users`)"
+      - "traefik.http.routers.users.entrypoints=web"
+      - "traefik.http.routers.users.priority=50"
+      - "traefik.http.routers.users.middlewares=auth-middleware,cors-headers"
+
+      # Service configuration
+      - "traefik.http.services.user-service.loadbalancer.server.port=8081"
+
+      # Admin-only middleware (strips non-ADMIN requests)
+      - "traefik.http.middlewares.admin-only.headers.customRequestHeaders.X-Required-Role=ADMIN"
     restart: always
 
   device-service:
@@ -138,7 +185,7 @@ services:
       - "8082:8082"
     environment:
       DB_HOST: devices_db
-      DB_USER: devices_r
+      DB_USER: devices_user
       DB_PASS: devices_pass
       DB_NAME: devices_db
     depends_on:
@@ -146,29 +193,23 @@ services:
         condition: service_healthy
     networks:
       - energy_management_network
-#    labels:
-#      - "traefik.enable=true"
-#      - "traefik.http.routers.devices.rule=PathPrefix(`/api/devices`)"
-#      - "traefik.http.routers.devices.entrypoints=web"
-#      - "traefik.http.services.devices.loadbalancer.server.port=8082"
-    restart: always
-
-  api-gateway:
-    build: ./backend/api-gateway
-    container_name: api-gateway
-    ports:
-      - "9090:8080"
-    depends_on:
-      - authorization-service
-      - user-service
-      - device-service
-    networks:
-      - energy_management_network
     labels:
-        - "traefik.enable=true"
-        - "traefik.http.routers.api-gateway.rule=PathPrefix(`/api`)"
-        - "traefik.http.routers.api-gateway.entrypoints=web"
-        - "traefik.http.services.api-gateway.loadbalancer.server.port=8080"
+      - "traefik.enable=true"
+
+      # All device endpoints require authentication
+      - "traefik.http.routers.devices.rule=PathPrefix(`/api/devices`) && !PathPrefix(`/api/devices/sync`)"
+      - "traefik.http.routers.devices.entrypoints=web"
+      - "traefik.http.routers.devices.priority=100"
+      - "traefik.http.routers.devices.middlewares=auth-middleware,cors-headers"
+
+      # Sync endpoints - internal only (still protected but lower priority)
+      - "traefik.http.routers.devices-sync.rule=PathPrefix(`/api/devices/sync`)"
+      - "traefik.http.routers.devices-sync.entrypoints=web"
+      - "traefik.http.routers.devices-sync.priority=101"
+      - "traefik.http.routers.devices-sync.middlewares=cors-headers"
+
+      # Service configuration
+      - "traefik.http.services.devices.loadbalancer.server.port=8082"
     restart: always
 
 volumes:
