@@ -2,11 +2,7 @@ package com.vio.userservice.dto;
 
 import java.time.LocalDateTime;
 
-/*
- * DTO that combines user profile data with credential data
- * Used by admin to see complete user information
- */
-public record AdminUserResponse(
+public record UserResponse(
         Long userId,
         String firstName,
         String lastName,

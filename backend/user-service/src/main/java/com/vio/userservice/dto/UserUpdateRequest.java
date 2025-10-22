@@ -3,7 +3,7 @@ package com.vio.userservice.dto;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Size;
 
-public record AdminUserUpdateRequest(
+public record UserUpdateRequest(
         // Profile data (all optional)
         @Size(min = 2, max = 50, message = "First name must be between 2 and 50 characters")
         String firstName,
