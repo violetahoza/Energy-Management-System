@@ -44,7 +44,7 @@ public class AuthService {
             throw new UsernameAlreadyExistsException(request.username());
         }
 
-        Long userId = createUserInUserService(request);
+        Long userId = createUserProfileInUserService(request);
 
         try {
             Credential credential = Credential.builder()
@@ -82,10 +82,10 @@ public class AuthService {
         log.info("User login attempt: {}", request.username());
 
         Credential credential = credentialRepository.findByUsername(request.username())
-                .orElseThrow(() -> new InvalidCredentialsException("Invalid username or password"));
+                .orElseThrow(() -> new InvalidCredentialsException("Invalid username"));
 
         if (!passwordEncoder.matches(request.password(), credential.getPassword())) {
-            throw new InvalidCredentialsException("Invalid username or password");
+            throw new InvalidCredentialsException("Invalid password");
         }
 
         String token = jwtUtil.generateToken(
@@ -211,7 +211,7 @@ public class AuthService {
         );
     }
 
-    private Long createUserInUserService(RegisterRequest request) {
+    private Long createUserProfileInUserService(RegisterRequest request) {
         try {
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
@@ -228,7 +228,7 @@ public class AuthService {
             HttpEntity<Map<String, Object>> entity = new HttpEntity<>(userRequest, headers);
 
             ResponseEntity<Map> response = restTemplate.postForEntity(
-                    USER_SERVICE_URL,
+                    USER_SERVICE_URL + "/internal/profile",
                     entity,
                     Map.class
             );
@@ -246,6 +246,16 @@ public class AuthService {
         } catch (Exception e) {
             log.error("Unexpected error creating user in User Service: {}", e.getMessage(), e);
             throw new ExternalServiceException("User Service", e);
+        }
+
+    }
+
+    private void deleteUserProfileInUserService(Long userId) {
+        try {
+            restTemplate.delete(USER_SERVICE_URL + "/internal/profile/" + userId);
+            log.info("Rolled back user profile creation for userId: {}", userId);
+        } catch (Exception e) {
+            log.error("Failed to rollback user profile for userId {}: {}", userId, e.getMessage());
         }
     }
 }

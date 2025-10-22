@@ -2,7 +2,7 @@ package com.vio.device_service.dto;
 
 import java.time.LocalDateTime;
 
-public record DeviceDTOResponse(
+public record DeviceResponse(
         Long deviceId,
         String name,
         String description,

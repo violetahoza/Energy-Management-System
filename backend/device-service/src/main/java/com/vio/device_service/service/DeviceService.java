@@ -1,24 +1,25 @@
 package com.vio.device_service.service;
 
-import com.vio.device_service.dto.DeviceDTORequest;
-import com.vio.device_service.dto.DeviceDTOResponse;
-import com.vio.device_service.dto.DeviceUpdateRequest;
+import com.vio.device_service.dto.DeviceRequest;
+import com.vio.device_service.dto.DeviceResponse;
 import com.vio.device_service.handler.DeviceNotFoundException;
 import com.vio.device_service.handler.UserServiceException;
 import com.vio.device_service.model.Device;
 import com.vio.device_service.repository.DeviceRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.*;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.client.RestTemplate;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.ResourceAccessException;
-import org.springframework.http.ResponseEntity;
-import org.springframework.http.HttpStatus;
+import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -29,11 +30,10 @@ public class DeviceService {
 
     private static final String USER_SERVICE_URL = "http://user-service:8081/api/users";
 
-    public List<DeviceDTOResponse> getAllDevices() {
+    public List<DeviceResponse> getAllDevices() {
         log.info("Fetching all devices");
         try {
-            return repository
-                    .findAll()
+            return repository.findAll()
                     .stream()
                     .map(this::mapToResponse)
                     .toList();
@@ -43,32 +43,22 @@ public class DeviceService {
         }
     }
 
-    public DeviceDTOResponse findById(Long deviceId) {
+    public DeviceResponse findById(Long deviceId) {
         log.info("Fetching device with id: {}", deviceId);
+        validateDeviceId(deviceId);
 
-        if (deviceId == null || deviceId <= 0) {
-            throw new IllegalArgumentException("Device ID must be a positive number");
-        }
-
-        Device device = repository
-                .findById(deviceId)
+        Device device = repository.findById(deviceId)
                 .orElseThrow(() -> new DeviceNotFoundException(deviceId));
         return mapToResponse(device);
     }
 
-    public List<DeviceDTOResponse> findByUserId(Long userId) {
+    public List<DeviceResponse> findByUserId(Long userId) {
         log.info("Fetching devices for user with id: {}", userId);
-
-        if (userId == null || userId <= 0) {
-            throw new IllegalArgumentException("User ID must be a positive number");
-        }
-
-        // Validate user exists
+        validateUserId(userId);
         validateUserExists(userId);
 
         try {
-            return repository
-                    .findByUserId(userId)
+            return repository.findByUserId(userId)
                     .stream()
                     .map(this::mapToResponse)
                     .toList();
@@ -79,18 +69,19 @@ public class DeviceService {
     }
 
     @Transactional
-    public DeviceDTOResponse createDevice(DeviceDTORequest request) {
+    public DeviceResponse createDevice(DeviceRequest request) {
         log.info("Creating new device with name: {}", request.name());
 
-        try {
-            // Validate user if userId is provided
-            if (request.userId() != null) {
-                if (request.userId() <= 0) {
-                    throw new IllegalArgumentException("User ID must be a positive number");
-                }
-                validateUserExists(request.userId());
-            }
+        // Validate required fields for creation
+        validateDeviceCreationRequest(request);
 
+        // Validate user if userId is provided
+        if (request.userId() != null) {
+            validateUserId(request.userId());
+            validateUserExists(request.userId());
+        }
+
+        try {
             Device device = Device.builder()
                     .name(request.name())
                     .description(request.description())
@@ -113,16 +104,12 @@ public class DeviceService {
     }
 
     @Transactional
-    public DeviceDTOResponse updateById(Long deviceId, DeviceUpdateRequest request) {
+    public DeviceResponse updateById(Long deviceId, DeviceRequest request) {
         log.info("Updating device with id: {}", deviceId);
-
-        if (deviceId == null || deviceId <= 0) {
-            throw new IllegalArgumentException("Device ID must be a positive number");
-        }
+        validateDeviceId(deviceId);
 
         try {
-            Device device = repository
-                    .findById(deviceId)
+            Device device = repository.findById(deviceId)
                     .orElseThrow(() -> new DeviceNotFoundException(deviceId));
 
             boolean updated = false;
@@ -155,9 +142,7 @@ public class DeviceService {
             }
 
             if (request.userId() != null && !request.userId().equals(device.getUserId())) {
-                if (request.userId() <= 0) {
-                    throw new IllegalArgumentException("User ID must be a positive number");
-                }
+                validateUserId(request.userId());
                 validateUserExists(request.userId());
                 device.setUserId(request.userId());
                 updated = true;
@@ -181,45 +166,14 @@ public class DeviceService {
     }
 
     @Transactional
-    public void deleteById(Long deviceId) {
-        log.info("Deleting device with id: {}", deviceId);
-
-        if (deviceId == null || deviceId <= 0) {
-            throw new IllegalArgumentException("Device ID must be a positive number");
-        }
-
-        try {
-            Device device = repository
-                    .findById(deviceId)
-                    .orElseThrow(() -> new DeviceNotFoundException(deviceId));
-
-            repository.delete(device);
-            log.info("Device deleted successfully with id: {}", deviceId);
-        } catch (DeviceNotFoundException | IllegalArgumentException e) {
-            throw e;
-        } catch (Exception e) {
-            log.error("Error deleting device {}: {}", deviceId, e.getMessage());
-            throw new RuntimeException("Failed to delete device", e);
-        }
-    }
-
-    @Transactional
-    public DeviceDTOResponse assignDeviceToUser(Long deviceId, Long userId) {
+    public DeviceResponse assignDeviceToUser(Long deviceId, Long userId) {
         log.info("Assigning device {} to user {}", deviceId, userId);
-
-        if (deviceId == null || deviceId <= 0) {
-            throw new IllegalArgumentException("Device ID must be a positive number");
-        }
-        if (userId == null || userId <= 0) {
-            throw new IllegalArgumentException("User ID must be a positive number");
-        }
+        validateDeviceId(deviceId);
+        validateUserId(userId);
+        validateUserExists(userId);
 
         try {
-            // Validate user exists
-            validateUserExists(userId);
-
-            Device device = repository
-                    .findById(deviceId)
+            Device device = repository.findById(deviceId)
                     .orElseThrow(() -> new DeviceNotFoundException(deviceId));
 
             device.setUserId(userId);
@@ -236,12 +190,95 @@ public class DeviceService {
         }
     }
 
-    private void validateUserExists(Long userId) {
-        log.info("Validating user exists with id: {}", userId);
+    @Transactional
+    public DeviceResponse unassignDevice(Long deviceId) {
+        log.info("Unassigning device {}", deviceId);
+        validateDeviceId(deviceId);
 
         try {
-            ResponseEntity<Void> response = restTemplate.getForEntity(
+            Device device = repository.findById(deviceId)
+                    .orElseThrow(() -> new DeviceNotFoundException(deviceId));
+
+            device.setUserId(null);
+            device.setUpdatedAt(LocalDateTime.now());
+
+            Device updatedDevice = repository.save(device);
+            log.info("Device unassigned successfully");
+            return mapToResponse(updatedDevice);
+        } catch (DeviceNotFoundException | IllegalArgumentException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("Error unassigning device {}: {}", deviceId, e.getMessage());
+            throw new RuntimeException("Failed to unassign device", e);
+        }
+    }
+
+    @Transactional
+    public void deleteById(Long deviceId) {
+        log.info("Deleting device with id: {}", deviceId);
+        validateDeviceId(deviceId);
+
+        try {
+            Device device = repository.findById(deviceId)
+                    .orElseThrow(() -> new DeviceNotFoundException(deviceId));
+
+            repository.delete(device);
+            log.info("Device deleted successfully with id: {}", deviceId);
+        } catch (DeviceNotFoundException | IllegalArgumentException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("Error deleting device {}: {}", deviceId, e.getMessage());
+            throw new RuntimeException("Failed to delete device", e);
+        }
+    }
+
+    // Validation methods
+    private void validateDeviceId(Long deviceId) {
+        if (deviceId == null || deviceId <= 0) {
+            throw new IllegalArgumentException("Device ID must be a positive number");
+        }
+    }
+
+    private void validateUserId(Long userId) {
+        if (userId == null || userId <= 0) {
+            throw new IllegalArgumentException("User ID must be a positive number");
+        }
+    }
+
+    private void validateDeviceCreationRequest(DeviceRequest request) {
+        if (request.name() == null || request.name().isEmpty()) {
+            throw new IllegalArgumentException("Device name is required");
+        }
+        if (request.location() == null || request.location().isEmpty()) {
+            throw new IllegalArgumentException("Device location is required");
+        }
+        if (request.maximumConsumption() == null || request.maximumConsumption() <= 0) {
+            throw new IllegalArgumentException("Valid maximum consumption is required");
+        }
+    }
+
+    private void validateUserExists(Long userId) {
+        log.debug("Validating user exists with id: {}", userId);
+
+        try {
+            // Get the authentication token from the security context
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+            HttpHeaders headers = new HttpHeaders();
+            if (authentication != null && authentication.getDetails() instanceof Map) {
+                Map<?, ?> details = (Map<?, ?>) authentication.getDetails();
+                String token = (String) details.get("token");
+                if (token != null) {
+                    headers.set("Authorization", "Bearer " + token);
+                }
+            }
+
+            HttpEntity<?> entity = new HttpEntity<>(headers);
+
+            ResponseEntity<Void> response = restTemplate.exchange(
                     USER_SERVICE_URL + "/id=" + userId,
+                    HttpMethod.GET,
+                    entity,
                     Void.class
             );
 
@@ -266,8 +303,8 @@ public class DeviceService {
         }
     }
 
-    private DeviceDTOResponse mapToResponse(Device device) {
-        return new DeviceDTOResponse(
+    private DeviceResponse mapToResponse(Device device) {
+        return new DeviceResponse(
                 device.getDeviceId(),
                 device.getName(),
                 device.getDescription(),

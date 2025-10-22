@@ -141,7 +141,11 @@ services:
       - energy_management_network
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.users.rule=PathPrefix(`/api/users`)"
+      - "traefik.http.routers.users-internal.rule=PathPrefix(`/api/users/internal`)"
+      - "traefik.http.routers.users-internal.entrypoints=web"
+      - "traefik.http.routers.users-internal.priority=101"
+      - "traefik.http.routers.users-internal.middlewares=cors-headers"
+      - "traefik.http.routers.users.rule=PathPrefix(`/api/users`) && !PathPrefix(`/api/users/internal`)"
       - "traefik.http.routers.users.entrypoints=web"
       - "traefik.http.routers.users.priority=50"
       - "traefik.http.routers.users.middlewares=auth-middleware,cors-headers"

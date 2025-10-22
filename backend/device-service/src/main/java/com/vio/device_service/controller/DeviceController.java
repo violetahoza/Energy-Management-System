@@ -1,13 +1,15 @@
 package com.vio.device_service.controller;
 
-import com.vio.device_service.dto.DeviceDTORequest;
-import com.vio.device_service.dto.DeviceDTOResponse;
-import com.vio.device_service.dto.DeviceUpdateRequest;
+import com.vio.device_service.dto.DeviceRequest;
+import com.vio.device_service.dto.DeviceResponse;
 import com.vio.device_service.service.DeviceService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -15,51 +17,86 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/devices")
 @RequiredArgsConstructor
+@Slf4j
 public class DeviceController {
     private final DeviceService service;
 
     @GetMapping
-    public ResponseEntity<List<DeviceDTOResponse>> getAllDevices() {
-        List<DeviceDTOResponse> devices = service.getAllDevices();
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<List<DeviceResponse>> getAllDevices() {
+        log.info("Admin fetching all devices");
+        List<DeviceResponse> devices = service.getAllDevices();
         return ResponseEntity.ok(devices);
     }
 
     @GetMapping("/id={deviceId}")
-    public ResponseEntity<DeviceDTOResponse> findById(@PathVariable Long deviceId) {
-        DeviceDTOResponse device = service.findById(deviceId);
+    @PreAuthorize("hasRole('ADMIN') or @deviceSecurityService.isDeviceOwnedByUser(#deviceId, principal)")
+    public ResponseEntity<DeviceResponse> findById(@PathVariable Long deviceId) {
+        log.info("Fetching device by id: {}", deviceId);
+        DeviceResponse device = service.findById(deviceId);
         return ResponseEntity.ok(device);
     }
 
     @GetMapping("/user/{userId}")
-    public ResponseEntity<List<DeviceDTOResponse>> findByUserId(@PathVariable Long userId) {
-        List<DeviceDTOResponse> devices = service.findByUserId(userId);
+    @PreAuthorize("hasRole('ADMIN') or principal == #userId.toString()")
+    public ResponseEntity<List<DeviceResponse>> findByUserId(@PathVariable Long userId) {
+        log.info("Fetching devices for user: {}", userId);
+        List<DeviceResponse> devices = service.findByUserId(userId);
+        return ResponseEntity.ok(devices);
+    }
+
+    /**
+     * Get devices for current user (CLIENT role)
+     */
+    @GetMapping("/my-devices")
+    @PreAuthorize("hasRole('CLIENT')")
+    public ResponseEntity<List<DeviceResponse>> getMyDevices(Authentication authentication) {
+        String userId = authentication.getPrincipal().toString();
+        log.info("Client fetching their devices: {}", userId);
+        List<DeviceResponse> devices = service.findByUserId(Long.parseLong(userId));
         return ResponseEntity.ok(devices);
     }
 
     @PostMapping
-    public ResponseEntity<DeviceDTOResponse> createDevice(@RequestBody @Valid DeviceDTORequest request) {
-        DeviceDTOResponse device = service.createDevice(request);
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<DeviceResponse> createDevice(@RequestBody @Valid DeviceRequest request) {
+        log.info("Admin creating new device: {}", request.name());
+        DeviceResponse device = service.createDevice(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(device);
     }
 
     @PatchMapping("/id={deviceId}")
-    public ResponseEntity<DeviceDTOResponse> updateById(
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<DeviceResponse> updateById(
             @PathVariable Long deviceId,
-            @RequestBody @Valid DeviceUpdateRequest request) {
-        DeviceDTOResponse device = service.updateById(deviceId, request);
+            @RequestBody @Valid DeviceRequest request) {
+        log.info("Admin updating device: {}", deviceId);
+        DeviceResponse device = service.updateById(deviceId, request);
         return ResponseEntity.ok(device);
     }
 
     @PatchMapping("/id={deviceId}/assign/{userId}")
-    public ResponseEntity<DeviceDTOResponse> assignDeviceToUser(
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<DeviceResponse> assignDeviceToUser(
             @PathVariable Long deviceId,
             @PathVariable Long userId) {
-        DeviceDTOResponse device = service.assignDeviceToUser(deviceId, userId);
+        log.info("Admin assigning device {} to user {}", deviceId, userId);
+        DeviceResponse device = service.assignDeviceToUser(deviceId, userId);
+        return ResponseEntity.ok(device);
+    }
+
+    @PatchMapping("/id={deviceId}/unassign")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<DeviceResponse> unassignDevice(@PathVariable Long deviceId) {
+        log.info("Admin unassigning device: {}", deviceId);
+        DeviceResponse device = service.unassignDevice(deviceId);
         return ResponseEntity.ok(device);
     }
 
     @DeleteMapping("/id={deviceId}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> deleteById(@PathVariable Long deviceId) {
+        log.info("Admin deleting device: {}", deviceId);
         service.deleteById(deviceId);
         return ResponseEntity.noContent().build();
     }

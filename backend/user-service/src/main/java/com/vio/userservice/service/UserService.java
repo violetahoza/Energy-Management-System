@@ -1,5 +1,6 @@
 package com.vio.userservice.service;
 
+import com.vio.userservice.dto.UserProfileRequest;
 import com.vio.userservice.dto.UserRequest;
 import com.vio.userservice.dto.UserResponse;
 import com.vio.userservice.dto.UserUpdateRequest;
@@ -122,6 +123,39 @@ public class UserService {
 
         log.info("User updated successfully: {}", userId);
         return getUserWithCredentials(user);
+    }
+
+    @Transactional
+    public User createUserProfile(UserProfileRequest request) {
+        log.info("Creating user profile only: {}", request.email());
+
+        // Validate email uniqueness
+        if (userRepository.existsByEmail(request.email())) {
+            throw new UserEmailAlreadyExistsException(request.email());
+        }
+
+        User user = User.builder()
+                .firstName(request.firstName())
+                .lastName(request.lastName())
+                .email(request.email())
+                .address(request.address())
+                .build();
+
+        User savedUser = userRepository.save(user);
+        log.info("User profile created with id: {}", savedUser.getUserId());
+
+        return savedUser;
+    }
+
+    @Transactional
+    public void deleteUserProfile(Long userId) {
+        log.info("Deleting user profile: {}", userId);
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException(userId));
+
+        userRepository.delete(user);
+        log.info("User profile deleted: {}", userId);
     }
 
     @Transactional
