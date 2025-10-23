@@ -1,14 +1,11 @@
 package com.vio.authorization_service.controller;
 
-import com.vio.authorization_service.dto.AuthResponse;
-import com.vio.authorization_service.dto.LoginRequest;
-import com.vio.authorization_service.dto.RegisterRequest;
+import com.vio.authorization_service.dto.*;
 import com.vio.authorization_service.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -43,16 +40,14 @@ public class AuthController {
     }
 
     @GetMapping("/validate")
-    public ResponseEntity<?> validateToken(
-            @RequestHeader(value = "Authorization", required = false) String authorizationHeader) {
+    public ResponseEntity<?> validateToken(@RequestHeader(value = "Authorization", required = false) String authorizationHeader) {
 
         log.info("ForwardAuth validation request received");
 
         try {
             AuthResponse userInfo = authService.validateAuthorizationHeader(authorizationHeader);
 
-            log.info("Request authorized for user: {} (role: {})",
-                    userInfo.username(), userInfo.role());
+            log.info("Request authorized for user: {} (role: {})", userInfo.username(), userInfo.role());
 
             // Return 200 OK with user information in headers
             // These headers will be forwarded to downstream services by Traefik
@@ -69,8 +64,7 @@ public class AuthController {
 
         } catch (Exception e) {
             log.error("Token validation failed: {}", e.getMessage());
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("error", e.getMessage()));
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", e.getMessage()));
         }
     }
 

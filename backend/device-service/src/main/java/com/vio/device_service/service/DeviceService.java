@@ -1,25 +1,16 @@
 package com.vio.device_service.service;
 
-import com.vio.device_service.dto.DeviceRequest;
-import com.vio.device_service.dto.DeviceResponse;
-import com.vio.device_service.handler.DeviceNotFoundException;
-import com.vio.device_service.handler.UserServiceException;
+import com.vio.device_service.dto.*;
+import com.vio.device_service.handler.*;
 import com.vio.device_service.model.Device;
 import com.vio.device_service.repository.DeviceRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.*;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.client.HttpClientErrorException;
-import org.springframework.web.client.ResourceAccessException;
-import org.springframework.web.client.RestTemplate;
-
+import org.springframework.web.client.*;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -72,10 +63,8 @@ public class DeviceService {
     public DeviceResponse createDevice(DeviceRequest request) {
         log.info("Creating new device with name: {}", request.name());
 
-        // Validate required fields for creation
         validateDeviceCreationRequest(request);
 
-        // Validate user if userId is provided
         if (request.userId() != null) {
             validateUserId(request.userId());
             validateUserExists(request.userId());
@@ -173,8 +162,7 @@ public class DeviceService {
         validateUserExists(userId);
 
         try {
-            Device device = repository.findById(deviceId)
-                    .orElseThrow(() -> new DeviceNotFoundException(deviceId));
+            Device device = repository.findById(deviceId).orElseThrow(() -> new DeviceNotFoundException(deviceId));
 
             device.setUserId(userId);
             device.setUpdatedAt(LocalDateTime.now());
@@ -196,8 +184,7 @@ public class DeviceService {
         validateDeviceId(deviceId);
 
         try {
-            Device device = repository.findById(deviceId)
-                    .orElseThrow(() -> new DeviceNotFoundException(deviceId));
+            Device device = repository.findById(deviceId).orElseThrow(() -> new DeviceNotFoundException(deviceId));
 
             device.setUserId(null);
             device.setUpdatedAt(LocalDateTime.now());
@@ -219,9 +206,7 @@ public class DeviceService {
         validateDeviceId(deviceId);
 
         try {
-            Device device = repository.findById(deviceId)
-                    .orElseThrow(() -> new DeviceNotFoundException(deviceId));
-
+            Device device = repository.findById(deviceId).orElseThrow(() -> new DeviceNotFoundException(deviceId));
             repository.delete(device);
             log.info("Device deleted successfully with id: {}", deviceId);
         } catch (DeviceNotFoundException | IllegalArgumentException e) {
@@ -261,12 +246,7 @@ public class DeviceService {
         log.debug("Validating user exists with id: {}", userId);
 
         try {
-            // Simple call to internal validation endpoint (no auth needed)
-            restTemplate.getForEntity(
-                    USER_SERVICE_URL + "/" + userId,
-                    Void.class
-            );
-
+            restTemplate.getForEntity(USER_SERVICE_URL + "/" + userId, Void.class);
             log.debug("User validation successful for id: {}", userId);
         } catch (HttpClientErrorException.NotFound e) {
             log.error("User not found with id: {}", userId);

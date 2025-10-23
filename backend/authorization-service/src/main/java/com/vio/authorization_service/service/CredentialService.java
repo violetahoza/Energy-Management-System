@@ -1,8 +1,6 @@
 package com.vio.authorization_service.service;
 
-import com.vio.authorization_service.dto.CredentialRequest;
-import com.vio.authorization_service.dto.CredentialResponse;
-import com.vio.authorization_service.dto.CredentialUpdateRequest;
+import com.vio.authorization_service.dto.*;
 import com.vio.authorization_service.handler.*;
 import com.vio.authorization_service.model.Credential;
 import com.vio.authorization_service.repository.CredentialRepository;
@@ -23,10 +21,7 @@ public class CredentialService {
 
     public CredentialResponse getCredentialByUserId(Long userId) {
         log.info("Fetching credentials for userId: {}", userId);
-
-        Credential credential = credentialRepository.findByUserId(userId)
-                .orElseThrow(() -> new CredentialNotFoundException(userId));
-
+        Credential credential = credentialRepository.findByUserId(userId).orElseThrow(() -> new CredentialNotFoundException(userId));
         return mapToResponse(credential);
     }
 
@@ -39,9 +34,7 @@ public class CredentialService {
         }
 
         if (credentialRepository.findByUserId(request.userId()).isPresent()) {
-            throw new CredentialAlreadyExistsException(
-                    "Credentials already exist for userId: " + request.userId()
-            );
+            throw new CredentialAlreadyExistsException("Credentials already exist for userId: " + request.userId());
         }
 
         try {
@@ -68,8 +61,7 @@ public class CredentialService {
     public CredentialResponse updateCredential(Long userId, CredentialUpdateRequest request) {
         log.info("Updating credentials for userId: {}", userId);
 
-        Credential credential = credentialRepository.findByUserId(userId)
-                .orElseThrow(() -> new CredentialNotFoundException(userId));
+        Credential credential = credentialRepository.findByUserId(userId).orElseThrow(() -> new CredentialNotFoundException(userId));
 
         boolean updated = false;
 
@@ -110,8 +102,7 @@ public class CredentialService {
     public void deleteCredential(Long userId) {
         log.info("Deleting credentials for userId: {}", userId);
 
-        Credential credential = credentialRepository.findByUserId(userId)
-                .orElseThrow(() -> new CredentialNotFoundException(userId));
+        Credential credential = credentialRepository.findByUserId(userId).orElseThrow(() -> new CredentialNotFoundException(userId));
 
         try {
             credentialRepository.delete(credential);

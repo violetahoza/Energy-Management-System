@@ -1,14 +1,11 @@
 package com.vio.authorization_service.controller;
 
-import com.vio.authorization_service.dto.CredentialRequest;
-import com.vio.authorization_service.dto.CredentialResponse;
-import com.vio.authorization_service.dto.CredentialUpdateRequest;
+import com.vio.authorization_service.dto.*;
 import com.vio.authorization_service.service.CredentialService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -26,17 +23,14 @@ public class CredentialController {
     }
 
     @PostMapping
-    public ResponseEntity<CredentialResponse> createCredential(
-            @Valid @RequestBody CredentialRequest request) {
+    public ResponseEntity<CredentialResponse> createCredential(@Valid @RequestBody CredentialRequest request) {
         log.info("Creating credentials for userId: {}", request.userId());
         CredentialResponse credential = credentialService.createCredential(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(credential);
     }
 
     @PatchMapping("/user/{userId}")
-    public ResponseEntity<CredentialResponse> updateCredential(
-            @PathVariable Long userId,
-            @Valid @RequestBody CredentialUpdateRequest request) {
+    public ResponseEntity<CredentialResponse> updateCredential(@PathVariable Long userId, @Valid @RequestBody CredentialUpdateRequest request) {
         log.info("Updating credentials for userId: {}", userId);
         CredentialResponse credential = credentialService.updateCredential(userId, request);
         return ResponseEntity.ok(credential);

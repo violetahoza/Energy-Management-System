@@ -1,22 +1,15 @@
 package com.vio.userservice.controller;
 
-import com.vio.userservice.dto.UserProfileRequest;
-import com.vio.userservice.dto.UserRequest;
-import com.vio.userservice.dto.UserResponse;
-import com.vio.userservice.dto.UserUpdateRequest;
+import com.vio.userservice.dto.*;
 import com.vio.userservice.model.User;
 import com.vio.userservice.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @RestController
 @RequestMapping("/api/users")
@@ -47,9 +40,7 @@ public class UserController {
 
     @PatchMapping("/{userId}")
     @PreAuthorize("hasRole('ADMIN') or (hasRole('CLIENT') and principal == #userId.toString())")
-    public ResponseEntity<UserResponse> updateUser(
-            @PathVariable Long userId,
-            @Valid @RequestBody UserUpdateRequest request) {
+    public ResponseEntity<UserResponse> updateUser(@PathVariable Long userId, @Valid @RequestBody UserUpdateRequest request) {
         UserResponse user = userService.updateUser(userId, request);
         return ResponseEntity.ok(user);
     }
@@ -62,8 +53,7 @@ public class UserController {
     }
 
     @PostMapping("/internal/profile")
-    public ResponseEntity<Map<String, Object>> createUserProfile(
-            @Valid @RequestBody UserProfileRequest request) {
+    public ResponseEntity<Map<String, Object>> createUserProfile(@Valid @RequestBody UserProfileRequest request) {
         User user = userService.createUserProfile(request);
 
         Map<String, Object> response = new HashMap<>();

@@ -14,19 +14,16 @@ import java.util.concurrent.ConcurrentHashMap;
 public class TokenBlackListService {
     private final ConcurrentHashMap<String, Date> blacklistedTokens = new ConcurrentHashMap<>();
 
-    // Add token to blacklist
     public void blacklistToken(String token, Date expirationDate) {
         blacklistedTokens.put(token, expirationDate);
         log.info("Token blacklisted until: {}", expirationDate);
         cleanupExpiredTokens();
     }
 
-    // Check if token is blacklisted
     public boolean isTokenBlacklisted(String token) {
         if (blacklistedTokens.containsKey(token)) {
             Date expirationDate = blacklistedTokens.get(token);
             if (expirationDate.before(new Date())) {
-                // Token expired, remove from blacklist
                 blacklistedTokens.remove(token);
                 return false;
             }
@@ -35,10 +32,8 @@ public class TokenBlackListService {
         return false;
     }
 
-    // Remove expired tokens from blacklist
     private void cleanupExpiredTokens() {
         Date now = new Date();
         blacklistedTokens.entrySet().removeIf(entry -> entry.getValue().before(now));
     }
-
 }

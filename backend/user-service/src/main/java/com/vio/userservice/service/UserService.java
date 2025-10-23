@@ -1,24 +1,15 @@
 package com.vio.userservice.service;
 
-import com.vio.userservice.dto.UserProfileRequest;
-import com.vio.userservice.dto.UserRequest;
-import com.vio.userservice.dto.UserResponse;
-import com.vio.userservice.dto.UserUpdateRequest;
+import com.vio.userservice.dto.*;
 import com.vio.userservice.handler.*;
 import com.vio.userservice.model.User;
 import com.vio.userservice.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.client.HttpClientErrorException;
-import org.springframework.web.client.ResourceAccessException;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.web.client.*;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -53,10 +44,7 @@ public class UserService {
 
     public UserResponse getUserById(Long userId) {
         log.info("Fetching user by id: {}", userId);
-
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new UserNotFoundException(userId));
-
+        User user = userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException(userId));
         return getUserWithCredentials(user);
     }
 
@@ -99,8 +87,7 @@ public class UserService {
     public UserResponse updateUser(Long userId, UserUpdateRequest request) {
         log.info("Updating user: {}", userId);
 
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new UserNotFoundException(userId));
+        User user = userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException(userId));
 
         boolean profileUpdated = false;
         boolean credentialsUpdated = false;
@@ -127,7 +114,6 @@ public class UserService {
     public User createUserProfile(UserProfileRequest request) {
         log.info("Creating user profile only: {}", request.email());
 
-        // Validate email uniqueness
         if (userRepository.existsByEmail(request.email())) {
             throw new UserEmailAlreadyExistsException(request.email());
         }
@@ -148,10 +134,7 @@ public class UserService {
     @Transactional
     public void deleteUserProfile(Long userId) {
         log.info("Deleting user profile: {}", userId);
-
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new UserNotFoundException(userId));
-
+        User user = userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException(userId));
         userRepository.delete(user);
         log.info("User profile deleted: {}", userId);
     }
@@ -160,26 +143,22 @@ public class UserService {
     public void deleteUser(Long userId) {
         log.info("Deleting user: {}", userId);
 
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new UserNotFoundException(userId));
+        User user = userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException(userId));
 
         deleteCredentialsInAuthService(userId);
         notifyDeviceServiceUserDeletion(userId);
 
         userRepository.delete(user);
         log.info("User profile deleted: {}", userId);
-
         log.info("User deleted successfully: {}", userId);
     }
 
     private boolean hasProfileUpdates(UserUpdateRequest request) {
-        return request.firstName() != null || request.lastName() != null ||
-                request.email() != null || request.address() != null;
+        return request.firstName() != null || request.lastName() != null || request.email() != null || request.address() != null;
     }
 
     private boolean hasCredentialUpdates(UserUpdateRequest request) {
-        return request.username() != null || request.password() != null ||
-                request.role() != null;
+        return request.username() != null || request.password() != null || request.role() != null;
     }
 
     private void updateUserProfile(User user, UserUpdateRequest request) {
@@ -190,8 +169,7 @@ public class UserService {
             user.setLastName(request.lastName());
         }
         if (request.email() != null) {
-            if (!user.getEmail().equals(request.email()) &&
-                    userRepository.existsByEmail(request.email())) {
+            if (!user.getEmail().equals(request.email()) && userRepository.existsByEmail(request.email())) {
                 throw new UserEmailAlreadyExistsException(request.email());
             }
             user.setEmail(request.email());
@@ -218,16 +196,10 @@ public class UserService {
             credentialRequest.put("role", role.toUpperCase());
 
             HttpEntity<Map<String, Object>> entity = new HttpEntity<>(credentialRequest, headers);
-
-            ResponseEntity<Map> response = restTemplate.postForEntity(
-                    AUTH_SERVICE_URL,
-                    entity,
-                    Map.class
-            );
+            ResponseEntity<Map> response = restTemplate.postForEntity(AUTH_SERVICE_URL, entity, Map.class);
 
             if (response.getBody() == null) {
-                throw new ServiceCommunicationException("authorization-service",
-                        "Empty response from credentials creation");
+                throw new ServiceCommunicationException("authorization-service", "Empty response from credentials creation");
             }
 
             return response.getBody();
@@ -237,18 +209,15 @@ public class UserService {
 
         } catch (HttpClientErrorException e) {
             log.error("HTTP error creating credentials: {} - {}", e.getStatusCode(), e.getMessage());
-            throw new ServiceCommunicationException("authorization-service",
-                    "Failed to create credentials: " + e.getStatusText(), e);
+            throw new ServiceCommunicationException("authorization-service", "Failed to create credentials: " + e.getStatusText(), e);
         } catch (ResourceAccessException e) {
             log.error("Network error creating credentials: {}", e.getMessage());
-            throw new ServiceCommunicationException("authorization-service",
-                    "Unable to reach authorization service", e);
+            throw new ServiceCommunicationException("authorization-service", "Unable to reach authorization service", e);
         } catch (ServiceCommunicationException e) {
             throw e;
         } catch (Exception e) {
             log.error("Unexpected error creating credentials: {}", e.getMessage());
-            throw new ServiceCommunicationException("authorization-service",
-                    "Unexpected error: " + e.getMessage(), e);
+            throw new ServiceCommunicationException("authorization-service", "Unexpected error: " + e.getMessage(), e);
         }
     }
 
@@ -265,26 +234,18 @@ public class UserService {
 
             HttpEntity<Map<String, Object>> entity = new HttpEntity<>(updates, headers);
 
-            restTemplate.exchange(
-                    AUTH_SERVICE_URL + "/user/" + userId,
-                    HttpMethod.PATCH,
-                    entity,
-                    Map.class
-            );
+            restTemplate.exchange(AUTH_SERVICE_URL + "/user/" + userId, HttpMethod.PATCH, entity, Map.class);
 
             log.info("Credentials updated successfully: {}", userId);
         } catch (HttpClientErrorException e) {
             log.error("HTTP error updating credentials: {} - {}", e.getStatusCode(), e.getMessage());
-            throw new ServiceCommunicationException("authorization-service",
-                    "Failed to update credentials: " + e.getStatusText(), e);
+            throw new ServiceCommunicationException("authorization-service", "Failed to update credentials: " + e.getStatusText(), e);
         } catch (ResourceAccessException e) {
             log.error("Network error updating credentials: {}", e.getMessage());
-            throw new ServiceCommunicationException("authorization-service",
-                    "Unable to reach authorization service", e);
+            throw new ServiceCommunicationException("authorization-service", "Unable to reach authorization service", e);
         } catch (Exception e) {
             log.error("Unexpected error updating credentials: {}", e.getMessage());
-            throw new ServiceCommunicationException("authorization-service",
-                    "Unexpected error: " + e.getMessage(), e);
+            throw new ServiceCommunicationException("authorization-service", "Unexpected error: " + e.getMessage(), e);
         }
     }
 
@@ -296,16 +257,13 @@ public class UserService {
             log.warn("Credentials not found for user: {}", userId);
         } catch (HttpClientErrorException e) {
             log.error("HTTP error deleting credentials: {} - {}", e.getStatusCode(), e.getMessage());
-            throw new ServiceCommunicationException("authorization-service",
-                    "Failed to delete credentials: " + e.getStatusText(), e);
+            throw new ServiceCommunicationException("authorization-service", "Failed to delete credentials: " + e.getStatusText(), e);
         } catch (ResourceAccessException e) {
             log.error("Network error deleting credentials: {}", e.getMessage());
-            throw new ServiceCommunicationException("authorization-service",
-                    "Unable to reach authorization service", e);
+            throw new ServiceCommunicationException("authorization-service", "Unable to reach authorization service", e);
         } catch (Exception e) {
             log.error("Unexpected error deleting credentials: {}", e.getMessage());
-            throw new ServiceCommunicationException("authorization-service",
-                    "Unexpected error: " + e.getMessage(), e);
+            throw new ServiceCommunicationException("authorization-service", "Unexpected error: " + e.getMessage(), e);
         }
     }
 
@@ -314,12 +272,7 @@ public class UserService {
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
             HttpEntity<Void> entity = new HttpEntity<>(headers);
-
-            restTemplate.postForEntity(
-                    DEVICE_SERVICE_URL + "/" + userId,
-                    entity,
-                    Void.class
-            );
+            restTemplate.postForEntity(DEVICE_SERVICE_URL + "/" + userId, entity, Void.class);
             log.info("Device unassignment triggered for user: {}", userId);
         } catch (Exception e) {
             log.warn("Failed to notify Device Service about user deletion: {}", e.getMessage());
@@ -328,11 +281,7 @@ public class UserService {
 
     private UserResponse getUserWithCredentials(User user) {
         try {
-            ResponseEntity<Map> response = restTemplate.getForEntity(
-                    AUTH_SERVICE_URL + "/user/" + user.getUserId(),
-                    Map.class
-            );
-
+            ResponseEntity<Map> response = restTemplate.getForEntity(AUTH_SERVICE_URL + "/user/" + user.getUserId(), Map.class);
             Map<String, Object> credential = response.getBody();
             return buildUserResponse(user, credential);
         } catch (HttpClientErrorException.NotFound e) {

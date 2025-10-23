@@ -1,8 +1,6 @@
 package com.vio.authorization_service.service;
 
-import com.vio.authorization_service.dto.AuthResponse;
-import com.vio.authorization_service.dto.LoginRequest;
-import com.vio.authorization_service.dto.RegisterRequest;
+import com.vio.authorization_service.dto.*;
 import com.vio.authorization_service.handler.*;
 import com.vio.authorization_service.model.Credential;
 import com.vio.authorization_service.repository.CredentialRepository;
@@ -12,17 +10,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.client.RestClientException;
-import org.springframework.web.client.RestTemplate;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
+import org.springframework.web.client.*;
+import org.springframework.http.*;
 
 import java.time.LocalDateTime;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -118,20 +110,6 @@ public class AuthService {
         log.info("User logged out successfully");
     }
 
-    public boolean validateToken(String token) {
-        try {
-            if (tokenBlacklistService.isTokenBlacklisted(token)) {
-                log.warn("Token is blacklisted");
-                return false;
-            }
-
-            return jwtUtil.validateToken(token);
-        } catch (Exception e) {
-            log.error("Error validating token: {}", e.getMessage());
-            return false;
-        }
-    }
-
     public AuthResponse validateAuthorizationHeader(String authorizationHeader) {
         log.info("Validating authorization header");
 
@@ -202,13 +180,7 @@ public class AuthService {
         Long userId = jwtUtil.extractUserId(token);
         String role = jwtUtil.extractRole(token);
 
-        return new AuthResponse(
-                token,
-                userId,
-                username,
-                role,
-                "Token is valid"
-        );
+        return new AuthResponse(token, userId, username, role, "Token is valid");
     }
 
     private Long createUserProfileInUserService(RegisterRequest request) {
@@ -218,8 +190,7 @@ public class AuthService {
 
             Map<String, Object> userRequest = new HashMap<>();
 
-            String[] nameParts = request.fullName() != null ?
-                    request.fullName().split(" ", 2) : new String[]{"", ""};
+            String[] nameParts = request.fullName() != null ? request.fullName().split(" ", 2) : new String[]{"", ""};
             userRequest.put("firstName", nameParts.length > 0 ? nameParts[0] : "");
             userRequest.put("lastName", nameParts.length > 1 ? nameParts[1] : "");
             userRequest.put("email", request.email());
@@ -227,11 +198,7 @@ public class AuthService {
 
             HttpEntity<Map<String, Object>> entity = new HttpEntity<>(userRequest, headers);
 
-            ResponseEntity<Map> response = restTemplate.postForEntity(
-                    USER_SERVICE_URL + "/internal/profile",
-                    entity,
-                    Map.class
-            );
+            ResponseEntity<Map> response = restTemplate.postForEntity(USER_SERVICE_URL + "/internal/profile", entity, Map.class);
 
             Map<String, Object> responseBody = response.getBody();
             if (responseBody != null && responseBody.containsKey("userId")) {
@@ -239,7 +206,6 @@ public class AuthService {
             }
 
             throw new ExternalServiceException("User Service", "Invalid response format");
-
         } catch (RestClientException e) {
             log.error("Error communicating with User Service: {}", e.getMessage(), e);
             throw new ExternalServiceException("User Service", e);
@@ -248,14 +214,5 @@ public class AuthService {
             throw new ExternalServiceException("User Service", e);
         }
 
-    }
-
-    private void deleteUserProfileInUserService(Long userId) {
-        try {
-            restTemplate.delete(USER_SERVICE_URL + "/internal/profile/" + userId);
-            log.info("Rolled back user profile creation for userId: {}", userId);
-        } catch (Exception e) {
-            log.error("Failed to rollback user profile for userId {}: {}", userId, e.getMessage());
-        }
     }
 }
