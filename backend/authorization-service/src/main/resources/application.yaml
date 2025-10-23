@@ -17,8 +17,8 @@ spring:
         dialect: org.hibernate.dialect.MySQLDialect
 
   jwt:
-    secret: my_jwt_very_very_secret_key_for_jwt_token_generation
-    expiration: 86400000  # 24 hours in milliseconds
+    secret: my_jwt_very_very_super_secret_key_for_jwt_token_generation
+    expiration: 3600000  # 1 hour in milliseconds
 
 server:
   port: 8083
