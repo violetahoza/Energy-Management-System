@@ -120,6 +120,7 @@ services:
       - "traefik.http.middlewares.cors-headers.headers.accessControlAllowHeaders=Content-Type,Authorization"
       - "traefik.http.middlewares.cors-headers.headers.accessControlAllowCredentials=true"
       - "traefik.http.middlewares.auth-middleware.forwardauth.address=http://authorization-service:8083/api/auth/validate"
+      - "traefik.http.middlewares.auth-middleware.forwardauth.authRequestHeaders=Authorization"
       - "traefik.http.middlewares.auth-middleware.forwardauth.authResponseHeaders=X-User-Id,X-Username,X-User-Role"
     restart: always
 
