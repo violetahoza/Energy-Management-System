@@ -191,10 +191,6 @@ services:
       - "3000:3000"
     environment:
       - REACT_APP_API_URL=http://localhost
-      - WATCHPACK_POLLING=true
-    volumes:
-      - ./frontend/src:/app/src
-      - ./frontend/public:/app/public
     networks:
       - energy_management_network
     labels:
@@ -203,8 +199,6 @@ services:
       - "traefik.http.routers.frontend.entrypoints=web"
       - "traefik.http.routers.frontend.priority=1"
       - "traefik.http.services.frontend.loadbalancer.server.port=3000"
-    stdin_open: true
-    tty: true
     restart: always
 
 volumes:

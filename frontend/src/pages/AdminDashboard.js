@@ -1,0 +1,677 @@
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import { userAPI, deviceAPI } from '../services/api';
+import '../styles/App.css';
+
+const AdminDashboard = () => {
+    const navigate = useNavigate();
+    const { user, logout } = useAuth();
+    const [activeTab, setActiveTab] = useState('users');
+    const [users, setUsers] = useState([]);
+    const [devices, setDevices] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
+    const [showUserModal, setShowUserModal] = useState(false);
+    const [showDeviceModal, setShowDeviceModal] = useState(false);
+    const [showAssignModal, setShowAssignModal] = useState(false);
+    const [selectedUser, setSelectedUser] = useState(null);
+    const [selectedDevice, setSelectedDevice] = useState(null);
+
+    useEffect(() => {
+        if (user?.role !== 'ADMIN') {
+            navigate('/login');
+        } else {
+            fetchData();
+        }
+    }, [user, navigate]);
+
+    const fetchData = async () => {
+        setLoading(true);
+        setError('');
+        try {
+            const [usersData, devicesData] = await Promise.all([
+                userAPI.getAllUsers(),
+                deviceAPI.getAllDevices()
+            ]);
+            setUsers(usersData);
+            setDevices(devicesData);
+        } catch (err) {
+            setError(err.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleLogout = async () => {
+        await logout();
+        navigate('/login');
+    };
+
+    const handleDeleteUser = async (userId) => {
+        if (!window.confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
+            return;
+        }
+        try {
+            await userAPI.deleteUser(userId);
+            await fetchData();
+        } catch (err) {
+            setError(err.message);
+        }
+    };
+
+    const handleDeleteDevice = async (deviceId) => {
+        if (!window.confirm('Are you sure you want to delete this device?')) {
+            return;
+        }
+        try {
+            await deviceAPI.deleteDevice(deviceId);
+            await fetchData();
+        } catch (err) {
+            setError(err.message);
+        }
+    };
+
+    const handleAssignDevice = async (deviceId, userId) => {
+        try {
+            if (userId) {
+                await deviceAPI.assignDeviceToUser(deviceId, userId);
+            } else {
+                await deviceAPI.unassignDevice(deviceId);
+            }
+            await fetchData();
+            setShowAssignModal(false);
+            setSelectedDevice(null);
+        } catch (err) {
+            setError(err.message);
+        }
+    };
+
+    return (
+        <div className="dashboard-container">
+            <div className="dashboard-content">
+                <nav className="navbar">
+                    <div style={{display: 'flex', alignItems: 'center', gap: '16px'}}>
+                        <div className="navbar-brand">
+                            <span style={{fontSize: '24px'}}>⚡</span>
+                            <span>Energy Management System</span>
+                        </div>
+                        <div style={{
+                            height: '24px',
+                            width: '1px',
+                            background: 'rgba(255, 255, 255, 0.2)'
+                        }}></div>
+                        <span style={{
+                            color: '#00b4ff',
+                            fontSize: '16px',
+                            fontWeight: '500'
+                        }}>
+                            Welcome {user?.username}!
+                        </span>
+                    </div>
+                    <div className="navbar-user">
+                        <span className="user-badge">{user?.role}</span>
+                        <button onClick={handleLogout} className="btn-logout">
+                            <span>🚪</span>
+                            <span>Logout</span>
+                        </button>
+                    </div>
+                </nav>
+
+                <div className="main-content">
+                    <div className="page-header">
+                        <h1 className="page-title">Admin Dashboard</h1>
+                        <p className="page-description">
+                            Manage users, devices, and system configuration
+                        </p>
+                    </div>
+
+                    {error && (
+                        <div className="alert alert-error" style={{marginBottom: '24px'}}>
+                            <span className="alert-icon">⚠</span>
+                            <span>{error}</span>
+                        </div>
+                    )}
+
+                    <div className="card">
+                        <div className="card-header">
+                            <div style={{display: 'flex', gap: '16px'}}>
+                                <button
+                                    className={`btn btn-sm ${activeTab === 'users' ? 'btn-primary' : 'btn-secondary'}`}
+                                    onClick={() => setActiveTab('users')}
+                                >
+                                    👥 Users
+                                </button>
+                                <button
+                                    className={`btn btn-sm ${activeTab === 'devices' ? 'btn-primary' : 'btn-secondary'}`}
+                                    onClick={() => setActiveTab('devices')}
+                                >
+                                    📱 Devices
+                                </button>
+                            </div>
+                            <button
+                                className="btn btn-sm btn-success"
+                                onClick={() => activeTab === 'users' ? setShowUserModal(true) : setShowDeviceModal(true)}
+                            >
+                                ➕ Add {activeTab === 'users' ? 'User' : 'Device'}
+                            </button>
+                        </div>
+
+                        {loading ? (
+                            <div className="empty-state">
+                                <p className="empty-state-text">Loading...</p>
+                            </div>
+                        ) : activeTab === 'users' ? (
+                            <UsersTable
+                                users={users}
+                                onEdit={setSelectedUser}
+                                onDelete={handleDeleteUser}
+                            />
+                        ) : (
+                            <DevicesTable
+                                devices={devices}
+                                users={users}
+                                onEdit={setSelectedDevice}
+                                onDelete={handleDeleteDevice}
+                                onAssign={(device) => {
+                                    setSelectedDevice(device);
+                                    setShowAssignModal(true);
+                                }}
+                            />
+                        )}
+                    </div>
+                </div>
+            </div>
+
+            {showUserModal && (
+                <UserModal
+                    user={selectedUser}
+                    onClose={() => {
+                        setShowUserModal(false);
+                        setSelectedUser(null);
+                    }}
+                    onSuccess={() => {
+                        fetchData();
+                        setShowUserModal(false);
+                        setSelectedUser(null);
+                    }}
+                />
+            )}
+
+            {showDeviceModal && (
+                <DeviceModal
+                    device={selectedDevice}
+                    users={users}
+                    onClose={() => {
+                        setShowDeviceModal(false);
+                        setSelectedDevice(null);
+                    }}
+                    onSuccess={() => {
+                        fetchData();
+                        setShowDeviceModal(false);
+                        setSelectedDevice(null);
+                    }}
+                />
+            )}
+
+            {showAssignModal && selectedDevice && (
+                <AssignDeviceModal
+                    device={selectedDevice}
+                    users={users}
+                    onClose={() => {
+                        setShowAssignModal(false);
+                        setSelectedDevice(null);
+                    }}
+                    onAssign={handleAssignDevice}
+                />
+            )}
+        </div>
+    );
+};
+
+// Users Table Component
+const UsersTable = ({ users, onEdit, onDelete }) => {
+    if (users.length === 0) {
+        return (
+            <div className="empty-state">
+                <p className="empty-state-text">No users found</p>
+            </div>
+        );
+    }
+
+    return (
+        <table className="table">
+            <thead>
+            <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Username</th>
+                <th>Email</th>
+                <th>Role</th>
+                <th>Actions</th>
+            </tr>
+            </thead>
+            <tbody>
+            {users.map(user => (
+                <tr key={user.userId}>
+                    <td>{user.userId}</td>
+                    <td>{user.firstName} {user.lastName}</td>
+                    <td>{user.username}</td>
+                    <td>{user.email}</td>
+                    <td>
+                        <span className="user-badge">{user.role}</span>
+                    </td>
+                    <td>
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                            <button
+                                className="btn btn-sm btn-edit"
+                                onClick={() => onEdit(user)}
+                                title="Edit user"
+                            >
+                                ✏️
+                            </button>
+                            <button
+                                className="btn btn-sm btn-delete"
+                                onClick={() => onDelete(user.userId)}
+                                title="Delete user"
+                            >
+                                🗑️
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            ))}
+            </tbody>
+        </table>
+    );
+};
+
+// Devices Table Component
+const DevicesTable = ({ devices, users, onEdit, onDelete, onAssign }) => {
+    const getUserName = (userId) => {
+        const user = users.find(u => u.userId === userId);
+        return user ? `${user.firstName} ${user.lastName}` : 'Unassigned';
+    };
+
+    if (devices.length === 0) {
+        return (
+            <div className="empty-state">
+                <p className="empty-state-text">No devices found</p>
+            </div>
+        );
+    }
+
+    return (
+        <table className="table">
+            <thead>
+            <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Description</th>
+                <th>Location</th>
+                <th>Max Consumption (kWh)</th>
+                <th>Assigned To</th>
+                <th>Actions</th>
+            </tr>
+            </thead>
+            <tbody>
+            {devices.map(device => (
+                <tr key={device.deviceId}>
+                    <td>{device.deviceId}</td>
+                    <td>{device.name}</td>
+                    <td>{device.description}</td>
+                    <td>{device.location}</td>
+                    <td>{device.maximumConsumption}</td>
+                    <td>{getUserName(device.userId)}</td>
+                    <td>
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                            <button
+                                className="btn btn-sm btn-success"
+                                onClick={() => onAssign(device)}
+                                title="Assign device"
+                            >
+                                👤
+                            </button>
+                            <button
+                                className="btn btn-sm btn-edit"
+                                onClick={() => onEdit(device)}
+                                title="Edit device"
+                            >
+                                ✏️
+                            </button>
+                            <button
+                                className="btn btn-sm btn-delete"
+                                onClick={() => onDelete(device.deviceId)}
+                                title="Delete device"
+                            >
+                                🗑️
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            ))}
+            </tbody>
+        </table>
+    );
+};
+
+// User Modal Component
+const UserModal = ({ user, onClose, onSuccess }) => {
+    const [formData, setFormData] = useState({
+        firstName: user?.firstName || '',
+        lastName: user?.lastName || '',
+        email: user?.email || '',
+        address: user?.address || '',
+        username: user?.username || '',
+        password: '',
+        role: user?.role || 'CLIENT'
+    });
+    const [error, setError] = useState('');
+    const [loading, setLoading] = useState(false);
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setError('');
+        setLoading(true);
+
+        try {
+            if (user) {
+                // Update user
+                const updateData = { ...formData };
+                if (!updateData.password) {
+                    delete updateData.password;
+                }
+                await userAPI.updateUser(user.userId, updateData);
+            } else {
+                // Create new user
+                await userAPI.createUser(formData);
+            }
+            onSuccess();
+        } catch (err) {
+            setError(err.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <div className="modal-overlay" onClick={onClose}>
+            <div className="modal" onClick={(e) => e.stopPropagation()}>
+                <div className="modal-header">
+                    <h2 className="modal-title">
+                        {user ? 'Edit User' : 'Create New User'}
+                    </h2>
+                    <button className="modal-close" onClick={onClose}>✕</button>
+                </div>
+                <div className="modal-body">
+                    {error && (
+                        <div className="alert alert-error">
+                            <span className="alert-icon">⚠</span>
+                            <span>{error}</span>
+                        </div>
+                    )}
+                    <form onSubmit={handleSubmit}>
+                        <div className="form-group">
+                            <label className="form-label">First Name</label>
+                            <input
+                                type="text"
+                                className="form-input"
+                                value={formData.firstName}
+                                onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                                required
+                            />
+                        </div>
+                        <div className="form-group">
+                            <label className="form-label">Last Name</label>
+                            <input
+                                type="text"
+                                className="form-input"
+                                value={formData.lastName}
+                                onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                                required
+                            />
+                        </div>
+                        <div className="form-group">
+                            <label className="form-label">Email</label>
+                            <input
+                                type="email"
+                                className="form-input"
+                                value={formData.email}
+                                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                                required
+                            />
+                        </div>
+                        <div className="form-group">
+                            <label className="form-label">Address</label>
+                            <input
+                                type="text"
+                                className="form-input"
+                                value={formData.address}
+                                onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                            />
+                        </div>
+                        <div className="form-group">
+                            <label className="form-label">Username</label>
+                            <input
+                                type="text"
+                                className="form-input"
+                                value={formData.username}
+                                onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                                required={!user}
+                                disabled={!!user}
+                            />
+                        </div>
+                        <div className="form-group">
+                            <label className="form-label">
+                                Password {user && '(leave blank to keep current)'}
+                            </label>
+                            <input
+                                type="password"
+                                className="form-input"
+                                value={formData.password}
+                                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                                required={!user}
+                                minLength="6"
+                            />
+                        </div>
+                        <div className="form-group">
+                            <label className="form-label">Role</label>
+                            <select
+                                className="form-select"
+                                value={formData.role}
+                                onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                                required
+                            >
+                                <option value="CLIENT">CLIENT</option>
+                                <option value="ADMIN">ADMIN</option>
+                            </select>
+                        </div>
+                        <div className="modal-footer">
+                            <button type="button" className="btn btn-secondary" onClick={onClose}>
+                                Cancel
+                            </button>
+                            <button type="submit" className="btn btn-primary" disabled={loading}>
+                                {loading ? 'Saving...' : (user ? 'Update' : 'Create')}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+// Device Modal Component
+const DeviceModal = ({ device, users, onClose, onSuccess }) => {
+    const [formData, setFormData] = useState({
+        name: device?.name || '',
+        description: device?.description || '',
+        location: device?.location || '',
+        maximumConsumption: device?.maximumConsumption || '',
+        userId: device?.userId || ''
+    });
+    const [error, setError] = useState('');
+    const [loading, setLoading] = useState(false);
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setError('');
+        setLoading(true);
+
+        try {
+            const deviceData = {
+                ...formData,
+                userId: formData.userId || null,
+                maximumConsumption: parseFloat(formData.maximumConsumption)
+            };
+
+            if (device) {
+                await deviceAPI.updateDevice(device.deviceId, deviceData);
+            } else {
+                await deviceAPI.createDevice(deviceData);
+            }
+            onSuccess();
+        } catch (err) {
+            setError(err.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <div className="modal-overlay" onClick={onClose}>
+            <div className="modal" onClick={(e) => e.stopPropagation()}>
+                <div className="modal-header">
+                    <h2 className="modal-title">
+                        {device ? 'Edit Device' : 'Create New Device'}
+                    </h2>
+                    <button className="modal-close" onClick={onClose}>✕</button>
+                </div>
+                <div className="modal-body">
+                    {error && (
+                        <div className="alert alert-error">
+                            <span className="alert-icon">⚠</span>
+                            <span>{error}</span>
+                        </div>
+                    )}
+                    <form onSubmit={handleSubmit}>
+                        <div className="form-group">
+                            <label className="form-label">Device Name</label>
+                            <input
+                                type="text"
+                                className="form-input"
+                                value={formData.name}
+                                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                required
+                            />
+                        </div>
+                        <div className="form-group">
+                            <label className="form-label">Description</label>
+                            <input
+                                type="text"
+                                className="form-input"
+                                value={formData.description}
+                                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                                required
+                            />
+                        </div>
+                        <div className="form-group">
+                            <label className="form-label">Location</label>
+                            <input
+                                type="text"
+                                className="form-input"
+                                value={formData.location}
+                                onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                                required
+                            />
+                        </div>
+                        <div className="form-group">
+                            <label className="form-label">Maximum Consumption (kWh)</label>
+                            <input
+                                type="number"
+                                step="0.01"
+                                className="form-input"
+                                value={formData.maximumConsumption}
+                                onChange={(e) => setFormData({ ...formData, maximumConsumption: e.target.value })}
+                                required
+                                min="0"
+                            />
+                        </div>
+                        <div className="form-group">
+                            <label className="form-label">Assign to User (Optional)</label>
+                            <select
+                                className="form-select"
+                                value={formData.userId}
+                                onChange={(e) => setFormData({ ...formData, userId: e.target.value })}
+                            >
+                                <option value="">Unassigned</option>
+                                {users.map(user => (
+                                    <option key={user.userId} value={user.userId}>
+                                        {user.firstName} {user.lastName} ({user.username})
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                        <div className="modal-footer">
+                            <button type="button" className="btn btn-secondary" onClick={onClose}>
+                                Cancel
+                            </button>
+                            <button type="submit" className="btn btn-primary" disabled={loading}>
+                                {loading ? 'Saving...' : (device ? 'Update' : 'Create')}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+// Assign Device Modal Component
+const AssignDeviceModal = ({ device, users, onClose, onAssign }) => {
+    const [selectedUserId, setSelectedUserId] = useState(device.userId || '');
+
+    return (
+        <div className="modal-overlay" onClick={onClose}>
+            <div className="modal" onClick={(e) => e.stopPropagation()}>
+                <div className="modal-header">
+                    <h2 className="modal-title">Assign Device</h2>
+                    <button className="modal-close" onClick={onClose}>✕</button>
+                </div>
+                <div className="modal-body">
+                    <p style={{ color: 'rgba(255,255,255,0.8)', marginBottom: '16px' }}>
+                        Assign "{device.name}" to a user
+                    </p>
+                    <div className="form-group">
+                        <label className="form-label">Select User</label>
+                        <select
+                            className="form-select"
+                            value={selectedUserId}
+                            onChange={(e) => setSelectedUserId(e.target.value)}
+                        >
+                            <option value="">Unassigned</option>
+                            {users.map(user => (
+                                <option key={user.userId} value={user.userId}>
+                                    {user.firstName} {user.lastName} ({user.username})
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                </div>
+                <div className="modal-footer">
+                    <button className="btn btn-secondary" onClick={onClose}>
+                        Cancel
+                    </button>
+                    <button
+                        className="btn btn-primary"
+                        onClick={() => onAssign(device.deviceId, selectedUserId || null)}
+                    >
+                        Assign
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+export default AdminDashboard;
