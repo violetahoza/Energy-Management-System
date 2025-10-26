@@ -53,29 +53,14 @@ const Login = () => {
                 </div>
 
                 {error && (
-                    <div className="alert alert-error" style={{ position: 'relative' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
+                    <div className="alert alert-error">
+                        <div className="alert-content">
                             <span className="alert-icon">⚠</span>
                             <span>{error}</span>
                         </div>
                         <button
                             onClick={() => setError('')}
-                            style={{
-                                position: 'absolute',
-                                right: '12px',
-                                top: '50%',
-                                transform: 'translateY(-50%)',
-                                background: 'none',
-                                border: 'none',
-                                color: 'inherit',
-                                cursor: 'pointer',
-                                fontSize: '20px',
-                                padding: '4px 8px',
-                                opacity: '0.7',
-                                transition: 'opacity 0.2s'
-                            }}
-                            onMouseEnter={(e) => e.target.style.opacity = '1'}
-                            onMouseLeave={(e) => e.target.style.opacity = '0.7'}
+                            className="alert-close"
                             aria-label="Close alert"
                         >
                             ✕
@@ -85,9 +70,7 @@ const Login = () => {
 
                 <form onSubmit={handleSubmit}>
                     <div className="form-group">
-                        <label className="form-label" htmlFor="username">
-                            Username
-                        </label>
+                        <label className="form-label" htmlFor="username"> Username </label>
                         <input
                             type="text"
                             id="username"
@@ -102,9 +85,7 @@ const Login = () => {
                     </div>
 
                     <div className="form-group">
-                        <label className="form-label" htmlFor="password">
-                            Password
-                        </label>
+                        <label className="form-label" htmlFor="password"> Password </label>
                         <input
                             type="password"
                             id="password"
@@ -138,9 +119,7 @@ const Login = () => {
 
                 <div className="auth-footer">
                     Don't have an account?{' '}
-                    <Link to="/register" className="auth-link">
-                        Sign up
-                    </Link>
+                    <Link to="/register" className="auth-link"> Sign up </Link>
                 </div>
             </div>
         </div>

@@ -41,7 +41,6 @@ const AdminDashboard = () => {
         } else {
             fetchData();
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [user, navigate]);
 
     const handleLogout = async () => {
@@ -92,23 +91,13 @@ const AdminDashboard = () => {
         <div className="dashboard-container">
             <div className="dashboard-content">
                 <nav className="navbar">
-                    <div style={{display: 'flex', alignItems: 'center', gap: '16px'}}>
+                    <div className="navbar-left">
                         <div className="navbar-brand">
-                            <span style={{fontSize: '24px'}}>⚡</span>
+                            <span className="navbar-brand-icon">⚡</span>
                             <span>Energy Management System</span>
                         </div>
-                        <div style={{
-                            height: '24px',
-                            width: '1px',
-                            background: 'rgba(255, 255, 255, 0.2)'
-                        }}></div>
-                        <span style={{
-                            color: '#00b4ff',
-                            fontSize: '16px',
-                            fontWeight: '500'
-                        }}>
-                            Welcome {user?.username}!
-                        </span>
+                        <div className="navbar-divider"></div>
+                        <span className="navbar-welcome">Welcome {user?.username}!</span>
                     </div>
                     <div className="navbar-user">
                         <span className="user-badge">{user?.role}</span>
@@ -128,7 +117,7 @@ const AdminDashboard = () => {
                     </div>
 
                     {error && (
-                        <div className="alert alert-error" style={{marginBottom: '24px'}}>
+                        <div className="alert alert-error">
                             <span className="alert-icon">⚠</span>
                             <span>{error}</span>
                         </div>
@@ -136,7 +125,7 @@ const AdminDashboard = () => {
 
                     <div className="card">
                         <div className="card-header">
-                            <div style={{display: 'flex', gap: '16px'}}>
+                            <div className="tab-buttons">
                                 <button
                                     className={`btn btn-sm ${activeTab === 'users' ? 'btn-primary' : 'btn-secondary'}`}
                                     onClick={() => setActiveTab('users')}
@@ -236,7 +225,6 @@ const AdminDashboard = () => {
     );
 };
 
-// Users Table Component
 const UsersTable = ({ users, onEdit, onDelete }) => {
     if (users.length === 0) {
         return (
@@ -269,21 +257,9 @@ const UsersTable = ({ users, onEdit, onDelete }) => {
                         <span className="user-badge">{user.role}</span>
                     </td>
                     <td>
-                        <div style={{ display: 'flex', gap: '8px' }}>
-                            <button
-                                className="btn btn-sm btn-edit"
-                                onClick={() => onEdit(user)}
-                                title="Edit user"
-                            >
-                                ✏️
-                            </button>
-                            <button
-                                className="btn btn-sm btn-delete"
-                                onClick={() => onDelete(user.userId)}
-                                title="Delete user"
-                            >
-                                🗑️
-                            </button>
+                        <div className="action-buttons">
+                            <button className="btn btn-sm btn-edit" onClick={() => onEdit(user)} title="Edit user">✏️</button>
+                            <button className="btn btn-sm btn-delete" onClick={() => onDelete(user.userId)} title="Delete user">🗑️</button>
                         </div>
                     </td>
                 </tr>
@@ -293,7 +269,6 @@ const UsersTable = ({ users, onEdit, onDelete }) => {
     );
 };
 
-// Devices Table Component
 const DevicesTable = ({ devices, users, onEdit, onDelete, onAssign }) => {
     const getUserName = (userId) => {
         const user = users.find(u => u.userId === userId);
@@ -331,28 +306,10 @@ const DevicesTable = ({ devices, users, onEdit, onDelete, onAssign }) => {
                     <td>{device.maximumConsumption}</td>
                     <td>{getUserName(device.userId)}</td>
                     <td>
-                        <div style={{ display: 'flex', gap: '8px' }}>
-                            <button
-                                className="btn btn-sm btn-success"
-                                onClick={() => onAssign(device)}
-                                title="Assign device"
-                            >
-                                👤
-                            </button>
-                            <button
-                                className="btn btn-sm btn-edit"
-                                onClick={() => onEdit(device)}
-                                title="Edit device"
-                            >
-                                ✏️
-                            </button>
-                            <button
-                                className="btn btn-sm btn-delete"
-                                onClick={() => onDelete(device.deviceId)}
-                                title="Delete device"
-                            >
-                                🗑️
-                            </button>
+                        <div className="action-buttons">
+                            <button className="btn btn-sm btn-success" onClick={() => onAssign(device)} title="Assign device">👤</button>
+                            <button className="btn btn-sm btn-edit" onClick={() => onEdit(device)} title="Edit device">✏️</button>
+                            <button className="btn btn-sm btn-delete" onClick={() => onDelete(device.deviceId)} title="Delete device">🗑️</button>
                         </div>
                     </td>
                 </tr>
@@ -362,7 +319,6 @@ const DevicesTable = ({ devices, users, onEdit, onDelete, onAssign }) => {
     );
 };
 
-// User Modal Component
 const UserModal = ({ user, onClose, onSuccess }) => {
     const [formData, setFormData] = useState({
         firstName: user?.firstName || '',
@@ -379,18 +335,29 @@ const UserModal = ({ user, onClose, onSuccess }) => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
+
+        if (!user) {
+            if (formData.password.length < 6) {
+                setError('Password must be at least 6 characters long');
+                return;
+            }
+        } else {
+            if (formData.password && formData.password.length < 6) {
+                setError('Password must be at least 6 characters long');
+                return;
+            }
+        }
+
         setLoading(true);
 
         try {
             if (user) {
-                // Update user
                 const updateData = { ...formData };
                 if (!updateData.password) {
                     delete updateData.password;
                 }
                 await userAPI.updateUser(user.userId, updateData);
             } else {
-                // Create new user
                 await userAPI.createUser(formData);
             }
             onSuccess();
@@ -405,9 +372,7 @@ const UserModal = ({ user, onClose, onSuccess }) => {
         <div className="modal-overlay" onClick={onClose}>
             <div className="modal" onClick={(e) => e.stopPropagation()}>
                 <div className="modal-header">
-                    <h2 className="modal-title">
-                        {user ? 'Edit User' : 'Create New User'}
-                    </h2>
+                    <h2 className="modal-title">{user ? 'Edit User' : 'Create New User'}</h2>
                     <button className="modal-close" onClick={onClose}>✕</button>
                 </div>
                 <div className="modal-body">
@@ -419,27 +384,31 @@ const UserModal = ({ user, onClose, onSuccess }) => {
                     )}
                     <form onSubmit={handleSubmit}>
                         <div className="form-group">
-                            <label className="form-label">First Name</label>
+                            <label className="form-label">First Name *</label>
                             <input
                                 type="text"
                                 className="form-input"
                                 value={formData.firstName}
                                 onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
                                 required
+                                minLength="2"
+                                maxLength="50"
                             />
                         </div>
                         <div className="form-group">
-                            <label className="form-label">Last Name</label>
+                            <label className="form-label">Last Name *</label>
                             <input
                                 type="text"
                                 className="form-input"
                                 value={formData.lastName}
                                 onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
                                 required
+                                minLength="2"
+                                maxLength="50"
                             />
                         </div>
                         <div className="form-group">
-                            <label className="form-label">Email</label>
+                            <label className="form-label">Email *</label>
                             <input
                                 type="email"
                                 className="form-input"
@@ -449,16 +418,18 @@ const UserModal = ({ user, onClose, onSuccess }) => {
                             />
                         </div>
                         <div className="form-group">
-                            <label className="form-label">Address</label>
+                            <label className="form-label">Address *</label>
                             <input
                                 type="text"
                                 className="form-input"
                                 value={formData.address}
                                 onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                                required
+                                maxLength="200"
                             />
                         </div>
                         <div className="form-group">
-                            <label className="form-label">Username</label>
+                            <label className="form-label">Username *</label>
                             <input
                                 type="text"
                                 className="form-input"
@@ -466,15 +437,18 @@ const UserModal = ({ user, onClose, onSuccess }) => {
                                 onChange={(e) => setFormData({ ...formData, username: e.target.value })}
                                 required={!user}
                                 disabled={!!user}
+                                minLength="3"
+                                maxLength="50"
                             />
                         </div>
                         <div className="form-group">
                             <label className="form-label">
-                                Password {user && '(leave blank to keep current)'}
+                                Password {user ? '(leave blank to keep current)' : '*'}
                             </label>
                             <input
                                 type="password"
                                 className="form-input"
+                                placeholder={user ? '(optional)' : 'Password (min 6 chars)'}
                                 value={formData.password}
                                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                                 required={!user}
@@ -482,7 +456,7 @@ const UserModal = ({ user, onClose, onSuccess }) => {
                             />
                         </div>
                         <div className="form-group">
-                            <label className="form-label">Role</label>
+                            <label className="form-label">Role *</label>
                             <select
                                 className="form-select"
                                 value={formData.role}
@@ -508,7 +482,6 @@ const UserModal = ({ user, onClose, onSuccess }) => {
     );
 };
 
-// Device Modal Component
 const DeviceModal = ({ device, users, onClose, onSuccess }) => {
     const [formData, setFormData] = useState({
         name: device?.name || '',
@@ -634,7 +607,6 @@ const DeviceModal = ({ device, users, onClose, onSuccess }) => {
     );
 };
 
-// Assign Device Modal Component
 const AssignDeviceModal = ({ device, users, onClose, onAssign }) => {
     const [selectedUserId, setSelectedUserId] = useState(device.userId || '');
 
@@ -646,9 +618,7 @@ const AssignDeviceModal = ({ device, users, onClose, onAssign }) => {
                     <button className="modal-close" onClick={onClose}>✕</button>
                 </div>
                 <div className="modal-body">
-                    <p style={{ color: 'rgba(255,255,255,0.8)', marginBottom: '16px' }}>
-                        Assign "{device.name}" to a user
-                    </p>
+                    <p className="modal-description">Assign "{device.name}" to a user</p>
                     <div className="form-group">
                         <label className="form-label">Select User</label>
                         <select
@@ -666,15 +636,8 @@ const AssignDeviceModal = ({ device, users, onClose, onAssign }) => {
                     </div>
                 </div>
                 <div className="modal-footer">
-                    <button className="btn btn-secondary" onClick={onClose}>
-                        Cancel
-                    </button>
-                    <button
-                        className="btn btn-primary"
-                        onClick={() => onAssign(device.deviceId, selectedUserId || null)}
-                    >
-                        Assign
-                    </button>
+                    <button className="btn btn-secondary" onClick={onClose}>Cancel</button>
+                    <button className="btn btn-primary" onClick={() => onAssign(device.deviceId, selectedUserId || null)}>Assign</button>
                 </div>
             </div>
         </div>

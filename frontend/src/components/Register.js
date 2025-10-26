@@ -33,7 +33,6 @@ const Register = () => {
         setError('');
         setSuccess('');
 
-        // Validation
         if (formData.password !== formData.confirmPassword) {
             setError('Passwords do not match');
             return;
@@ -47,7 +46,6 @@ const Register = () => {
         setLoading(true);
 
         try {
-            // Prepare data without confirmPassword
             const { confirmPassword, ...registrationData } = formData;
             const fullName = `${formData.firstName} ${formData.lastName}`;
 
@@ -93,12 +91,9 @@ const Register = () => {
                 )}
 
                 <form onSubmit={handleSubmit}>
-                    {/* First Name and Last Name on same row */}
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                    <div className="form-grid-2">
                         <div className="form-group">
-                            <label className="form-label" htmlFor="firstName">
-                                First Name *
-                            </label>
+                            <label className="form-label" htmlFor="firstName"> First Name * </label>
                             <input
                                 type="text"
                                 id="firstName"
@@ -115,9 +110,7 @@ const Register = () => {
                         </div>
 
                         <div className="form-group">
-                            <label className="form-label" htmlFor="lastName">
-                                Last Name *
-                            </label>
+                            <label className="form-label" htmlFor="lastName"> Last Name * </label>
                             <input
                                 type="text"
                                 id="lastName"
@@ -134,9 +127,7 @@ const Register = () => {
                     </div>
 
                     <div className="form-group">
-                        <label className="form-label" htmlFor="email">
-                            Email *
-                        </label>
+                        <label className="form-label" htmlFor="email"> Email * </label>
                         <input
                             type="email"
                             id="email"
@@ -150,9 +141,7 @@ const Register = () => {
                     </div>
 
                     <div className="form-group">
-                        <label className="form-label" htmlFor="address">
-                            Address *
-                        </label>
+                        <label className="form-label" htmlFor="address"> Address * </label>
                         <input
                             type="text"
                             id="address"
@@ -167,9 +156,7 @@ const Register = () => {
                     </div>
 
                     <div className="form-group">
-                        <label className="form-label" htmlFor="username">
-                            Username *
-                        </label>
+                        <label className="form-label" htmlFor="username"> Username * </label>
                         <input
                             type="text"
                             id="username"
@@ -184,12 +171,9 @@ const Register = () => {
                         />
                     </div>
 
-                    {/* Password and Confirm Password on same row */}
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                    <div className="form-grid-2">
                         <div className="form-group">
-                            <label className="form-label" htmlFor="password">
-                                Password *
-                            </label>
+                            <label className="form-label" htmlFor="password"> Password * </label>
                             <input
                                 type="password"
                                 id="password"
@@ -204,9 +188,7 @@ const Register = () => {
                         </div>
 
                         <div className="form-group">
-                            <label className="form-label" htmlFor="confirmPassword">
-                                Confirm Password *
-                            </label>
+                            <label className="form-label" htmlFor="confirmPassword"> Confirm Password * </label>
                             <input
                                 type="password"
                                 id="confirmPassword"
@@ -221,11 +203,7 @@ const Register = () => {
                         </div>
                     </div>
 
-                    <button
-                        type="submit"
-                        className="btn btn-primary"
-                        disabled={loading}
-                    >
+                    <button type="submit" className="btn btn-primary" disabled={loading}>
                         {loading ? (
                             <>
                                 <span>⏳</span>
@@ -242,9 +220,7 @@ const Register = () => {
 
                 <div className="auth-footer">
                     Already have an account?{' '}
-                    <Link to="/login" className="auth-link">
-                        Sign in
-                    </Link>
+                    <Link to="/login" className="auth-link"> Sign in </Link>
                 </div>
             </div>
         </div>

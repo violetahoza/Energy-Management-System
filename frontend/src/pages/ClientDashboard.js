@@ -46,21 +46,13 @@ const ClientDashboard = () => {
         <div className="dashboard-container">
             <div className="dashboard-content">
                 <nav className="navbar">
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                    <div className="navbar-left">
                         <div className="navbar-brand">
-                            <span style={{ fontSize: '24px' }}>⚡</span>
+                            <span className="navbar-brand-icon">⚡</span>
                             <span>Energy Management System</span>
                         </div>
-                        <div style={{
-                            height: '24px',
-                            width: '1px',
-                            background: 'rgba(255, 255, 255, 0.2)'
-                        }}></div>
-                        <span style={{
-                            color: '#00b4ff',
-                            fontSize: '16px',
-                            fontWeight: '500'
-                        }}>
+                        <div className="navbar-divider"></div>
+                        <span className="navbar-welcome">
                             Welcome {user?.username}!
                         </span>
                     </div>
@@ -82,61 +74,27 @@ const ClientDashboard = () => {
                     </div>
 
                     {error && (
-                        <div className="alert alert-error" style={{ marginBottom: '24px', position: 'relative' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
+                        <div className="alert alert-error">
+                            <div className="alert-content">
                                 <span className="alert-icon">⚠</span>
                                 <span>{error}</span>
                             </div>
-                            <button
-                                onClick={() => setError('')}
-                                style={{
-                                    position: 'absolute',
-                                    right: '12px',
-                                    top: '50%',
-                                    transform: 'translateY(-50%)',
-                                    background: 'none',
-                                    border: 'none',
-                                    color: 'inherit',
-                                    cursor: 'pointer',
-                                    fontSize: '20px',
-                                    padding: '4px 8px',
-                                    opacity: '0.7',
-                                    transition: 'opacity 0.2s'
-                                }}
-                                onMouseEnter={(e) => e.target.style.opacity = '1'}
-                                onMouseLeave={(e) => e.target.style.opacity = '0.7'}
-                                aria-label="Close alert"
-                            >
-                                ✕
-                            </button>
+                            <button onClick={() => setError('')} className="alert-close" aria-label="Close alert"> ✕ </button>
                         </div>
                     )}
 
                     {/* Statistics Cards */}
-                    <div style={{
-                        display: 'grid',
-                        gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-                        gap: '20px',
-                        marginBottom: '32px'
-                    }}>
-                        <div className="card" style={{ textAlign: 'center', padding: '32px' }}>
-                            <div style={{ fontSize: '48px', marginBottom: '12px' }}>📱</div>
-                            <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#00b4ff', marginBottom: '8px' }}>
-                                {devices.length}
-                            </div>
-                            <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: '14px' }}>
-                                Total Devices
-                            </div>
+                    <div className="stats-grid">
+                        <div className="card card-center">
+                            <div className="stat-card-icon">📱</div>
+                            <div className="stat-card-value">{devices.length}</div>
+                            <div className="stat-card-label">Total Devices</div>
                         </div>
 
-                        <div className="card" style={{ textAlign: 'center', padding: '32px' }}>
-                            <div style={{ fontSize: '48px', marginBottom: '12px' }}>⚡</div>
-                            <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#00b4ff', marginBottom: '8px' }}>
-                                {getTotalConsumption()}
-                            </div>
-                            <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: '14px' }}>
-                                Total Max Consumption (kWh)
-                            </div>
+                        <div className="card card-center">
+                            <div className="stat-card-icon">⚡</div>
+                            <div className="stat-card-value">{getTotalConsumption()}</div>
+                            <div className="stat-card-label">Total Max Consumption (kWh)</div>
                         </div>
                     </div>
 
@@ -152,27 +110,16 @@ const ClientDashboard = () => {
                             </div>
                         ) : devices.length === 0 ? (
                             <div className="empty-state">
-                                <div style={{ fontSize: '64px', marginBottom: '16px', opacity: 0.3 }}>
-                                    📱
-                                </div>
+                                <div className="empty-state-icon">📱</div>
                                 <p className="empty-state-text">
                                     No devices assigned to you yet
                                 </p>
-                                <p style={{
-                                    color: 'rgba(255,255,255,0.4)',
-                                    fontSize: '14px',
-                                    marginTop: '8px'
-                                }}>
+                                <p className="empty-state-subtext">
                                     Contact your administrator to get devices assigned
                                 </p>
                             </div>
                         ) : (
-                            <div style={{
-                                display: 'grid',
-                                gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
-                                gap: '20px',
-                                padding: '20px'
-                            }}>
+                            <div className="device-grid">
                                 {devices.map(device => (
                                     <DeviceCard
                                         key={device.deviceId}
@@ -196,105 +143,29 @@ const ClientDashboard = () => {
     );
 };
 
-// Device Card Component
 const DeviceCard = ({ device, onClick }) => {
     return (
-        <div
-            className="card"
-            style={{
-                cursor: 'pointer',
-                transition: 'all 0.3s ease',
-                padding: '20px'
-            }}
-            onClick={onClick}
-            onMouseEnter={(e) => {
-                e.currentTarget.style.transform = 'translateY(-4px)';
-                e.currentTarget.style.borderColor = 'rgba(0, 180, 255, 0.5)';
-            }}
-            onMouseLeave={(e) => {
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.borderColor = 'rgba(0, 180, 255, 0.2)';
-            }}
-        >
-            <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '12px',
-                marginBottom: '16px'
-            }}>
-                <div style={{
-                    width: '48px',
-                    height: '48px',
-                    background: 'linear-gradient(135deg, #00b4ff, #0066ff)',
-                    borderRadius: '12px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: '24px'
-                }}>
-                    📱
-                </div>
-                <div style={{ flex: 1 }}>
-                    <h3 style={{
-                        margin: 0,
-                        color: '#ffffff',
-                        fontSize: '18px',
-                        fontWeight: '600'
-                    }}>
-                        {device.name}
-                    </h3>
-                    <p style={{
-                        margin: '4px 0 0 0',
-                        color: 'rgba(255,255,255,0.6)',
-                        fontSize: '13px'
-                    }}>
-                        {device.location}
-                    </p>
+        <div className="card device-card" onClick={onClick}>
+            <div className="device-card-header">
+                <div className="device-card-icon">📱</div>
+                <div className="device-card-info">
+                    <h3 className="device-card-name">{device.name}</h3>
+                    <p className="device-card-location">{device.location}</p>
                 </div>
             </div>
 
-            <div style={{
-                padding: '12px',
-                background: 'rgba(0, 180, 255, 0.1)',
-                borderRadius: '8px',
-                marginBottom: '12px'
-            }}>
-                <div style={{
-                    fontSize: '24px',
-                    fontWeight: 'bold',
-                    color: '#00b4ff',
-                    marginBottom: '4px'
-                }}>
+            <div className="device-card-consumption">
+                <div className="device-card-consumption-value">
                     {device.maximumConsumption} kWh
                 </div>
-                <div style={{
-                    fontSize: '12px',
-                    color: 'rgba(255,255,255,0.6)',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.5px'
-                }}>
+                <div className="device-card-consumption-label">
                     Maximum Consumption
                 </div>
             </div>
 
-            <p style={{
-                margin: 0,
-                color: 'rgba(255,255,255,0.7)',
-                fontSize: '14px',
-                lineHeight: '1.5'
-            }}>
-                {device.description}
-            </p>
+            <p className="device-card-description">{device.description}</p>
 
-            <div style={{
-                marginTop: '16px',
-                paddingTop: '16px',
-                borderTop: '1px solid rgba(255,255,255,0.1)',
-                display: 'flex',
-                justifyContent: 'space-between',
-                fontSize: '12px',
-                color: 'rgba(255,255,255,0.5)'
-            }}>
+            <div className="device-card-footer">
                 <span>ID: {device.deviceId}</span>
                 <span>Click for details →</span>
             </div>
@@ -302,35 +173,19 @@ const DeviceCard = ({ device, onClick }) => {
     );
 };
 
-// Device Detail Modal Component
 const DeviceDetailModal = ({ device, onClose }) => {
     return (
         <div className="modal-overlay" onClick={onClose}>
-            <div
-                className="modal"
-                style={{ maxWidth: '600px' }}
-                onClick={(e) => e.stopPropagation()}
-            >
+            <div className="modal modal-wide" onClick={(e) => e.stopPropagation()}>
                 <div className="modal-header">
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <div style={{
-                            width: '40px',
-                            height: '40px',
-                            background: 'linear-gradient(135deg, #00b4ff, #0066ff)',
-                            borderRadius: '10px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            fontSize: '20px'
-                        }}>
-                            📱
-                        </div>
+                    <div className="modal-header-content">
+                        <div className="modal-header-icon">📱</div>
                         <h2 className="modal-title">{device.name}</h2>
                     </div>
                     <button className="modal-close" onClick={onClose}>✕</button>
                 </div>
                 <div className="modal-body">
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                    <div className="detail-rows">
                         <DetailRow label="Device ID" value={device.deviceId} />
                         <DetailRow label="Name" value={device.name} />
                         <DetailRow label="Description" value={device.description} />
@@ -351,40 +206,18 @@ const DeviceDetailModal = ({ device, onClose }) => {
                     </div>
                 </div>
                 <div className="modal-footer">
-                    <button className="btn btn-primary" onClick={onClose}>
-                        Close
-                    </button>
+                    <button className="btn btn-primary" onClick={onClose}> Close </button>
                 </div>
             </div>
         </div>
     );
 };
 
-// Detail Row Component
 const DetailRow = ({ label, value, highlight }) => {
     return (
-        <div style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            padding: '12px',
-            background: highlight ? 'rgba(0, 180, 255, 0.1)' : 'rgba(255, 255, 255, 0.03)',
-            borderRadius: '8px',
-            border: highlight ? '1px solid rgba(0, 180, 255, 0.3)' : 'none'
-        }}>
-            <span style={{
-                color: 'rgba(255,255,255,0.6)',
-                fontSize: '14px',
-                fontWeight: '500'
-            }}>
-                {label}
-            </span>
-            <span style={{
-                color: highlight ? '#00b4ff' : '#ffffff',
-                fontSize: highlight ? '18px' : '14px',
-                fontWeight: highlight ? '600' : '500',
-                textAlign: 'right'
-            }}>
+        <div className={`detail-row ${highlight ? 'detail-row-highlight' : ''}`}>
+            <span className="detail-row-label">{label}</span>
+            <span className={`detail-row-value ${highlight ? 'detail-row-value-highlight' : ''}`}>
                 {value}
             </span>
         </div>
