@@ -18,14 +18,6 @@ const AdminDashboard = () => {
     const [selectedUser, setSelectedUser] = useState(null);
     const [selectedDevice, setSelectedDevice] = useState(null);
 
-    useEffect(() => {
-        if (user?.role !== 'ADMIN') {
-            navigate('/login');
-        } else {
-            fetchData();
-        }
-    }, [user, navigate]);
-
     const fetchData = async () => {
         setLoading(true);
         setError('');
@@ -42,6 +34,15 @@ const AdminDashboard = () => {
             setLoading(false);
         }
     };
+
+    useEffect(() => {
+        if (user?.role !== 'ADMIN') {
+            navigate('/login');
+        } else {
+            fetchData();
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [user, navigate]);
 
     const handleLogout = async () => {
         await logout();
@@ -164,14 +165,20 @@ const AdminDashboard = () => {
                         ) : activeTab === 'users' ? (
                             <UsersTable
                                 users={users}
-                                onEdit={setSelectedUser}
+                                onEdit={(user) => {
+                                    setSelectedUser(user);
+                                    setShowUserModal(true);
+                                }}
                                 onDelete={handleDeleteUser}
                             />
                         ) : (
                             <DevicesTable
                                 devices={devices}
                                 users={users}
-                                onEdit={setSelectedDevice}
+                                onEdit={(device) => {
+                                    setSelectedDevice(device);
+                                    setShowDeviceModal(true);
+                                }}
                                 onDelete={handleDeleteDevice}
                                 onAssign={(device) => {
                                     setSelectedDevice(device);

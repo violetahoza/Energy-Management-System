@@ -15,7 +15,6 @@ const handleResponse = async (response) => {
     return response.json();
 };
 
-// User API
 export const userAPI = {
     getAllUsers: async () => {
         const response = await fetch(`${API_URL}/api/users`, {
@@ -73,7 +72,6 @@ export const userAPI = {
     }
 };
 
-// Device API
 export const deviceAPI = {
     getAllDevices: async () => {
         const response = await fetch(`${API_URL}/api/devices`, {
