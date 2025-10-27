@@ -21,10 +21,10 @@ import java.util.function.Function;
 @Slf4j
 public class JwtUtil {
 
-    @Value("${spring.jwt.secret}")
+    @Value("${jwt.secret}")
     private String secret;
 
-    @Value("${spring.jwt.expiration}")
+    @Value("${jwt.expiration}")
     private Long expiration;
 
     private Key getSigningKey() {

@@ -76,7 +76,7 @@ public class UserController {
     @GetMapping("/internal/validate/{userId}")
     public ResponseEntity<Void> validateUserExists(@PathVariable Long userId) {
         log.info("Internal validation request for userId: {}", userId);
-        userService.getUserById(userId); // this will throw UserNotFoundException if not found
+        userService.getUserById(userId);
         return ResponseEntity.ok().build();
     }
 }

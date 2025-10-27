@@ -111,9 +111,7 @@ const AdminDashboard = () => {
                 <div className="main-content">
                     <div className="page-header">
                         <h1 className="page-title">Admin Dashboard</h1>
-                        <p className="page-description">
-                            Manage users, devices, and system configuration
-                        </p>
+                        <p className="page-description">Manage users, devices, and system configuration</p>
                     </div>
 
                     {error && (
@@ -442,9 +440,7 @@ const UserModal = ({ user, onClose, onSuccess }) => {
                             />
                         </div>
                         <div className="form-group">
-                            <label className="form-label">
-                                Password {user ? '(leave blank to keep current)' : '*'}
-                            </label>
+                            <label className="form-label">Password {user ? '(leave blank to keep current)' : '*'}</label>
                             <input
                                 type="password"
                                 className="form-input"
@@ -468,12 +464,8 @@ const UserModal = ({ user, onClose, onSuccess }) => {
                             </select>
                         </div>
                         <div className="modal-footer">
-                            <button type="button" className="btn btn-secondary" onClick={onClose}>
-                                Cancel
-                            </button>
-                            <button type="submit" className="btn btn-primary" disabled={loading}>
-                                {loading ? 'Saving...' : (user ? 'Update' : 'Create')}
-                            </button>
+                            <button type="button" className="btn btn-secondary" onClick={onClose}>Cancel</button>
+                            <button type="submit" className="btn btn-primary" disabled={loading}>{loading ? 'Saving...' : (user ? 'Update' : 'Create')}</button>
                         </div>
                     </form>
                 </div>
@@ -579,11 +571,7 @@ const DeviceModal = ({ device, users, onClose, onSuccess }) => {
                         </div>
                         <div className="form-group">
                             <label className="form-label">Assign to User (Optional)</label>
-                            <select
-                                className="form-select"
-                                value={formData.userId}
-                                onChange={(e) => setFormData({ ...formData, userId: e.target.value })}
-                            >
+                            <select className="form-select" value={formData.userId} onChange={(e) => setFormData({ ...formData, userId: e.target.value })}>
                                 <option value="">Unassigned</option>
                                 {users.map(user => (
                                     <option key={user.userId} value={user.userId}>
@@ -621,11 +609,7 @@ const AssignDeviceModal = ({ device, users, onClose, onAssign }) => {
                     <p className="modal-description">Assign "{device.name}" to a user</p>
                     <div className="form-group">
                         <label className="form-label">Select User</label>
-                        <select
-                            className="form-select"
-                            value={selectedUserId}
-                            onChange={(e) => setSelectedUserId(e.target.value)}
-                        >
+                        <select className="form-select" value={selectedUserId} onChange={(e) => setSelectedUserId(e.target.value)}>
                             <option value="">Unassigned</option>
                             {users.map(user => (
                                 <option key={user.userId} value={user.userId}>

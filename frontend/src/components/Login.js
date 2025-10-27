@@ -18,7 +18,7 @@ const Login = () => {
             ...formData,
             [e.target.name]: e.target.value
         });
-        setError(''); // Clear error when user types
+        setError('');
     };
 
     const handleSubmit = async (e) => {
@@ -58,13 +58,7 @@ const Login = () => {
                             <span className="alert-icon">⚠</span>
                             <span>{error}</span>
                         </div>
-                        <button
-                            onClick={() => setError('')}
-                            className="alert-close"
-                            aria-label="Close alert"
-                        >
-                            ✕
-                        </button>
+                        <button onClick={() => setError('')} className="alert-close" aria-label="Close alert">✕</button>
                     </div>
                 )}
 
@@ -98,11 +92,7 @@ const Login = () => {
                         />
                     </div>
 
-                    <button
-                        type="submit"
-                        className="btn btn-primary"
-                        disabled={loading}
-                    >
+                    <button type="submit" className="btn btn-primary" disabled={loading}>
                         {loading ? (
                             <>
                                 <span>⏳</span>

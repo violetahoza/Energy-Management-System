@@ -7,7 +7,6 @@ import AdminDashboard from './pages/AdminDashboard';
 import ClientDashboard from './pages/ClientDashboard';
 import './styles/App.css';
 
-// Protected Route Component
 const ProtectedRoute = ({ children, allowedRoles }) => {
     const { user, loading } = useAuth();
 
