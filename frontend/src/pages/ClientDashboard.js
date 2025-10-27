@@ -89,7 +89,7 @@ const ClientDashboard = () => {
                         <div className="card card-center">
                             <div className="stat-card-icon">⚡</div>
                             <div className="stat-card-value">{getTotalConsumption()}</div>
-                            <div className="stat-card-label">Total Max Consumption (kWh)</div>
+                            <div className="stat-card-label">Total Max Consumption (kW)</div>
                         </div>
                     </div>
 

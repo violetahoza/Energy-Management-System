@@ -1,0 +1,58 @@
+-- MySQL dump 10.13  Distrib 9.4.0, for Linux (x86_64)
+--
+-- Host: localhost    Database: credentials_db
+-- ------------------------------------------------------
+-- Server version	9.4.0
+
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!50503 SET NAMES utf8mb4 */;
+/*!40103 SET @OLD_TIME_ZONE=@@TIME_ZONE */;
+/*!40103 SET TIME_ZONE='+00:00' */;
+/*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
+/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
+/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
+/*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
+
+--
+-- Table structure for table `credentials`
+--
+
+DROP TABLE IF EXISTS `credentials`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `credentials` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `created_at` datetime(6) NOT NULL,
+  `password` varchar(255) NOT NULL,
+  `role` varchar(255) NOT NULL,
+  `updated_at` datetime(6) DEFAULT NULL,
+  `user_id` bigint NOT NULL,
+  `username` varchar(255) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `UKry431gkw9ueu8xq0yfbys0d1d` (`user_id`),
+  UNIQUE KEY `UKl7xhygibdj6cgkpj2ih1jgx14` (`username`)
+) ENGINE=InnoDB AUTO_INCREMENT=15 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `credentials`
+--
+
+LOCK TABLES `credentials` WRITE;
+/*!40000 ALTER TABLE `credentials` DISABLE KEYS */;
+INSERT INTO `credentials` VALUES (1,'2025-10-22 20:40:33.989156','$2a$10$vy7Bi//9wHTJvbBNhy2c7uDkeYR7cDSznqREWFvmQmdD.Txz71yoa','ADMIN','2025-10-22 20:40:33.989177',1,'admin'),(3,'2025-10-22 20:41:10.907125','$2a$10$0CZv8sISUT3dQrmZHsPHx.4RTZVov8AwR3XAclu8D4y/H666oUJVe','ADMIN','2025-10-22 20:41:10.907138',3,'admin2'),(5,'2025-10-22 20:49:41.510374','$2a$10$xTy3X6IOWK10gw8xqThc6.A0H/vMJjZYDWP8rtwoC7Vq2MkZQ9B62','CLIENT','2025-10-23 13:04:29.684121',5,'violeta'),(7,'2025-10-23 13:08:38.545847','$2a$10$TDdMD4rs7sosjo16Jvp5MOzVAApFfrsGsfryrt4OAidUcv4XUg7q.','CLIENT','2025-10-23 13:08:38.545917',7,'testuser'),(10,'2025-10-25 17:03:19.349295','$2a$10$YYhWJLz0Yag4pP4h3FIjO.Dp6PWznCUWPibrR6CZXK2BpL7y8umta','CLIENT','2025-10-25 17:03:19.349329',10,'maria'),(12,'2025-10-26 11:49:20.226871','$2a$10$GI6bj6xb6Qbh5B25BoAjsuaxha733KZcCuFMVvFk5FcHjuL9p3S4W','CLIENT','2025-10-26 11:49:20.226904',12,'diana'),(13,'2025-10-27 20:12:44.433925','$2a$10$cv.kl1wQ72rYeiSpc5vKjO7oqiNwqhCnvf8yOuHorn41dlh8xfas.','ADMIN','2025-10-27 20:12:44.434010',14,'admin3'),(14,'2025-10-27 20:25:37.766159','$2a$10$IVBGapVDyNbdaQpC7OzlmuM0FX4DUxiDLC/swsIpXdUtlPMID1Ipq','CLIENT','2025-10-27 20:25:37.766174',15,'alina');
+/*!40000 ALTER TABLE `credentials` ENABLE KEYS */;
+UNLOCK TABLES;
+/*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
+
+/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
+/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
+/*!40014 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS */;
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+/*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
+
+-- Dump completed on 2025-10-27 20:37:09
