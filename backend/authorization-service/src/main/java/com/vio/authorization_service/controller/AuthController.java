@@ -2,6 +2,9 @@ package com.vio.authorization_service.controller;
 
 import com.vio.authorization_service.dto.*;
 import com.vio.authorization_service.service.AuthService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -14,10 +17,15 @@ import java.util.Map;
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
 @Slf4j
+@Tag(name = "Authentication", description = "User authentication and authorization endpoints")
 public class AuthController {
     private final AuthService authService;
 
     @PostMapping("/register")
+    @Operation(
+            summary = "Register new user",
+            description = "Create a new user account with credentials and profile information"
+    )
     public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest request) {
         log.info("Register endpoint called for user: {}", request.username());
         AuthResponse response = authService.register(request);
@@ -25,6 +33,10 @@ public class AuthController {
     }
 
     @PostMapping("/login")
+    @Operation(
+            summary = "User login",
+            description = "Authenticate user and return JWT token"
+    )
     public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
         log.info("Login endpoint called for user: {}", request.username());
         AuthResponse response = authService.login(request);
@@ -32,6 +44,11 @@ public class AuthController {
     }
 
     @PostMapping("/logout")
+    @SecurityRequirement(name = "bearer-jwt")
+    @Operation(
+            summary = "User logout",
+            description = "Invalidate the current JWT token"
+    )
     public ResponseEntity<Map<String, String>> logout(@RequestHeader("Authorization") String token) {
         log.info("Logout endpoint called");
         String jwtToken = token.startsWith("Bearer ") ? token.substring(7) : token;
@@ -40,6 +57,10 @@ public class AuthController {
     }
 
     @GetMapping("/validate")
+    @Operation(
+            summary = "Validate JWT token",
+            description = "Validate JWT token and return user information (ForwardAuth endpoint for Traefik)"
+    )
     public ResponseEntity<?> validateToken(@RequestHeader(value = "Authorization", required = false) String authorizationHeader) {
 
         log.info("ForwardAuth validation request received");
@@ -70,6 +91,11 @@ public class AuthController {
 
 
     @GetMapping("/user")
+    @SecurityRequirement(name = "bearer-jwt")
+    @Operation(
+            summary = "Get current user",
+            description = "Get user information from JWT token"
+    )
     public ResponseEntity<AuthResponse> getUserFromToken(@RequestHeader("Authorization") String token) {
         log.info("Get user from token request");
         String jwtToken = token.startsWith("Bearer ") ? token.substring(7) : token;

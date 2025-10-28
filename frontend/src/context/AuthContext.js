@@ -7,7 +7,7 @@ export const AuthProvider = ({ children }) => {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        // Check if user is logged in on mount
+        // Check if user is logged in
         const token = localStorage.getItem('token');
         const userData = localStorage.getItem('user');
 

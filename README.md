@@ -96,6 +96,15 @@ docker-compose up --build -d device-service
 docker-compose up --build -d frontend
 ```
 
+
+## API Documentation (Swagger)
+
+Each microservice provides API documentation via Swagger UI. Once all services are running, you can access the Swagger UI for each service:
+
+- **Authorization Service**: http://localhost:8083/swagger-ui/index.html
+- **User Service**: http://localhost:8081/swagger-ui/index.html
+- **Device Service**: http://localhost:8082/swagger-ui/index.html
+
 ## Accessing the Application
 
 Once all services are running:
@@ -358,9 +367,7 @@ curl -X POST http://localhost/api/auth/logout \
 
 ## Authors
 
-- [Violeta-Maria Hoza]
-- Technical University of Cluj-Napoca
-- Distributed Systems - Assignment 1
+- Violeta-Maria Hoza
 
 ## License
 

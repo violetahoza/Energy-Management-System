@@ -27,6 +27,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // Allow sync endpoints without authentication (internal service-to-service)
                         .requestMatchers("/api/devices/sync/**").permitAll()
+                        .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
                         // All other endpoints require authentication
                         .anyRequest().authenticated()
                 )
