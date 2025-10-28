@@ -1,8 +1,8 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
-import Login from './components/Login';
-import Register from './components/Register';
+import Login from './components/auth/Login';
+import Register from './components/auth/Register';
 import AdminDashboard from './pages/AdminDashboard';
 import ClientDashboard from './pages/ClientDashboard';
 import './styles/App.css';
@@ -40,16 +40,14 @@ function App() {
                     <Route path="/" element={<Navigate to="/login" replace />} />
                     <Route path="/login" element={<Login />} />
                     <Route path="/register" element={<Register />} />
-                    <Route
-                        path="/admin"
+                    <Route path="/admin"
                         element={
                             <ProtectedRoute allowedRoles={['ADMIN']}>
                                 <AdminDashboard />
                             </ProtectedRoute>
                         }
                     />
-                    <Route
-                        path="/client"
+                    <Route path="/client"
                         element={
                             <ProtectedRoute allowedRoles={['CLIENT']}>
                                 <ClientDashboard />

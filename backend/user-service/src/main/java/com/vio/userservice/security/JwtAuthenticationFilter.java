@@ -29,7 +29,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                     FilterChain filterChain) throws ServletException, IOException {
 
         try {
-            // Extract user information from headers set by Traefik
+            // Extract user informatioan from headers set by Traefik
             String userId = request.getHeader("X-User-Id");
             String username = request.getHeader("X-Username");
             String role = request.getHeader("X-User-Role");

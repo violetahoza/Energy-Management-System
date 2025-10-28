@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import '../styles/App.css';
+import { useAuth } from '../../context/AuthContext';
+import '../../styles/App.css';
+import Alert from "../common/Alert";
 
 const Login = () => {
     const navigate = useNavigate();
@@ -52,44 +53,17 @@ const Login = () => {
                     <p className="auth-subtitle">Sign in to your account</p>
                 </div>
 
-                {error && (
-                    <div className="alert alert-error">
-                        <div className="alert-content">
-                            <span className="alert-icon">⚠</span>
-                            <span>{error}</span>
-                        </div>
-                        <button onClick={() => setError('')} className="alert-close" aria-label="Close alert">✕</button>
-                    </div>
-                )}
+                {error && <Alert type="error" message={error} onClose={() => setError('')} />}
 
                 <form onSubmit={handleSubmit}>
                     <div className="form-group">
                         <label className="form-label" htmlFor="username"> Username </label>
-                        <input
-                            type="text"
-                            id="username"
-                            name="username"
-                            className="form-input"
-                            placeholder="Enter your username"
-                            value={formData.username}
-                            onChange={handleChange}
-                            required
-                            autoFocus
-                        />
+                        <input type="text" id="username" name="username" className="form-input" placeholder="Enter your username" value={formData.username} onChange={handleChange} required autoFocus/>
                     </div>
 
                     <div className="form-group">
                         <label className="form-label" htmlFor="password"> Password </label>
-                        <input
-                            type="password"
-                            id="password"
-                            name="password"
-                            className="form-input"
-                            placeholder="Enter your password"
-                            value={formData.password}
-                            onChange={handleChange}
-                            required
-                        />
+                        <input type="password" id="password" name="password" className="form-input" placeholder="Enter your password" value={formData.password} onChange={handleChange} required/>
                     </div>
 
                     <button type="submit" className="btn btn-primary" disabled={loading}>

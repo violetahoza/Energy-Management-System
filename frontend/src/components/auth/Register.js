@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import '../styles/App.css';
+import { useAuth } from '../../context/AuthContext';
+import '../../styles/App.css';
+import Alert from "../common/Alert";
 
 const Register = () => {
     const navigate = useNavigate();
@@ -76,130 +77,46 @@ const Register = () => {
                     <p className="auth-subtitle">Create your account</p>
                 </div>
 
-                {error && (
-                    <div className="alert alert-error">
-                        <span className="alert-icon">⚠</span>
-                        <span>{error}</span>
-                    </div>
-                )}
-
-                {success && (
-                    <div className="alert alert-success">
-                        <span className="alert-icon">✓</span>
-                        <span>{success}</span>
-                    </div>
-                )}
+                {error && <Alert type="error" message={error} onClose={() => setError('')} />}
+                {success && <Alert type="success" message={success} />}
 
                 <form onSubmit={handleSubmit}>
                     <div className="form-grid-2">
                         <div className="form-group">
                             <label className="form-label" htmlFor="firstName"> First Name * </label>
-                            <input
-                                type="text"
-                                id="firstName"
-                                name="firstName"
-                                className="form-input"
-                                placeholder="First name"
-                                value={formData.firstName}
-                                onChange={handleChange}
-                                required
-                                autoFocus
-                                minLength="2"
-                                maxLength="50"
-                            />
+                            <input type="text" id="firstName" name="firstName" className="form-input" placeholder="First name" value={formData.firstName} onChange={handleChange} required autoFocus minLength="2" maxLength="50"/>
                         </div>
 
                         <div className="form-group">
                             <label className="form-label" htmlFor="lastName"> Last Name * </label>
-                            <input
-                                type="text"
-                                id="lastName"
-                                name="lastName"
-                                className="form-input"
-                                placeholder="Last name"
-                                value={formData.lastName}
-                                onChange={handleChange}
-                                required
-                                minLength="2"
-                                maxLength="50"
-                            />
+                            <input type="text" id="lastName" name="lastName" className="form-input" placeholder="Last name" value={formData.lastName} onChange={handleChange} required minLength="2" maxLength="50"/>
                         </div>
                     </div>
 
                     <div className="form-group">
                         <label className="form-label" htmlFor="email"> Email * </label>
-                        <input
-                            type="email"
-                            id="email"
-                            name="email"
-                            className="form-input"
-                            placeholder="Enter your email"
-                            value={formData.email}
-                            onChange={handleChange}
-                            required
-                        />
+                        <input type="email" id="email" name="email" className="form-input" placeholder="Enter your email" value={formData.email} onChange={handleChange} required/>
                     </div>
 
                     <div className="form-group">
                         <label className="form-label" htmlFor="address"> Address * </label>
-                        <input
-                            type="text"
-                            id="address"
-                            name="address"
-                            className="form-input"
-                            placeholder="Enter your address"
-                            value={formData.address}
-                            onChange={handleChange}
-                            required
-                            maxLength="200"
-                        />
+                        <input type="text" id="address" name="address" className="form-input" placeholder="Enter your address" value={formData.address} onChange={handleChange} required maxLength="200"/>
                     </div>
 
                     <div className="form-group">
                         <label className="form-label" htmlFor="username"> Username * </label>
-                        <input
-                            type="text"
-                            id="username"
-                            name="username"
-                            className="form-input"
-                            placeholder="Choose a username"
-                            value={formData.username}
-                            onChange={handleChange}
-                            required
-                            minLength="3"
-                            maxLength="50"
-                        />
+                        <input type="text" id="username" name="username" className="form-input" placeholder="Choose a username" value={formData.username} onChange={handleChange} required minLength="3" maxLength="50"/>
                     </div>
 
                     <div className="form-grid-2">
                         <div className="form-group">
                             <label className="form-label" htmlFor="password"> Password * </label>
-                            <input
-                                type="password"
-                                id="password"
-                                name="password"
-                                className="form-input"
-                                placeholder="Password (min 6 chars)"
-                                value={formData.password}
-                                onChange={handleChange}
-                                required
-                                minLength="6"
-                            />
+                            <input type="password" id="password" name="password" className="form-input" placeholder="Password (min 6 chars)" value={formData.password} onChange={handleChange} required minLength="6"/>
                         </div>
 
                         <div className="form-group">
                             <label className="form-label" htmlFor="confirmPassword"> Confirm Password * </label>
-                            <input
-                                type="password"
-                                id="confirmPassword"
-                                name="confirmPassword"
-                                className="form-input"
-                                placeholder="Confirm password"
-                                value={formData.confirmPassword}
-                                onChange={handleChange}
-                                required
-                                minLength="6"
-                            />
+                            <input type="password" id="confirmPassword" name="confirmPassword" className="form-input" placeholder="Confirm password" value={formData.confirmPassword} onChange={handleChange} required minLength="6"/>
                         </div>
                     </div>
 
@@ -220,7 +137,7 @@ const Register = () => {
 
                 <div className="auth-footer">
                     Already have an account?{' '}
-                    <Link to="/login" className="auth-link"> Sign in </Link>
+                    <Link to="/frontend/src/components/auth/Login" className="auth-link"> Sign in </Link>
                 </div>
             </div>
         </div>

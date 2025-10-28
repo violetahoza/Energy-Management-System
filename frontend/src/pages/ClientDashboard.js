@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { deviceAPI } from '../services/api';
+import Alert from '../components/common/Alert';
+import LoadingSpinner from '../components/common/LoadingSpinner';
 import '../styles/App.css';
 
 const ClientDashboard = () => {
@@ -69,15 +71,7 @@ const ClientDashboard = () => {
                         <p className="page-description">View and monitor your assigned energy devices</p>
                     </div>
 
-                    {error && (
-                        <div className="alert alert-error">
-                            <div className="alert-content">
-                                <span className="alert-icon">⚠</span>
-                                <span>{error}</span>
-                            </div>
-                            <button onClick={() => setError('')} className="alert-close" aria-label="Close alert"> ✕ </button>
-                        </div>
-                    )}
+                    {error && <Alert type="error" message={error} onClose={() => setError('')}/>}
 
                     <div className="stats-grid">
                         <div className="card card-center">
@@ -99,9 +93,7 @@ const ClientDashboard = () => {
                         </div>
 
                         {loading ? (
-                            <div className="empty-state">
-                                <p className="empty-state-text">Loading your devices...</p>
-                            </div>
+                            <LoadingSpinner message="Loading your devices..."/>
                         ) : devices.length === 0 ? (
                             <div className="empty-state">
                                 <div className="empty-state-icon">📱</div>
@@ -120,13 +112,16 @@ const ClientDashboard = () => {
             </div>
 
             {selectedDevice && (
-                <DeviceDetailModal device={selectedDevice} onClose={() => setSelectedDevice(null)}/>
+                <DeviceDetailModal
+                    device={selectedDevice}
+                    onClose={() => setSelectedDevice(null)}
+                />
             )}
         </div>
     );
 };
 
-const DeviceCard = ({ device, onClick }) => {
+const DeviceCard = ({device, onClick}) => {
     return (
         <div className="card device-card" onClick={onClick}>
             <div className="device-card-header">
@@ -138,12 +133,8 @@ const DeviceCard = ({ device, onClick }) => {
             </div>
 
             <div className="device-card-consumption">
-                <div className="device-card-consumption-value">
-                    {device.maximumConsumption} kW
-                </div>
-                <div className="device-card-consumption-label">
-                    Maximum Consumption
-                </div>
+                <div className="device-card-consumption-value">{device.maximumConsumption} kW</div>
+                <div className="device-card-consumption-label">Maximum Consumption</div>
             </div>
 
             <p className="device-card-description">{device.description}</p>
@@ -179,7 +170,7 @@ const DeviceDetailModal = ({ device, onClose }) => {
                     </div>
                 </div>
                 <div className="modal-footer">
-                    <button className="btn btn-primary" onClick={onClose}> Close </button>
+                    <button className="btn btn-primary" onClick={onClose}>Close</button>
                 </div>
             </div>
         </div>

@@ -48,11 +48,9 @@ export const AuthProvider = ({ children }) => {
     };
 
     const register = async (userData) => {
-        // userData should contain: username, password, firstName, lastName, email, address
-        // Role is always CLIENT for regular registration
         const registerData = {
-            ...userData,
-            role: 'CLIENT'
+            ...userData,   // userData should contain: username, password, firstName, lastName, email, address
+            role: 'CLIENT' // role is always CLIENT for regular registration
         };
 
         const response = await fetch('http://localhost/api/auth/register', {

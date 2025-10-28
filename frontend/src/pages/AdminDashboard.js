@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { userAPI, deviceAPI } from '../services/api';
 import '../styles/App.css';
+import Alert from '../components/common/Alert';
+import LoadingSpinner from '../components/common/LoadingSpinner';
 
 const AdminDashboard = () => {
     const navigate = useNavigate();
@@ -114,12 +116,7 @@ const AdminDashboard = () => {
                         <p className="page-description">Manage users, devices, and system configuration</p>
                     </div>
 
-                    {error && (
-                        <div className="alert alert-error">
-                            <span className="alert-icon">⚠</span>
-                            <span>{error}</span>
-                        </div>
-                    )}
+                    {error && <Alert type="error" message={error} onClose={() => setError('')} />}
 
                     <div className="card">
                         <div className="card-header">
@@ -146,9 +143,7 @@ const AdminDashboard = () => {
                         </div>
 
                         {loading ? (
-                            <div className="empty-state">
-                                <p className="empty-state-text">Loading...</p>
-                            </div>
+                            <LoadingSpinner message={`Loading ${activeTab}...`} />
                         ) : activeTab === 'users' ? (
                             <UsersTable
                                 users={users}
@@ -374,12 +369,8 @@ const UserModal = ({ user, onClose, onSuccess }) => {
                     <button className="modal-close" onClick={onClose}>✕</button>
                 </div>
                 <div className="modal-body">
-                    {error && (
-                        <div className="alert alert-error">
-                            <span className="alert-icon">⚠</span>
-                            <span>{error}</span>
-                        </div>
-                    )}
+                    {error && <Alert type="error" message={error} />}
+
                     <form onSubmit={handleSubmit}>
                         <div className="form-group">
                             <label className="form-label">First Name *</label>
@@ -514,21 +505,15 @@ const DeviceModal = ({ device, users, onClose, onSuccess }) => {
         <div className="modal-overlay" onClick={onClose}>
             <div className="modal" onClick={(e) => e.stopPropagation()}>
                 <div className="modal-header">
-                    <h2 className="modal-title">
-                        {device ? 'Edit Device' : 'Create New Device'}
-                    </h2>
+                    <h2 className="modal-title">{device ? 'Edit Device' : 'Create New Device'}</h2>
                     <button className="modal-close" onClick={onClose}>✕</button>
                 </div>
                 <div className="modal-body">
-                    {error && (
-                        <div className="alert alert-error">
-                            <span className="alert-icon">⚠</span>
-                            <span>{error}</span>
-                        </div>
-                    )}
+                    {error && <Alert type="error" message={error} />}
+
                     <form onSubmit={handleSubmit}>
                         <div className="form-group">
-                            <label className="form-label">Device Name</label>
+                            <label className="form-label">Device Name *</label>
                             <input
                                 type="text"
                                 className="form-input"
@@ -538,7 +523,7 @@ const DeviceModal = ({ device, users, onClose, onSuccess }) => {
                             />
                         </div>
                         <div className="form-group">
-                            <label className="form-label">Description</label>
+                            <label className="form-label">Description *</label>
                             <input
                                 type="text"
                                 className="form-input"
@@ -548,7 +533,7 @@ const DeviceModal = ({ device, users, onClose, onSuccess }) => {
                             />
                         </div>
                         <div className="form-group">
-                            <label className="form-label">Location</label>
+                            <label className="form-label">Location *</label>
                             <input
                                 type="text"
                                 className="form-input"
@@ -558,7 +543,7 @@ const DeviceModal = ({ device, users, onClose, onSuccess }) => {
                             />
                         </div>
                         <div className="form-group">
-                            <label className="form-label">Maximum Consumption (kW)</label>
+                            <label className="form-label">Maximum Consumption (kW) *</label>
                             <input
                                 type="number"
                                 step="0.01"
@@ -574,19 +559,13 @@ const DeviceModal = ({ device, users, onClose, onSuccess }) => {
                             <select className="form-select" value={formData.userId} onChange={(e) => setFormData({ ...formData, userId: e.target.value })}>
                                 <option value="">Unassigned</option>
                                 {users.map(user => (
-                                    <option key={user.userId} value={user.userId}>
-                                        {user.firstName} {user.lastName} ({user.username})
-                                    </option>
+                                    <option key={user.userId} value={user.userId}>{user.firstName} {user.lastName} ({user.username})</option>
                                 ))}
                             </select>
                         </div>
                         <div className="modal-footer">
-                            <button type="button" className="btn btn-secondary" onClick={onClose}>
-                                Cancel
-                            </button>
-                            <button type="submit" className="btn btn-primary" disabled={loading}>
-                                {loading ? 'Saving...' : (device ? 'Update' : 'Create')}
-                            </button>
+                            <button type="button" className="btn btn-secondary" onClick={onClose}>Cancel</button>
+                            <button type="submit" className="btn btn-primary" disabled={loading}>{loading ? 'Saving...' : (device ? 'Update' : 'Create')}</button>
                         </div>
                     </form>
                 </div>
@@ -598,30 +577,38 @@ const DeviceModal = ({ device, users, onClose, onSuccess }) => {
 const AssignDeviceModal = ({ device, users, onClose, onAssign }) => {
     const [selectedUserId, setSelectedUserId] = useState(device.userId || '');
 
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        onAssign(device.deviceId, selectedUserId || null);
+    };
+
     return (
         <div className="modal-overlay" onClick={onClose}>
-            <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal modal-sm" onClick={(e) => e.stopPropagation()}>
                 <div className="modal-header">
                     <h2 className="modal-title">Assign Device</h2>
                     <button className="modal-close" onClick={onClose}>✕</button>
                 </div>
                 <div className="modal-body">
-                    <p className="modal-description">Assign "{device.name}" to a user</p>
-                    <div className="form-group">
-                        <label className="form-label">Select User</label>
-                        <select className="form-select" value={selectedUserId} onChange={(e) => setSelectedUserId(e.target.value)}>
-                            <option value="">Unassigned</option>
-                            {users.map(user => (
-                                <option key={user.userId} value={user.userId}>
-                                    {user.firstName} {user.lastName} ({user.username})
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-                </div>
-                <div className="modal-footer">
-                    <button className="btn btn-secondary" onClick={onClose}>Cancel</button>
-                    <button className="btn btn-primary" onClick={() => onAssign(device.deviceId, selectedUserId || null)}>Assign</button>
+                    <form onSubmit={handleSubmit}>
+                        <div className="form-group">
+                            <label className="form-label">Device: {device.name}</label>
+                            <p className="form-helper">Select a user to assign this device to, or leave unassigned.</p>
+                        </div>
+                        <div className="form-group">
+                            <label className="form-label">Assign to User</label>
+                            <select className="form-select" value={selectedUserId} onChange={(e) => setSelectedUserId(e.target.value)}>
+                                <option value="">Unassigned</option>
+                                {users.map(user => (
+                                    <option key={user.userId} value={user.userId}>{user.firstName} {user.lastName} ({user.username})</option>
+                                ))}
+                            </select>
+                        </div>
+                        <div className="modal-footer">
+                            <button type="button" className="btn btn-secondary" onClick={onClose}>Cancel</button>
+                            <button type="submit" className="btn btn-primary">Assign</button>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>
