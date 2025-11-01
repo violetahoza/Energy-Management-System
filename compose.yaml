@@ -8,10 +8,10 @@ services:
       - "--accesslog=true"
       - "--accesslog.filepath=/var/log/traefik/access.log"
       - "--log.level=INFO"
-      - "--entrypoints.web.address=:80"
+      - "--entrypoints.web.address=:80" # defines where Traefik listens for traffic
     ports:
-      - "80:80"
-      - "8080:8080"
+      - "80:80" # the entry point
+      - "8080:8080" # Traefik dashboard
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - traefik_logs:/var/log/traefik
@@ -22,13 +22,13 @@ services:
   credentials_db:
     image: mysql
     container_name: credentials_db
+    ports:
+      - "4000:3306"
     environment:
       MYSQL_DATABASE: credentials_db
       MYSQL_USER: credentials_user
       MYSQL_PASSWORD: credentials_pass
       MYSQL_ROOT_PASSWORD: root_password
-    ports:
-      - "4000:3306"
     volumes:
       - credentials_data:/var/lib/mysql
     networks:
@@ -43,13 +43,13 @@ services:
   users_db:
     image: mysql
     container_name: users_db
+    ports:
+      - "4001:3306"
     environment:
       MYSQL_DATABASE: users_db
       MYSQL_USER: users_user
       MYSQL_PASSWORD: users_pass
       MYSQL_ROOT_PASSWORD: root_password
-    ports:
-      - "4001:3306"
     volumes:
       - users_data:/var/lib/mysql
     networks:
@@ -64,13 +64,13 @@ services:
   devices_db:
     image: mysql
     container_name: devices_db
+    ports:
+      - "4002:3306"
     environment:
       MYSQL_DATABASE: devices_db
       MYSQL_USER: devices_user
       MYSQL_PASSWORD: devices_pass
       MYSQL_ROOT_PASSWORD: root_password
-    ports:
-      - "4002:3306"
     volumes:
       - devices_data:/var/lib/mysql
     networks:
@@ -111,16 +111,19 @@ services:
       - "traefik.http.routers.auth-protected.entrypoints=web"
       - "traefik.http.routers.auth-protected.priority=99"
       - "traefik.http.routers.auth-protected.middlewares=auth-middleware,cors-headers"
-      # Internal endpoints - no auth, higher priority
+      # Internal endpoints (service to service) - no auth, higher priority
       - "traefik.http.routers.auth-internal.rule=PathPrefix(`/api/auth/internal`)"
       - "traefik.http.routers.auth-internal.entrypoints=web"
       - "traefik.http.routers.auth-internal.priority=101"
       - "traefik.http.routers.auth-internal.middlewares=cors-headers"
+      # Service configuration
       - "traefik.http.services.auth.loadbalancer.server.port=8083"
-      - "traefik.http.middlewares.cors-headers.headers.accessControlAllowOriginList=http://localhost:3000,http://localhost:4200"
+      # CORS Middleware
+      - "traefik.http.middlewares.cors-headers.headers.accessControlAllowOriginList=http://localhost:3000"
       - "traefik.http.middlewares.cors-headers.headers.accessControlAllowMethods=GET,POST,PUT,PATCH,DELETE,OPTIONS"
       - "traefik.http.middlewares.cors-headers.headers.accessControlAllowHeaders=Content-Type,Authorization"
       - "traefik.http.middlewares.cors-headers.headers.accessControlAllowCredentials=true"
+      # Forward Auth Middleware
       - "traefik.http.middlewares.auth-middleware.forwardauth.address=http://authorization-service:8083/api/auth/validate"
       - "traefik.http.middlewares.auth-middleware.forwardauth.authRequestHeaders=Authorization"
       - "traefik.http.middlewares.auth-middleware.forwardauth.authResponseHeaders=X-User-Id,X-Username,X-User-Role"
@@ -190,8 +193,6 @@ services:
   frontend:
     build: ./frontend
     container_name: frontend
-    ports:
-      - "3000:3000"
     environment:
       - REACT_APP_API_URL=http://localhost
     networks:

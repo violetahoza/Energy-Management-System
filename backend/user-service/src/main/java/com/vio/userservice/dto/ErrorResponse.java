@@ -1,4 +1,4 @@
-package com.vio.userservice.handler;
+package com.vio.userservice.dto;
 
 import java.time.LocalDateTime;
 import java.util.Map;

@@ -1,0 +1,58 @@
+@startuml Energy Management System - Deployment Diagram
+skinparam componentStyle rectangle
+skinparam packagePadding 20
+skinparam componentPadding 10
+skinparam databasePadding 10
+skinparam nodesep 80
+skinparam ranksep 100
+
+actor "Browser" as browser
+
+package "Docker Host" {
+    
+
+    package "Internal Network\n(energy_management_network)" {
+    
+        component "Traefik\nReverse Proxy\n(port 80, 8080)" as traefik #LightBlue
+        
+        component "Frontend\n(React)\n(port 3000)" as frontend
+        
+        component "Authorization\nService\n(Spring Boot)\n(port 8083)" as auth
+        
+        component "User\nService\n(Spring Boot)\n(port 8081)" as user
+        
+        component "Device\nService\n(Spring Boot)\n(port 8082)" as device
+        
+        database "credentials_db\n(MySQL)\n(port 3306)" as creddb
+        
+        database "users_db\n(MySQL)\n(port 3306)" as usersdb
+        
+        database "devices_db\n(MySQL)\n(port 3306)" as devicesdb
+    }
+}
+
+' Public network flow
+browser --> traefik : HTTP :80\n(public)
+
+' Traefik routing to services
+traefik --> frontend : / 
+traefik --> auth : /api/auth/
+traefik --> user : /api/users/
+traefik --> device : /api/devices/
+
+' ForwardAuth validation
+traefik ..> auth : /api/auth/validate\n(ForwardAuth middleware)
+
+' Service to database connections
+auth --> creddb 
+user --> usersdb 
+device --> devicesdb 
+
+' Internal service-to-service communication
+user ..> auth : /api/auth/internal/credentials/\n(create/update/delete credentials)
+user ..> device : /api/devices/sync/unassign-user/userId\n(notify user deletion)
+device ..> user : /api/users/internal/validate/userId\n(verify user exists)
+auth ..> user : /api/users/internal/profile\n(profile creation)
+
+
+@enduml

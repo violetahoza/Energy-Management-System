@@ -74,10 +74,10 @@ public class AuthService {
         log.info("User login attempt: {}", request.username());
 
         Credential credential = credentialRepository.findByUsername(request.username())
-                .orElseThrow(() -> new InvalidCredentialsException("Invalid username"));
+                .orElseThrow(() -> new InvalidCredentialsException("Invalid username and/or password"));
 
         if (!passwordEncoder.matches(request.password(), credential.getPassword())) {
-            throw new InvalidCredentialsException("Invalid password");
+            throw new InvalidCredentialsException("Invalid username and/or password");
         }
 
         String token = jwtUtil.generateToken(

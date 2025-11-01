@@ -1,4 +1,4 @@
-package com.vio.device_service.handler;
+package com.vio.device_service.dto;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 
