@@ -39,7 +39,7 @@ public class CredentialController {
     @Operation(summary = "Create new user credentials", description = "Create authentication credentials for a user. This endpoint is called internally by User Service when a new user needs authentication credentials.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Credentials created successfully", content = @Content(schema = @Schema(implementation = CredentialResponse.class))),
-            @ApiResponse(responseCode = "400", description = "Invalid request data or validation failed", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "400", description = "Bad Request - Invalid input data", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
             @ApiResponse(responseCode = "409", description = "Username already exists or credentials already exist for this user", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
             @ApiResponse(responseCode = "500", description = "Internal server error during credential creation", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
@@ -53,12 +53,12 @@ public class CredentialController {
     @Operation(summary = "Update user credentials", description = "Update existing user credentials (username, password, or role). All fields are optional - only provided fields will be updated.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Credentials updated successfully", content = @Content(schema = @Schema(implementation = CredentialResponse.class))),
-            @ApiResponse(responseCode = "400", description = "Invalid request data", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "400", description = "Bad Request - Invalid input data", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
             @ApiResponse(responseCode = "404", description = "Credentials not found for the specified user ID", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
             @ApiResponse(responseCode = "409", description = "Username already exists", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
             @ApiResponse(responseCode = "500", description = "Internal server error during update", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
-    public ResponseEntity<CredentialResponse> updateCredential(@PathVariable Long userId, @Valid @RequestBody CredentialUpdateRequest request) {
+    public ResponseEntity<CredentialResponse> updateCredential(@PathVariable Long userId, @Valid @RequestBody CredentialRequest request) {
         log.info("Updating credentials for userId: {}", userId);
         CredentialResponse credential = credentialService.updateCredential(userId, request);
         return ResponseEntity.ok(credential);

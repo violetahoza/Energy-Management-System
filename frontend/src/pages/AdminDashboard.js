@@ -577,6 +577,8 @@ const DeviceModal = ({ device, users, onClose, onSuccess }) => {
 const AssignDeviceModal = ({ device, users, onClose, onAssign }) => {
     const [selectedUserId, setSelectedUserId] = useState(device.userId || '');
 
+    const clientUsers = users.filter(user => user.role === 'CLIENT');
+
     const handleSubmit = (e) => {
         e.preventDefault();
         onAssign(device.deviceId, selectedUserId || null);
@@ -593,13 +595,18 @@ const AssignDeviceModal = ({ device, users, onClose, onAssign }) => {
                     <form onSubmit={handleSubmit}>
                         <div className="form-group">
                             <label className="form-label">Device: {device.name}</label>
-                            <p className="form-helper">Select a user to assign this device to, or leave unassigned.</p>
+                            <p className="form-label">Select a client to assign this device to, or leave unassigned.</p>
+                            {clientUsers.length === 0 && (
+                                <div className="alert alert-warning">
+                                    No client users available for assignment. Only users with CLIENT role can be assigned devices.
+                                </div>
+                            )}
                         </div>
                         <div className="form-group">
                             <label className="form-label">Assign to User</label>
-                            <select className="form-select" value={selectedUserId} onChange={(e) => setSelectedUserId(e.target.value)}>
+                            <select className="form-select" value={selectedUserId} onChange={(e) => setSelectedUserId(e.target.value)} disabled={clientUsers.length === 0}>
                                 <option value="">Unassigned</option>
-                                {users.map(user => (
+                                {clientUsers.map(user => (
                                     <option key={user.userId} value={user.userId}>{user.firstName} {user.lastName} ({user.username})</option>
                                 ))}
                             </select>

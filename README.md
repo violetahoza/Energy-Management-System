@@ -46,7 +46,7 @@ Create a `.env` file in `backend/authorization-service/` directory with the foll
 ```env
 # JWT Configuration
 JWT_SECRET=your-secret-key-here-minimum-32-characters-long
-JWT_EXPIRATION=86400000
+JWT_EXPIRATION=3600000 # 1 hour in milliseconds
 ```
 
 **Important**: Replace `your-secret-key-here-minimum-32-characters-long` with a secure random string of at least 32 characters.
@@ -61,7 +61,7 @@ git clone <repository-url>
 cd <repository-folder>
 ```
 
-2. **Create the authorization service .env file** (as described in Configuration section)
+2. **Create the authorization service .env file** (as described in the Configuration section)
 
 3. **Build and start all services**:
 ```bash
@@ -76,34 +76,6 @@ This command will:
 - Configure Traefik reverse proxy
 
 4. **Wait for all services to be healthy** 
-
-
-### Rebuild Specific Services
-
-If you make changes to a specific service:
-
-```bash
-# Rebuild and restart authorization service
-docker-compose up --build -d authorization-service
-
-# Rebuild and restart user service
-docker-compose up --build -d user-service
-
-# Rebuild and restart device service
-docker-compose up --build -d device-service
-
-# Rebuild and restart frontend
-docker-compose up --build -d frontend
-```
-
-
-## API Documentation (Swagger)
-
-Each microservice provides API documentation via Swagger UI. Once all services are running, you can access the Swagger UI for each service:
-
-- **Authorization Service**: http://localhost:8083/swagger-ui/index.html
-- **User Service**: http://localhost:8081/swagger-ui/index.html
-- **Device Service**: http://localhost:8082/swagger-ui/index.html
 
 ## Accessing the Application
 
@@ -156,17 +128,6 @@ DELETE http://localhost/api/devices/{id}          - Delete device (ADMIN only)
 PATCH  http://localhost/api/devices/{id}/assign   - Assign device to user (ADMIN only)
 ```
 
-## Authentication Flow
-
-1. **Register/Login**: User registers or logs in via frontend
-2. **Token Generation**: Authorization service generates JWT token
-3. **Token Storage**: Frontend stores token in localStorage
-4. **Authenticated Requests**: Frontend includes token in Authorization header
-5. **Token Validation**: Traefik intercepts requests and validates token via ForwardAuth
-6. **User Headers**: Valid tokens result in user info headers (X-User-Id, X-Username, X-User-Role)
-7. **Service Authorization**: Backend services read headers and enforce permissions
-
-
 ## Stopping the Application
 
 ### Stop all services (containers remain):
@@ -183,6 +144,35 @@ docker-compose down
 ```bash
 docker-compose down -v
 ```
+
+### Rebuild Specific Services
+
+If you make changes to a specific service:
+
+```bash
+# Rebuild and restart authorization service
+docker-compose up --build -d authorization-service
+
+# Rebuild and restart user service
+docker-compose up --build -d user-service
+
+# Rebuild and restart device service
+docker-compose up --build -d device-service
+
+# Rebuild and restart frontend
+docker-compose up --build -d frontend
+```
+
+## Authentication Flow
+
+1. **Register/Login**: User registers or logs in via frontend
+2. **Token Generation**: Authorization service generates JWT token
+3. **Token Storage**: Frontend stores token in localStorage
+4. **Authenticated Requests**: Frontend includes token in Authorization header
+5. **Token Validation**: Traefik intercepts requests and validates token via ForwardAuth
+6. **User Headers**: Valid tokens result in user info headers (X-User-Id, X-Username, X-User-Role)
+7. **Service Authorization**: Backend services read headers and enforce permissions
+
 
 ## Testing the Application
 
@@ -364,6 +354,14 @@ curl -X DELETE http://localhost/api/users/2 \
 curl -X POST http://localhost/api/auth/logout \
   -H "Authorization: Bearer $TOKEN"
 ```
+
+## API Documentation (Swagger)
+
+Each microservice provides API documentation via Swagger UI. Once all services are running, you can access the Swagger UI for each service:
+
+- **Authorization Service**: http://localhost:8083/swagger-ui/index.html
+- **User Service**: http://localhost:8081/swagger-ui/index.html
+- **Device Service**: http://localhost:8082/swagger-ui/index.html
 
 ## Authors
 

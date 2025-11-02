@@ -153,14 +153,7 @@ public class AuthService {
             String role = jwtUtil.extractRole(jwtToken);
 
             log.info("Token validated successfully for user: {} (role: {})", username, role);
-
-            return new AuthResponse(
-                    jwtToken,
-                    userId,
-                    username,
-                    role,
-                    "Token is valid"
-            );
+            return new AuthResponse(jwtToken, userId, username, role, "Token is valid");
         } catch (Exception e) {
             log.error("Error extracting user info from token: {}", e.getMessage());
             throw new InvalidTokenException("Failed to extract user information from token");

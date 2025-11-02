@@ -29,6 +29,8 @@ public class CredentialService {
     public CredentialResponse createCredential(CredentialRequest request) {
         log.info("Creating credentials for userId: {}", request.userId());
 
+        validateCredentialCreationRequest(request);
+
         if (credentialRepository.existsByUsername(request.username())) {
             throw new UsernameAlreadyExistsException(request.username());
         }
@@ -58,7 +60,7 @@ public class CredentialService {
     }
 
     @Transactional
-    public CredentialResponse updateCredential(Long userId, CredentialUpdateRequest request) {
+    public CredentialResponse updateCredential(Long userId, CredentialRequest request) {
         log.info("Updating credentials for userId: {}", userId);
 
         Credential credential = credentialRepository.findByUserId(userId).orElseThrow(() -> new CredentialNotFoundException(userId));
@@ -119,6 +121,28 @@ public class CredentialService {
         } catch (Exception e) {
             log.error("Error checking username existence: {}", username, e);
             throw new RuntimeException("Failed to check username: " + e.getMessage(), e);
+        }
+    }
+
+    private void validateCredentialCreationRequest(CredentialRequest request) {
+        if (request.userId() == null) {
+            throw new InvalidCredentialRequestException("User ID is required");
+        }
+        if (request.username() == null || request.username().isEmpty()) {
+            throw new InvalidCredentialRequestException("Username is required");
+        }
+        if (request.password() == null || request.password().isEmpty()) {
+            throw new InvalidCredentialRequestException("Password is required");
+        }
+        if (request.role() == null || request.role().isEmpty()) {
+            throw new InvalidCredentialRequestException("Role is required");
+        }
+        validateRole(request.role());
+    }
+
+    private void validateRole(String role) {
+        if (!role.equalsIgnoreCase("CLIENT") && !role.equalsIgnoreCase("ADMIN")) {
+            throw new InvalidCredentialRequestException("Role must be either CLIENT or ADMIN");
         }
     }
 

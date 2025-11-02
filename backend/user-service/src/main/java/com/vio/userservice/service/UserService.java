@@ -52,6 +52,8 @@ public class UserService {
     public UserResponse createUser(UserRequest request) {
         log.info("Creating new user: {}", request.username());
 
+        validateUserCreationRequest(request);
+
         if (userRepository.existsByEmail(request.email())) {
             throw new UserEmailAlreadyExistsException(request.email());
         }
@@ -84,8 +86,8 @@ public class UserService {
     }
 
     @Transactional
-    public UserResponse updateUser(Long userId, UserUpdateRequest request) {
-        log.info("Updating user: {}", userId);
+    public UserResponse updateUser(Long userId, UserRequest request) {
+        log.info("Updating user wit id: {}", userId);
 
         User user = userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException(userId));
 
@@ -153,15 +155,42 @@ public class UserService {
         log.info("User deleted successfully: {}", userId);
     }
 
-    private boolean hasProfileUpdates(UserUpdateRequest request) {
+    private void validateUserCreationRequest(UserRequest request) {
+        if (request.username() == null || request.username().isEmpty()) {
+            throw new InvalidUserCreationException("Username is required");
+        }
+        if (request.password() == null || request.password().isEmpty()) {
+            throw new InvalidUserCreationException("Password is required");
+        }
+        if (request.role() == null || request.role().isEmpty()) {
+            throw new InvalidUserCreationException("Role is required");
+        }
+        if (!request.role().equalsIgnoreCase("CLIENT") && !request.role().equalsIgnoreCase("ADMIN")) {
+            throw new InvalidUserCreationException("Role must be either CLIENT or ADMIN");
+        }
+        if (request.email() == null || request.email().isEmpty()) {
+            throw new InvalidUserCreationException("Email is required");
+        }
+        if (request.firstName() == null || request.firstName().isEmpty()) {
+            throw new InvalidUserCreationException("First name is required");
+        }
+        if (request.lastName() == null || request.lastName().isEmpty()) {
+            throw new InvalidUserCreationException("Last name is required");
+        }
+        if (request.address() == null || request.address().isEmpty()) {
+            throw new InvalidUserCreationException("Address is required");
+        }
+    }
+
+    private boolean hasProfileUpdates(UserRequest request) {
         return request.firstName() != null || request.lastName() != null || request.email() != null || request.address() != null;
     }
 
-    private boolean hasCredentialUpdates(UserUpdateRequest request) {
+    private boolean hasCredentialUpdates(UserRequest request) {
         return request.username() != null || request.password() != null || request.role() != null;
     }
 
-    private void updateUserProfile(User user, UserUpdateRequest request) {
+    private void updateUserProfile(User user, UserRequest request) {
         if (request.firstName() != null) {
             user.setFirstName(request.firstName());
         }
@@ -221,7 +250,7 @@ public class UserService {
         }
     }
 
-    private void updateCredentialsInAuthService(Long userId, UserUpdateRequest request) {
+    private void updateCredentialsInAuthService(Long userId, UserRequest request) {
         try {
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);

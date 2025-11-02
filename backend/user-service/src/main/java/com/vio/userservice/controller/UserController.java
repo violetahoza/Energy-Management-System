@@ -59,7 +59,7 @@ public class UserController {
     @Operation(summary = "Create user", description = "Only admins can create new users")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "User created successfully", content = @Content(mediaType = "application/json", schema = @Schema(implementation = UserResponse.class))),
-            @ApiResponse(responseCode = "400", description = "Bad Request - Validation failed", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "400", description = "Bad Request - Invalid input data", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))),
             @ApiResponse(responseCode = "401", description = "Unauthorized - Missing or invalid JWT token", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))),
             @ApiResponse(responseCode = "403", description = "Forbidden - User does not have ADMIN role", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))),
             @ApiResponse(responseCode = "409", description = "Conflict - Email or username already exists", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))),
@@ -81,7 +81,7 @@ public class UserController {
             @ApiResponse(responseCode = "404", description = "User not found", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))),
             @ApiResponse(responseCode = "409", description = "Conflict - Email or username already exists", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class)))
     })
-    public ResponseEntity<UserResponse> updateUser(@PathVariable Long userId, @Valid @RequestBody UserUpdateRequest request) {
+    public ResponseEntity<UserResponse> updateUser(@PathVariable Long userId, @Valid @RequestBody UserRequest request) {
         UserResponse user = userService.updateUser(userId, request);
         return ResponseEntity.ok(user);
     }
@@ -142,5 +142,22 @@ public class UserController {
         log.info("Internal validation request for userId: {}", userId);
         userService.getUserById(userId);
         return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/internal/role/{userId}")
+    @Operation(summary = "Get user role (internal)", description = "Internal service endpoint to get a user's role by userId. Used by other services for role-based validation.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "User exists - Returns user role"),
+            @ApiResponse(responseCode = "404", description = "User not found", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class)))
+    })
+    public ResponseEntity<Map<String, String>> getUserRole(@PathVariable Long userId) {
+        log.info("Internal role request for userId: {}", userId);
+        UserResponse user = userService.getUserById(userId);
+
+        Map<String, String> response = new HashMap<>();
+        response.put("userId", String.valueOf(userId));
+        response.put("role", user.role());
+
+        return ResponseEntity.ok(response);
     }
 }
