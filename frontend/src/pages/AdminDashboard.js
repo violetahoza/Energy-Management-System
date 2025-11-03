@@ -476,6 +476,8 @@ const DeviceModal = ({ device, users, onClose, onSuccess }) => {
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
 
+    const clientUsers = users.filter(user => user.role === 'CLIENT');
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
@@ -558,8 +560,10 @@ const DeviceModal = ({ device, users, onClose, onSuccess }) => {
                             <label className="form-label">Assign to User (Optional)</label>
                             <select className="form-select" value={formData.userId} onChange={(e) => setFormData({ ...formData, userId: e.target.value })}>
                                 <option value="">Unassigned</option>
-                                {users.map(user => (
-                                    <option key={user.userId} value={user.userId}>{user.firstName} {user.lastName} ({user.username})</option>
+                                {clientUsers.map(user => (
+                                    <option key={user.userId} value={user.userId}>
+                                        {user.firstName} {user.lastName} ({user.username})
+                                    </option>
                                 ))}
                             </select>
                         </div>
