@@ -48,10 +48,10 @@ public class DeviceController {
     @Operation(summary = "Get device by ID", description = "Retrieve a specific device by its ID. Admins can access any device, clients can only access devices assigned to them.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Successfully retrieved device", content = @Content(mediaType = "application/json", schema = @Schema(implementation = DeviceResponse.class))),
-            @ApiResponse(responseCode = "400", description = "Bad Request - Invalid device ID format", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))),
             @ApiResponse(responseCode = "401", description = "Unauthorized - Missing or invalid JWT token", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))),
             @ApiResponse(responseCode = "403", description = "Forbidden - Client attempting to access device not assigned to them", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))),
-            @ApiResponse(responseCode = "404", description = "Device not found", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class)))
+            @ApiResponse(responseCode = "404", description = "Device not found", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class)))
     })
     public ResponseEntity<DeviceResponse> findById(@PathVariable Long deviceId) {
         log.info("Fetching device by id: {}", deviceId);
@@ -64,10 +64,10 @@ public class DeviceController {
     @Operation(summary = "Get devices by user ID", description = "Retrieve all devices assigned to a specific user. Administrators can view devices for any user. Clients can only view their own devices.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Successfully retrieved devices for user", content = @Content(mediaType = "application/json", schema = @Schema(implementation = DeviceResponse.class))),
-            @ApiResponse(responseCode = "400", description = "Bad Request - Invalid user ID format", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))),
             @ApiResponse(responseCode = "401", description = "Unauthorized - Missing or invalid JWT token", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))),
             @ApiResponse(responseCode = "403", description = "Forbidden - Client attempting to view another user's devices", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))),
             @ApiResponse(responseCode = "404", description = "User not found", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))),
             @ApiResponse(responseCode = "503", description = "Service Unavailable - Cannot communicate with User Service", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class)))
     })
     public ResponseEntity<List<DeviceResponse>> findByUserId(@PathVariable Long userId) {
@@ -98,7 +98,7 @@ public class DeviceController {
     @Operation(summary = "Update device", description = "Update an existing device. Only administrators can update devices. All fields in the request body will replace existing values.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Device updated successfully", content = @Content(mediaType = "application/json", schema = @Schema(implementation = DeviceResponse.class))),
-            @ApiResponse(responseCode = "400", description = "Bad Request - Validation failed or invalid data", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "400", description = "Bad Request -  Invalid data", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))),
             @ApiResponse(responseCode = "401", description = "Unauthorized - Missing or invalid JWT token", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))),
             @ApiResponse(responseCode = "403", description = "Forbidden - User does not have ADMIN role", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))),
             @ApiResponse(responseCode = "404", description = "Device not found", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class)))
@@ -114,11 +114,9 @@ public class DeviceController {
     @Operation(summary = "Assign device to user", description = "Assign a device to a specific user. Only administrators can perform device assignments. The device must exist and not be currently assigned to another user.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Device assigned to user successfully", content = @Content(mediaType = "application/json", schema = @Schema(implementation = DeviceResponse.class))),
-            @ApiResponse(responseCode = "400", description = "Bad Request - Invalid device or user ID", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))),
             @ApiResponse(responseCode = "401", description = "Unauthorized - Missing or invalid JWT token", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))),
             @ApiResponse(responseCode = "403", description = "Forbidden - User does not have ADMIN role", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))),
             @ApiResponse(responseCode = "404", description = "Device or user not found", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))),
-            @ApiResponse(responseCode = "409", description = "Conflict - Device already assigned to another user", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))),
             @ApiResponse(responseCode = "503", description = "Service Unavailable - Cannot communicate with User Service", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class)))
     })
     public ResponseEntity<DeviceResponse> assignDeviceToUser(@PathVariable Long deviceId, @PathVariable Long userId) {
@@ -132,7 +130,6 @@ public class DeviceController {
     @Operation(summary = "Unassign device from user", description = "Remove the current user assignment from a device, making it unassigned. Only administrators can unassign devices.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Device unassigned successfully", content = @Content(mediaType = "application/json", schema = @Schema(implementation = DeviceResponse.class))),
-            @ApiResponse(responseCode = "400", description = "Bad Request - Device is not currently assigned", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))),
             @ApiResponse(responseCode = "401", description = "Unauthorized - Missing or invalid JWT token", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))),
             @ApiResponse(responseCode = "403", description = "Forbidden - User does not have ADMIN role", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))),
             @ApiResponse(responseCode = "404", description = "Device not found", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class)))
@@ -148,10 +145,10 @@ public class DeviceController {
     @Operation(summary = "Delete device", description = "Permanently delete a device from the system. Only administrators can delete devices. This action cannot be undone.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "204", description = "Device deleted successfully - No content returned"),
-            @ApiResponse(responseCode = "400", description = "Bad Request - Invalid device ID format", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))),
             @ApiResponse(responseCode = "401", description = "Unauthorized - Missing or invalid JWT token", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))),
             @ApiResponse(responseCode = "403", description = "Forbidden - User does not have ADMIN role", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))),
-            @ApiResponse(responseCode = "404", description = "Device not found", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class)))
+            @ApiResponse(responseCode = "404", description = "Device not found", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class)))
     })
     public ResponseEntity<Void> deleteById(@PathVariable Long deviceId) {
         log.info("Admin deleting device: {}", deviceId);
@@ -168,7 +165,6 @@ public class DeviceController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Devices successfully unassigned from the deleted user"),
             @ApiResponse(responseCode = "400", description = "Invalid user ID provided", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
-            @ApiResponse(responseCode = "403", description = "Access denied - insufficient permissions to access this internal endpoint", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
             @ApiResponse(responseCode = "500", description = "Internal server error occurred while unassigning devices", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
     public ResponseEntity<Void> unassignUserDevices(@PathVariable Long userId) {

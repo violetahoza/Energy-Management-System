@@ -289,8 +289,8 @@ public class DeviceService {
             log.debug("User {} validation successful: has CLIENT role", userId);
         } catch (HttpClientErrorException.NotFound e) {
             log.error("User not found with id: {}", userId);
-            throw new UserServiceException("User with id " + userId + " does not exist");
-        } catch (UserServiceException e) {
+            throw new UserNotFoundException("User with id " + userId + " does not exist");
+        } catch (UserServiceException | UserNotFoundException  e) {
             throw e;
         } catch (Exception e) {
             log.error("Error validating user role for user {}: {}", userId, e.getMessage());
