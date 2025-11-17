@@ -103,6 +103,26 @@ services:
       timeout: 5s
       retries: 5
 
+  rabbitmq:
+    image: rabbitmq:3.13-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"   # AMQP port
+      - "15672:15672" # management UI
+    environment:
+      RABBITMQ_DEFAULT_USER: rabbitmq_user
+      RABBITMQ_DEFAULT_PASS: rabbitmq_pass
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - energy_management_network
+    restart: always
+    healthcheck:
+      test: [ "CMD", "rabbitmq-diagnostics", "-q", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   authorization-service:
     build: ./backend/authorization-service
     container_name: authorization-service
@@ -221,13 +241,22 @@ services:
       DB_USER: monitoring_user
       DB_PASS: monitoring_pass
       DB_NAME: monitoring_db
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: rabbitmq_user
+      RABBITMQ_PASS: rabbitmq_pass
     depends_on:
       monitoring_db:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
     networks:
       - energy_management_network
     labels:
       - "traefik.enable=true"
+      - "traefik.http.routers.monitoring.rule=PathPrefix(`/api/monitoring`)"
+      - "traefik.http.routers.monitoring.entrypoints=web"
+      - "traefik.http.routers.monitoring.priority=50"
       - "traefik.http.routers.monitoring.middlewares=auth-middleware,cors-headers"
       - "traefik.http.services.monitoring.loadbalancer.server.port=8084"
     restart: always
@@ -252,6 +281,7 @@ volumes:
   users_data:
   devices_data:
   monitoring_data:
+  rabbitmq_data:
   traefik_logs:
 
 networks:
