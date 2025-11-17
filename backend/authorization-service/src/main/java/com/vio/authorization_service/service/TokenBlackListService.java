@@ -12,7 +12,7 @@ import java.util.concurrent.ConcurrentHashMap;
 @Slf4j
 @RequiredArgsConstructor
 public class TokenBlackListService {
-    private final ConcurrentHashMap<String, Date> blacklistedTokens = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, Date> blacklistedTokens = new ConcurrentHashMap<>(); // store tokens with their expiration dates
 
     public void blacklistToken(String token, Date expirationDate) {
         blacklistedTokens.put(token, expirationDate);

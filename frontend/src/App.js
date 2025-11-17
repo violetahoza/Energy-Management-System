@@ -21,25 +21,31 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
         );
     }
 
+    // check if user is authenticated
     if (!user) {
         return <Navigate to="/login" replace />;
     }
 
+    // check if user has the required role
     if (allowedRoles && !allowedRoles.includes(user.role)) {
         return <Navigate to="/login" replace />;
     }
 
+    // if the checks pass, render the protected component
     return children;
 };
 
 function App() {
     return (
+        // the AuthProvider makes auth state available throughout the app
         <AuthProvider>
             <Router>
                 <Routes>
+                    {/*public routes*/}
                     <Route path="/" element={<Navigate to="/login" replace />} />
                     <Route path="/login" element={<Login />} />
                     <Route path="/register" element={<Register />} />
+                    {/*protected routes*/}
                     <Route path="/admin"
                         element={
                             <ProtectedRoute allowedRoles={['ADMIN']}>
@@ -54,6 +60,7 @@ function App() {
                             </ProtectedRoute>
                         }
                     />
+                    {/*catch-all route to redirect unknown paths to login*/}
                     <Route path="*" element={<Navigate to="/login" replace />} />
                 </Routes>
             </Router>

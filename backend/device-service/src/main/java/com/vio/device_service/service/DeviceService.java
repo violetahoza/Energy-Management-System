@@ -39,9 +39,7 @@ public class DeviceService {
     public DeviceResponse findById(Long deviceId) {
         log.info("Fetching device with id: {}", deviceId);
         validateDeviceId(deviceId);
-
-        Device device = deviceRepository.findById(deviceId)
-                .orElseThrow(() -> new DeviceNotFoundException(deviceId));
+        Device device = deviceRepository.findById(deviceId).orElseThrow(() -> new DeviceNotFoundException(deviceId));
         return mapToResponse(device);
     }
 
@@ -64,7 +62,6 @@ public class DeviceService {
     @Transactional
     public DeviceResponse createDevice(DeviceRequest request) {
         log.info("Creating new device with name: {}", request.name());
-
         validateDeviceCreationRequest(request);
 
         if (request.userId() != null) {
@@ -100,8 +97,7 @@ public class DeviceService {
         validateDeviceId(deviceId);
 
         try {
-            Device device = deviceRepository.findById(deviceId)
-                    .orElseThrow(() -> new DeviceNotFoundException(deviceId));
+            Device device = deviceRepository.findById(deviceId).orElseThrow(() -> new DeviceNotFoundException(deviceId));
 
             boolean updated = false;
 
@@ -165,10 +161,8 @@ public class DeviceService {
 
         try {
             Device device = deviceRepository.findById(deviceId).orElseThrow(() -> new DeviceNotFoundException(deviceId));
-
             device.setUserId(userId);
             device.setUpdatedAt(LocalDateTime.now());
-
             Device updatedDevice = deviceRepository.save(device);
             log.info("Device assigned successfully");
             return mapToResponse(updatedDevice);
@@ -187,10 +181,8 @@ public class DeviceService {
 
         try {
             Device device = deviceRepository.findById(deviceId).orElseThrow(() -> new DeviceNotFoundException(deviceId));
-
             device.setUserId(null);
             device.setUpdatedAt(LocalDateTime.now());
-
             Device updatedDevice = deviceRepository.save(device);
             log.info("Device unassigned successfully");
             return mapToResponse(updatedDevice);

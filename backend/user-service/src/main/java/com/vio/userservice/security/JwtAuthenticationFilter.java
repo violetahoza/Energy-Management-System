@@ -29,7 +29,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                     FilterChain filterChain) throws ServletException, IOException {
 
         try {
-            // Extract user informatioan from headers set by Traefik
+            // Extract user information from headers set by Traefik
             String userId = request.getHeader("X-User-Id");
             String username = request.getHeader("X-Username");
             String role = request.getHeader("X-User-Role");
@@ -51,6 +51,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
                 authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
+                // Set the authentication in the security context
                 SecurityContextHolder.getContext().setAuthentication(authentication);
                 log.info("Security context set successfully for user: {} with role: ROLE_{}", username, role);
             } else {

@@ -22,9 +22,7 @@ import java.util.Map;
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(AccessDeniedException.class)
-    public ResponseEntity<ErrorResponse> handleAccessDeniedException(
-            AccessDeniedException ex,
-            WebRequest request) {
+    public ResponseEntity<ErrorResponse> handleAccessDeniedException(AccessDeniedException ex, WebRequest request) {
         log.warn("Access denied: {}", ex.getMessage());
 
         ErrorResponse errorResponse = new ErrorResponse(
@@ -39,9 +37,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(DeviceNotFoundException.class)
-    public ResponseEntity<ErrorResponse> handleDeviceNotFoundException(
-            DeviceNotFoundException ex,
-            WebRequest request) {
+    public ResponseEntity<ErrorResponse> handleDeviceNotFoundException(DeviceNotFoundException ex, WebRequest request) {
         log.error("Device not found: {}", ex.getMessage());
 
         ErrorResponse error = new ErrorResponse(
@@ -56,9 +52,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(UserNotFoundException.class)
-    public ResponseEntity<ErrorResponse> handleUserNotFoundException(
-            UserNotFoundException ex,
-            WebRequest request) {
+    public ResponseEntity<ErrorResponse> handleUserNotFoundException(UserNotFoundException ex, WebRequest request) {
         log.error("User not found: {}", ex.getMessage());
 
         ErrorResponse error = new ErrorResponse(
@@ -73,9 +67,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(UserServiceException.class)
-    public ResponseEntity<ErrorResponse> handleUserServiceException(
-            UserServiceException ex,
-            WebRequest request) {
+    public ResponseEntity<ErrorResponse> handleUserServiceException(UserServiceException ex, WebRequest request) {
         log.error("User service error: {}", ex.getMessage());
 
         ErrorResponse error = new ErrorResponse(
@@ -90,9 +82,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ValidationErrorResponse> handleValidationExceptions(
-            MethodArgumentNotValidException ex,
-            WebRequest request) {
+    public ResponseEntity<ValidationErrorResponse> handleValidationExceptions(MethodArgumentNotValidException ex, WebRequest request) {
         log.error("Validation failed: {}", ex.getMessage());
 
         Map<String, String> fieldErrors = new HashMap<>();
@@ -115,9 +105,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(ResourceAccessException.class)
-    public ResponseEntity<ErrorResponse> handleResourceAccessException(
-            ResourceAccessException ex,
-            WebRequest request) {
+    public ResponseEntity<ErrorResponse> handleResourceAccessException(ResourceAccessException ex, WebRequest request) {
         log.error("Service communication error: {}", ex.getMessage());
 
         ErrorResponse error = new ErrorResponse(
@@ -132,9 +120,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(HttpClientErrorException.class)
-    public ResponseEntity<ErrorResponse> handleHttpClientErrorException(
-            HttpClientErrorException ex,
-            WebRequest request) {
+    public ResponseEntity<ErrorResponse> handleHttpClientErrorException(HttpClientErrorException ex, WebRequest request) {
         log.error("HTTP client error: {} - {}", ex.getStatusCode(), ex.getMessage());
 
         String message = ex.getStatusCode() == HttpStatus.NOT_FOUND
@@ -153,9 +139,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<ErrorResponse> handleIllegalArgumentException(
-            IllegalArgumentException ex,
-            WebRequest request) {
+    public ResponseEntity<ErrorResponse> handleIllegalArgumentException(IllegalArgumentException ex, WebRequest request) {
         log.error("Invalid argument: {}", ex.getMessage());
 
         ErrorResponse error = new ErrorResponse(
@@ -170,9 +154,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ErrorResponse> handleGlobalException(
-            Exception ex,
-            WebRequest request) {
+    public ResponseEntity<ErrorResponse> handleGlobalException(Exception ex, WebRequest request) {
         log.error("Unexpected error occurred: ", ex);
 
         ErrorResponse error = new ErrorResponse(

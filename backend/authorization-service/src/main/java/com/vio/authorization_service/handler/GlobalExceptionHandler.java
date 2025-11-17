@@ -19,9 +19,7 @@ import java.util.Map;
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(InvalidCredentialsException.class)
-    public ResponseEntity<ErrorResponse> handleInvalidCredentials(
-            InvalidCredentialsException ex,
-            HttpServletRequest request) {
+    public ResponseEntity<ErrorResponse> handleInvalidCredentials(InvalidCredentialsException ex, HttpServletRequest request) {
         log.warn("Invalid credentials attempt: {}", ex.getMessage());
 
         ErrorResponse errorResponse = new ErrorResponse(
@@ -36,9 +34,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(InvalidCredentialRequestException.class)
-    public ResponseEntity<ErrorResponse> handleInvalidCredentialRequest(
-            InvalidCredentialRequestException ex,
-            HttpServletRequest request) {
+    public ResponseEntity<ErrorResponse> handleInvalidCredentialRequest(InvalidCredentialRequestException ex, HttpServletRequest request) {
         log.error("Invalid credential request: {}", ex.getMessage());
 
         ErrorResponse errorResponse = new ErrorResponse(
@@ -53,9 +49,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(UsernameAlreadyExistsException.class)
-    public ResponseEntity<ErrorResponse> handleUsernameAlreadyExists(
-            UsernameAlreadyExistsException ex,
-            HttpServletRequest request) {
+    public ResponseEntity<ErrorResponse> handleUsernameAlreadyExists(UsernameAlreadyExistsException ex, HttpServletRequest request) {
         log.warn("Username already exists: {}", ex.getMessage());
 
         ErrorResponse errorResponse = new ErrorResponse(
@@ -70,9 +64,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(InvalidTokenException.class)
-    public ResponseEntity<ErrorResponse> handleInvalidToken(
-            InvalidTokenException ex,
-            HttpServletRequest request) {
+    public ResponseEntity<ErrorResponse> handleInvalidToken(InvalidTokenException ex, HttpServletRequest request) {
         log.warn("Invalid token: {}", ex.getMessage());
 
         ErrorResponse errorResponse = new ErrorResponse(
@@ -87,9 +79,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(TokenBlacklistedException.class)
-    public ResponseEntity<ErrorResponse> handleTokenBlacklisted(
-            TokenBlacklistedException ex,
-            HttpServletRequest request) {
+    public ResponseEntity<ErrorResponse> handleTokenBlacklisted(TokenBlacklistedException ex, HttpServletRequest request) {
         log.warn("Blacklisted token used: {}", ex.getMessage());
 
         ErrorResponse errorResponse = new ErrorResponse(
@@ -104,9 +94,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(CredentialNotFoundException.class)
-    public ResponseEntity<ErrorResponse> handleCredentialNotFound(
-            CredentialNotFoundException ex,
-            HttpServletRequest request) {
+    public ResponseEntity<ErrorResponse> handleCredentialNotFound(CredentialNotFoundException ex, HttpServletRequest request) {
         log.warn("Credential not found: {}", ex.getMessage());
 
         ErrorResponse errorResponse = new ErrorResponse(
@@ -121,9 +109,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(CredentialAlreadyExistsException.class)
-    public ResponseEntity<ErrorResponse> handleCredentialAlreadyExists(
-            CredentialAlreadyExistsException ex,
-            HttpServletRequest request) {
+    public ResponseEntity<ErrorResponse> handleCredentialAlreadyExists(CredentialAlreadyExistsException ex, HttpServletRequest request) {
         log.warn("Credential already exists: {}", ex.getMessage());
 
         ErrorResponse errorResponse = new ErrorResponse(
@@ -138,9 +124,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(ExternalServiceException.class)
-    public ResponseEntity<ErrorResponse> handleExternalServiceException(
-            ExternalServiceException ex,
-            HttpServletRequest request) {
+    public ResponseEntity<ErrorResponse> handleExternalServiceException(ExternalServiceException ex, HttpServletRequest request) {
         log.error("External service error: {}", ex.getMessage(), ex);
 
         ErrorResponse errorResponse = new ErrorResponse(
@@ -155,9 +139,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ErrorResponse> handleValidationExceptions(
-            MethodArgumentNotValidException ex,
-            HttpServletRequest request) {
+    public ResponseEntity<ErrorResponse> handleValidationExceptions(MethodArgumentNotValidException ex, HttpServletRequest request) {
         log.warn("Validation error: {}", ex.getMessage());
 
         Map<String, String> validationErrors = new HashMap<>();
@@ -180,9 +162,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<ErrorResponse> handleIllegalArgument(
-            IllegalArgumentException ex,
-            HttpServletRequest request) {
+    public ResponseEntity<ErrorResponse> handleIllegalArgument(IllegalArgumentException ex, HttpServletRequest request) {
         log.warn("Illegal argument: {}", ex.getMessage());
 
         ErrorResponse errorResponse = new ErrorResponse(
@@ -197,9 +177,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ErrorResponse> handleGenericException(
-            Exception ex,
-            HttpServletRequest request) {
+    public ResponseEntity<ErrorResponse> handleGenericException(Exception ex, HttpServletRequest request) {
         log.error("Unexpected error occurred: {}", ex.getMessage(), ex);
 
         ErrorResponse errorResponse = new ErrorResponse(

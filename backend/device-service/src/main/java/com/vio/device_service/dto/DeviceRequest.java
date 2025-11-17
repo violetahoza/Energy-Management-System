@@ -1,6 +1,5 @@
 package com.vio.device_service.dto;
 
-import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.Positive;
 
 public record DeviceRequest(

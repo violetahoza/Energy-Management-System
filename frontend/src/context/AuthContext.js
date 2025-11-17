@@ -91,6 +91,7 @@ export const AuthProvider = ({ children }) => {
         setUser(null);
     };
 
+    // return a Provider component that makes the auth context available to any child component
     return (
         <AuthContext.Provider value={{ user, login, register, logout, loading }}>
             {children}
@@ -98,6 +99,7 @@ export const AuthProvider = ({ children }) => {
     );
 };
 
+// custom hook to access the auth context
 export const useAuth = () => {
     const context = useContext(AuthContext);
     if (!context) {

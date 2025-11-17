@@ -144,12 +144,9 @@ public class UserService {
     @Transactional
     public void deleteUser(Long userId) {
         log.info("Deleting user: {}", userId);
-
         User user = userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException(userId));
-
         deleteCredentialsInAuthService(userId);
         notifyDeviceServiceUserDeletion(userId);
-
         userRepository.delete(user);
         log.info("User profile deleted: {}", userId);
         log.info("User deleted successfully: {}", userId);
@@ -235,7 +232,6 @@ public class UserService {
         } catch (HttpClientErrorException.Conflict e) {
             log.error("Username already taken: {}", e.getMessage());
             throw new UsernameAlreadyExistsException(username);
-
         } catch (HttpClientErrorException e) {
             log.error("HTTP error creating credentials: {} - {}", e.getStatusCode(), e.getMessage());
             throw new ServiceCommunicationException("authorization-service", "Failed to create credentials: " + e.getStatusText(), e);

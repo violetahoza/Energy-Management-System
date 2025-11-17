@@ -29,8 +29,7 @@ public class UserController {
 
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "Retrieve all users (Admin only)",
-            description = "@PreAuthorize(\"hasRole('ADMIN')\") checks if the authenticated user has ADMIN role. If authorized, calls userService.getAllUsers() to fetch and return the list of all users. If not authorized, Spring Security throws AccessDeniedException (403 Forbidden)")
+    @Operation(summary = "Retrieve all users (Admin only)", description = "@PreAuthorize(\"hasRole('ADMIN')\") checks if the authenticated user has ADMIN role. If authorized, calls userService.getAllUsers() to fetch and return the list of all users. If not authorized, Spring Security throws AccessDeniedException (403 Forbidden)")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Successfully retrieved all users", content = @Content(mediaType = "application/json", schema = @Schema(implementation = UserResponse.class))),
             @ApiResponse(responseCode = "401", description = "Unauthorized - Missing or invalid JWT token", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))),

@@ -82,6 +82,27 @@ services:
       timeout: 5s
       retries: 5
 
+  monitoring_db:
+    image: mysql
+    container_name: monitoring_db
+    ports:
+      - "4003:3306"
+    environment:
+      MYSQL_DATABASE: monitoring_db
+      MYSQL_USER: monitoring_user
+      MYSQL_PASSWORD: monitoring_pass
+      MYSQL_ROOT_PASSWORD: root_password
+    volumes:
+      - monitoring_data:/var/lib/mysql
+    networks:
+      - energy_management_network
+    restart: always
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   authorization-service:
     build: ./backend/authorization-service
     container_name: authorization-service
@@ -190,6 +211,27 @@ services:
       - "traefik.http.services.devices.loadbalancer.server.port=8082"
     restart: always
 
+  monitoring-service:
+    build: ./backend/monitoring-service
+    container_name: monitoring-service
+    ports:
+      - "8084:8084"
+    environment:
+      DB_HOST: monitoring_db
+      DB_USER: monitoring_user
+      DB_PASS: monitoring_pass
+      DB_NAME: monitoring_db
+    depends_on:
+      monitoring_db:
+        condition: service_healthy
+    networks:
+      - energy_management_network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.monitoring.middlewares=auth-middleware,cors-headers"
+      - "traefik.http.services.monitoring.loadbalancer.server.port=8084"
+    restart: always
+
   frontend:
     build: ./frontend
     container_name: frontend
@@ -209,6 +251,7 @@ volumes:
   credentials_data:
   users_data:
   devices_data:
+  monitoring_data:
   traefik_logs:
 
 networks:

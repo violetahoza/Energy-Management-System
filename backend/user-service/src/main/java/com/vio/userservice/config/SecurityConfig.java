@@ -11,9 +11,10 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
+// Configuration class for Spring Security
 @Configuration
-@EnableWebSecurity
-@EnableMethodSecurity(prePostEnabled = true)
+@EnableWebSecurity // Enable Spring Security's web security features
+@EnableMethodSecurity(prePostEnabled = true) // Enable method-level security annotations like @PreAuthorize
 @RequiredArgsConstructor
 public class SecurityConfig {
 
@@ -23,7 +24,7 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(csrf -> csrf.disable()) // disabled for stateless APIs
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // no sessions
                 .authorizeHttpRequests(auth -> auth
                         // Allow internal endpoints without authentication (service-to-service)
                         .requestMatchers("/api/users/internal/**").permitAll()
@@ -31,7 +32,7 @@ public class SecurityConfig {
                         // All other endpoints require authentication
                         .anyRequest().authenticated()
                 )
-                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class); // add the custom JWT filter before the default authentication filter
 
         return http.build();
     }

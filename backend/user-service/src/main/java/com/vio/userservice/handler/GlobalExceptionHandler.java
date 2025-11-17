@@ -17,14 +17,12 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
-@RestControllerAdvice
+@RestControllerAdvice // Handles exceptions globally for REST controllers
 @Slf4j
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(AccessDeniedException.class)
-    public ResponseEntity<ErrorResponse> handleAccessDeniedException(
-            AccessDeniedException ex,
-            WebRequest request) {
+    public ResponseEntity<ErrorResponse> handleAccessDeniedException(AccessDeniedException ex, WebRequest request) {
         log.warn("Access denied: {}", ex.getMessage());
 
         ErrorResponse errorResponse = new ErrorResponse(
@@ -39,9 +37,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ErrorResponse> handleValidationExceptions(
-            MethodArgumentNotValidException ex,
-            WebRequest request) {
+    public ResponseEntity<ErrorResponse> handleValidationExceptions(MethodArgumentNotValidException ex, WebRequest request) {
 
         log.warn("Validation error occurred: {}", ex.getMessage());
 
@@ -65,10 +61,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(InvalidUserCreationException.class)
-    public ResponseEntity<ErrorResponse> handleInvalidUserCreationException(
-            InvalidUserCreationException ex,
-            WebRequest request) {
-
+    public ResponseEntity<ErrorResponse> handleInvalidUserCreationException(InvalidUserCreationException ex, WebRequest request) {
         log.error("Invalid user creation request: {}", ex.getMessage());
 
         ErrorResponse errorResponse = new ErrorResponse(
@@ -83,10 +76,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(UserNotFoundException.class)
-    public ResponseEntity<ErrorResponse> handleUserNotFoundException(
-            UserNotFoundException ex,
-            WebRequest request) {
-
+    public ResponseEntity<ErrorResponse> handleUserNotFoundException(UserNotFoundException ex, WebRequest request) {
         log.error("User not found: {}", ex.getMessage());
 
         ErrorResponse errorResponse = new ErrorResponse(
@@ -101,10 +91,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(UserEmailAlreadyExistsException.class)
-    public ResponseEntity<ErrorResponse> handleUserEmailAlreadyExistsException(
-            UserEmailAlreadyExistsException ex,
-            WebRequest request) {
-
+    public ResponseEntity<ErrorResponse> handleUserEmailAlreadyExistsException(UserEmailAlreadyExistsException ex, WebRequest request) {
         log.error("Email conflict: {}", ex.getMessage());
 
         ErrorResponse errorResponse = new ErrorResponse(
@@ -119,10 +106,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(UsernameAlreadyExistsException.class)
-    public ResponseEntity<ErrorResponse> handleUsernameAlreadyExistsException(
-            UsernameAlreadyExistsException ex,
-            WebRequest request) {
-
+    public ResponseEntity<ErrorResponse> handleUsernameAlreadyExistsException(UsernameAlreadyExistsException ex, WebRequest request) {
         log.error("Username conflict: {}", ex.getMessage());
 
         ErrorResponse errorResponse = new ErrorResponse(
@@ -137,10 +121,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(InvalidUpdateException.class)
-    public ResponseEntity<ErrorResponse> handleInvalidUpdateException(
-            InvalidUpdateException ex,
-            WebRequest request) {
-
+    public ResponseEntity<ErrorResponse> handleInvalidUpdateException(InvalidUpdateException ex, WebRequest request) {
         log.error("Invalid update: {}", ex.getMessage());
 
         ErrorResponse errorResponse = new ErrorResponse(
@@ -155,10 +136,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(ServiceCommunicationException.class)
-    public ResponseEntity<ErrorResponse> handleServiceCommunicationException(
-            ServiceCommunicationException ex,
-            WebRequest request) {
-
+    public ResponseEntity<ErrorResponse> handleServiceCommunicationException(ServiceCommunicationException ex, WebRequest request) {
         log.error("Service communication error: {}", ex.getMessage());
 
         ErrorResponse errorResponse = new ErrorResponse(
@@ -173,10 +151,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(HttpClientErrorException.class)
-    public ResponseEntity<ErrorResponse> handleHttpClientErrorException(
-            HttpClientErrorException ex,
-            WebRequest request) {
-
+    public ResponseEntity<ErrorResponse> handleHttpClientErrorException(HttpClientErrorException ex, WebRequest request) {
         log.error("HTTP client error: {} - {}", ex.getStatusCode(), ex.getMessage());
 
         ErrorResponse errorResponse = new ErrorResponse(
@@ -191,10 +166,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(ResourceAccessException.class)
-    public ResponseEntity<ErrorResponse> handleResourceAccessException(
-            ResourceAccessException ex,
-            WebRequest request) {
-
+    public ResponseEntity<ErrorResponse> handleResourceAccessException(ResourceAccessException ex, WebRequest request) {
         log.error("Resource access error: {}", ex.getMessage());
 
         ErrorResponse errorResponse = new ErrorResponse(
@@ -209,10 +181,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<ErrorResponse> handleIllegalArgumentException(
-            IllegalArgumentException ex,
-            WebRequest request) {
-
+    public ResponseEntity<ErrorResponse> handleIllegalArgumentException(IllegalArgumentException ex, WebRequest request) {
         log.error("Illegal argument: {}", ex.getMessage());
 
         ErrorResponse errorResponse = new ErrorResponse(
@@ -227,10 +196,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(RuntimeException.class)
-    public ResponseEntity<ErrorResponse> handleRuntimeException(
-            RuntimeException ex,
-            WebRequest request) {
-
+    public ResponseEntity<ErrorResponse> handleRuntimeException(RuntimeException ex, WebRequest request) {
         log.error("Runtime exception occurred: {}", ex.getMessage(), ex);
 
         ErrorResponse errorResponse = new ErrorResponse(
@@ -245,10 +211,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ErrorResponse> handleGlobalException(
-            Exception ex,
-            WebRequest request) {
-
+    public ResponseEntity<ErrorResponse> handleGlobalException(Exception ex, WebRequest request) {
         log.error("Unhandled exception occurred: {}", ex.getMessage(), ex);
 
         ErrorResponse errorResponse = new ErrorResponse(

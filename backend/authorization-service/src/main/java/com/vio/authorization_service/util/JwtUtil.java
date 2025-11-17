@@ -17,6 +17,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
 
+// Utility class responsible for all JWT token operations
 @Component
 @Slf4j
 public class JwtUtil {
@@ -30,7 +31,7 @@ public class JwtUtil {
     private Key getSigningKey() {
         try {
             byte[] keyBytes = secret.getBytes();
-            return Keys.hmacShaKeyFor(keyBytes);
+            return Keys.hmacShaKeyFor(keyBytes); // create signing key from secret
         } catch (Exception e) {
             log.error("Error creating signing key: {}", e.getMessage());
             throw new RuntimeException("Failed to create JWT signing key", e);
@@ -111,7 +112,7 @@ public class JwtUtil {
             Map<String, Object> claims = new HashMap<>();
             claims.put("userId", userId);
             claims.put("role", role);
-            return createToken(claims, username);
+            return createToken(claims, username); // create a new token with claims (userId and role) and subject (username)
         } catch (Exception e) {
             log.error("Error generating token for user {}: {}", username, e.getMessage());
             throw new RuntimeException("Failed to generate authentication token", e);

@@ -22,8 +22,8 @@ const Register = () => {
 
     const handleChange = (e) => {
         setFormData({
-            ...formData,
-            [e.target.name]: e.target.value
+            ...formData, // take all the exiting properties from formData and copy them to a new object
+            [e.target.name]: e.target.value // update the property that matches the input field's name with the new value
         });
         setError('');
         setSuccess('');
