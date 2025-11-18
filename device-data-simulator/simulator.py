@@ -2,85 +2,106 @@ import json
 import time
 import random
 import sys
+import csv
+import threading
+import os
 from datetime import datetime
 import pika
+import pytz
 from config import Config
 
+# Lock for thread-safe file operations (though writing to separate files is generally safe, creating them might race)
+file_lock = threading.Lock()
 
 class DeviceSimulator:
     """Simulates smart meter energy consumption readings"""
 
     def __init__(self, device_id):
-        self.device_id = device_id
+        self.device_id = str(device_id).strip()
         self.config = Config()
-        self.base_load = random.uniform(0.3, 0.8)  # Random base load (kWh per 10 min)
+        self.base_load = random.uniform(0.3, 0.8)
         self.connection = None
         self.channel = None
+        self.tz = pytz.timezone(self.config.TIMEZONE)
+
+    def get_current_time_str(self):
+        # Get current UTC time and convert to target timezone
+        now = datetime.now(pytz.utc).astimezone(self.tz)
+        return now.strftime("%Y-%m-%dT%H:%M:%S")
+
+    def get_current_hour(self):
+        now = datetime.now(pytz.utc).astimezone(self.tz)
+        return now.hour
 
     def connect(self):
         """Establish RabbitMQ connection"""
-        try:
-            credentials = pika.PlainCredentials(
-                self.config.RABBITMQ_USER,
-                self.config.RABBITMQ_PASS
-            )
-            parameters = pika.ConnectionParameters(
-                host=self.config.RABBITMQ_HOST,
-                port=self.config.RABBITMQ_PORT,
-                credentials=credentials,
-                heartbeat=600
-            )
+        while True:
+            try:
+                credentials = pika.PlainCredentials(
+                    self.config.RABBITMQ_USER,
+                    self.config.RABBITMQ_PASS
+                )
+                parameters = pika.ConnectionParameters(
+                    host=self.config.RABBITMQ_HOST,
+                    port=self.config.RABBITMQ_PORT,
+                    credentials=credentials,
+                    heartbeat=600
+                )
 
-            self.connection = pika.BlockingConnection(parameters)
-            self.channel = self.connection.channel()
+                self.connection = pika.BlockingConnection(parameters)
+                self.channel = self.connection.channel()
 
-            # Declare exchange
-            self.channel.exchange_declare(
-                exchange=self.config.EXCHANGE,
-                exchange_type='topic',
-                durable=True
-            )
+                self.channel.exchange_declare(
+                    exchange=self.config.EXCHANGE,
+                    exchange_type='topic',
+                    durable=True
+                )
 
-            print(f"✓ Connected to RabbitMQ at {self.config.RABBITMQ_HOST}:{self.config.RABBITMQ_PORT}")
-            return True
+                print(f"✓ [Device {self.device_id}] Connected to RabbitMQ")
+                return True
 
-        except Exception as e:
-            print(f"✗ Connection failed: {e}")
-            return False
+            except Exception as e:
+                print(f"✗ [Device {self.device_id}] Connection failed. Retrying in 5s...")
+                time.sleep(5)
 
     def generate_measurement(self):
-        """
-        Generate realistic energy consumption based on time of day.
-        Returns energy consumed in kWh for the interval.
-        """
-        hour = datetime.now().hour
+        """Generate realistic energy consumption"""
+        hour = self.get_current_hour()
 
-        # Time-based consumption patterns
-        if 0 <= hour < 6:      # Night: 50-70% of base load
-            factor = random.uniform(0.5, 0.7)
-        elif 6 <= hour < 9:    # Morning: 80-110% of base load
-            factor = random.uniform(0.8, 1.1)
-        elif 9 <= hour < 17:   # Day: 70-90% of base load
-            factor = random.uniform(0.7, 0.9)
-        else:                  # Evening: 100-140% of base load
-            factor = random.uniform(1.0, 1.4)
+        if 0 <= hour < 6: factor = random.uniform(0.5, 0.7)
+        elif 6 <= hour < 9: factor = random.uniform(0.8, 1.1)
+        elif 9 <= hour < 17: factor = random.uniform(0.7, 0.9)
+        else: factor = random.uniform(1.0, 1.4)
 
-        # Add small random fluctuations
         fluctuation = random.uniform(-0.05, 0.05)
-
-        # Calculate measurement
         measurement = self.base_load * factor + fluctuation
-
-        # Ensure non-negative
         return max(0, round(measurement, 4))
 
+    def log_to_csv(self, timestamp, measurement):
+        """Save measurement to a device-specific CSV file"""
+        filename = f"sensor_data_{self.device_id}.csv"
+        file_path = os.path.join(self.config.DATA_FOLDER, filename)
+        file_exists = os.path.isfile(file_path)
+
+        try:
+            # Use lock to ensure multiple threads don't try to create/write headers at exact same time
+            with file_lock:
+                with open(file_path, mode='a', newline='') as file:
+                    writer = csv.writer(file)
+                    if not file_exists:
+                        writer.writerow(['timestamp', 'device_id', 'measurement_value'])
+                    writer.writerow([timestamp, self.device_id, measurement])
+        except Exception as e:
+            print(f"✗ [Device {self.device_id}] CSV Error: {e}")
+
     def send_measurement(self, measurement):
-        """Send measurement to RabbitMQ"""
+        timestamp = self.get_current_time_str()
         message = {
-            "timestamp": datetime.now().strftime("%Y-%m-%dT%H:%M:%S"),
+            "timestamp": timestamp,
             "device_id": self.device_id,
             "measurement_value": measurement
         }
+        self.log_to_csv(timestamp, measurement)
 
         try:
             self.channel.basic_publish(
@@ -92,63 +113,73 @@ class DeviceSimulator:
                     content_type='application/json'
                 )
             )
+            #print(f"✓ [Device {self.device_id}] Sent {measurement} kWh at {timestamp}")
             return True
         except Exception as e:
-            print(f"✗ Failed to send: {e}")
+            print(f"✗ [Device {self.device_id}] Send Error: {e}")
+            # If send fails, force a reconnect check in the next loop
+            if self.connection and self.connection.is_open:
+                try:
+                    self.connection.close()
+                except:
+                    pass
+            self.connect()
             return False
 
     def run(self, interval_minutes=10):
-        """Run the simulator"""
-        if not self.connect():
-            return
+        self.connect()
+        print(f"✓ [Device {self.device_id}] Simulator Running (Interval: {interval_minutes}m)")
 
-        print("=" * 60)
-        print("Device Data Simulator Started")
-        print("=" * 60)
-        print(f"Device ID:       {self.device_id}")
-        print(f"Base Load:       {self.base_load:.2f} kWh per {interval_minutes} min")
-        print(f"Interval:        {interval_minutes} minutes")
-        print(f"Press Ctrl+C to stop")
-        print("=" * 60)
-
-        count = 0
         try:
             while True:
-                # Generate and send measurement
                 measurement = self.generate_measurement()
-
-                if self.send_measurement(measurement):
-                    count += 1
-                    timestamp = datetime.now().strftime("%H:%M:%S")
-                    print(f"✓ [{count:3d}] {timestamp} | Device {self.device_id} | {measurement} kWh")
-
-                # Wait for next interval
+                self.send_measurement(measurement)
                 time.sleep(interval_minutes * 60)
-
         except KeyboardInterrupt:
-            print("\n" + "=" * 60)
-            print(f"Simulator stopped. Total sent: {count} measurements")
-            print("=" * 60)
+            pass
         finally:
             if self.connection:
-                self.connection.close()
+                try:
+                    self.connection.close()
+                except:
+                    pass
 
+def run_device(device_id, interval):
+    sim = DeviceSimulator(device_id)
+    sim.run(interval)
 
 def main():
-    if len(sys.argv) < 2:
-        print("Usage: python simulator.py <device_id> [interval_minutes]")
-        print("\nExamples:")
-        print("  python simulator.py 1          # Device 1, 10-minute intervals")
-        print("  python simulator.py 1 1        # Device 1, 1-minute intervals (testing)")
-        print("  python simulator.py 2 10       # Device 2, 10-minute intervals")
-        sys.exit(1)
+    config = Config()
+    ids = config.DEVICE_IDS
 
-    device_id = int(sys.argv[1])
-    interval = int(sys.argv[2]) if len(sys.argv) > 2 else 10
+    if not os.path.exists(config.DATA_FOLDER):
+        try:
+            os.makedirs(config.DATA_FOLDER)
+        except OSError:
+            pass
 
-    simulator = DeviceSimulator(device_id)
-    simulator.run(interval)
+    interval = int(sys.argv[1]) if len(sys.argv) > 1 else 10
 
+    print("=" * 60)
+    print(f"Starting Device Simulator")
+    print(f"Timezone: {config.TIMEZONE}")
+    print(f"Devices: {ids}")
+    print(f"Target: {config.RABBITMQ_HOST}:{config.RABBITMQ_PORT}")
+    print(f"Saving CSVs to: {config.DATA_FOLDER}/sensor_data_<id>.csv")
+    print("=" * 60)
+
+    threads = []
+    for dev_id in ids:
+        t = threading.Thread(target=run_device, args=(dev_id, interval))
+        t.daemon = True
+        t.start()
+        threads.append(t)
+
+    try:
+        while True:
+            time.sleep(1)
+    except KeyboardInterrupt:
+        print("\nStopping simulator...")
 
 if __name__ == '__main__':
     main()

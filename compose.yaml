@@ -276,6 +276,26 @@ services:
       - "traefik.http.services.frontend.loadbalancer.server.port=3000"
     restart: always
 
+#  device-simulator:
+#    build: ./device-data-simulator
+#    container_name: device-simulator
+#    environment:
+#      RABBITMQ_HOST: rabbitmq
+#      RABBITMQ_PORT: 5672
+#      RABBITMQ_USER: rabbitmq_user
+#      RABBITMQ_PASS: rabbitmq_pass
+#      # define which devices to simulate
+#      DEVICE_IDS: "1,2,6,7,8,9,10,11"
+#      DATA_FOLDER_PATH: "/app/data"
+#    volumes:
+#      - ./device-data-simulator/data:/app/data
+#    depends_on:
+#      rabbitmq:
+#        condition: service_healthy
+#    networks:
+#      - energy_management_network
+#    restart: always
+
 volumes:
   credentials_data:
   users_data:
