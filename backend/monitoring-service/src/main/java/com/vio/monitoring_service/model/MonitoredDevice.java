@@ -15,6 +15,6 @@ import lombok.NoArgsConstructor;
 public class MonitoredDevice {
     @Id
     private Long deviceId;
-    
-    private double maxHourlyConsumption;
+
+    private double hourlyConsumption;
 }

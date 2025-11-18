@@ -89,7 +89,7 @@ class DeviceSimulator:
                 with open(file_path, mode='a', newline='') as file:
                     writer = csv.writer(file)
                     if not file_exists:
-                        writer.writerow(['timestamp', 'device_id', 'measurement_value'])
+                        writer.writerow(['timestamp', 'device_id', 'measured_value'])
                     writer.writerow([timestamp, self.device_id, measurement])
         except Exception as e:
             print(f"✗ [Device {self.device_id}] CSV Error: {e}")
@@ -99,7 +99,7 @@ class DeviceSimulator:
         message = {
             "timestamp": timestamp,
             "device_id": self.device_id,
-            "measurement_value": measurement
+            "measured_value": measurement
         }
         self.log_to_csv(timestamp, measurement)
 

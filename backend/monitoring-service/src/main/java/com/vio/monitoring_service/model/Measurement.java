@@ -24,5 +24,5 @@ public class Measurement {
     private LocalDateTime timestamp;
 
     @Column(nullable = false)
-    private double measurementValue;
+    private double measuredValue;
 }
