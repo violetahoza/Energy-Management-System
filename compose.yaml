@@ -130,14 +130,20 @@ services:
       - "8083:8083"
     env_file:
       - ./backend/authorization-service/.env
+    depends_on:
+      credentials_db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
     environment:
       DB_HOST: credentials_db
       DB_USER: credentials_user
       DB_PASS: credentials_pass
       DB_NAME: credentials_db
-    depends_on:
-      credentials_db:
-        condition: service_healthy
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: rabbitmq_user
+      RABBITMQ_PASS: rabbitmq_pass
     networks:
       - energy_management_network
     labels:
@@ -180,8 +186,14 @@ services:
       DB_USER: users_user
       DB_PASS: users_pass
       DB_NAME: users_db
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: rabbitmq_user
+      RABBITMQ_PASS: rabbitmq_pass
     depends_on:
       users_db:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
     networks:
       - energy_management_network
@@ -211,8 +223,14 @@ services:
       DB_USER: devices_user
       DB_PASS: devices_pass
       DB_NAME: devices_db
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: rabbitmq_user
+      RABBITMQ_PASS: rabbitmq_pass
     depends_on:
       devices_db:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
     networks:
       - energy_management_network

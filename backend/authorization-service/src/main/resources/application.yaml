@@ -16,6 +16,30 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.MySQLDialect
 
+  rabbitmq:
+    host: rabbitmq
+    port: 5672
+    username: rabbitmq_user
+    password: rabbitmq_pass
+    listener:
+      simple:
+        acknowledge-mode: auto
+        prefetch: 1
+        retry:
+          enabled: true
+          initial-interval: 3000
+          max-attempts: 3
+          multiplier: 2.0
+
+app:
+  rabbitmq:
+    exchange:
+      sync: sync.exchange
+    queue:
+      sync: sync.queue
+    routing-key:
+      user-sync: user.sync
+
 jwt:
   secret: ${JWT_SECRET}
   expiration: ${JWT_EXPIRATION}
