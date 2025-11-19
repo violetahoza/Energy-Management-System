@@ -1,8 +1,6 @@
 package com.vio.monitoring_service.model;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -14,7 +12,10 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class MonitoredDevice {
     @Id
-    private Long deviceId;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
-    private double hourlyConsumption;
+    @Id
+    @Column(nullable = false)
+    private Long deviceId;
 }

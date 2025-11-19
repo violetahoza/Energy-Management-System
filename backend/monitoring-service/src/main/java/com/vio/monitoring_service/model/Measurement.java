@@ -5,7 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
+import java.time.LocalTime;
 
 @Entity
 @Table(name = "measurements")
@@ -21,8 +21,8 @@ public class Measurement {
     private Long deviceId;
 
     @Column(nullable = false)
-    private LocalDateTime timestamp;
+    private int hour;
 
     @Column(nullable = false)
-    private double measuredValue;
+    private double hourlyConsumption;
 }
