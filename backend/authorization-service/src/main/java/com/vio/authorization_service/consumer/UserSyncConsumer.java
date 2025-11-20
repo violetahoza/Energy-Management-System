@@ -2,10 +2,9 @@ package com.vio.authorization_service.consumer;
 
 import com.vio.authorization_service.config.RabbitMQConfig;
 import com.vio.authorization_service.event.UserSyncEvent;
+import com.vio.authorization_service.handler.UsernameAlreadyExistsException;
 import com.vio.authorization_service.model.Credential;
-import com.vio.authorization_service.model.SyncUser;
 import com.vio.authorization_service.repository.CredentialRepository;
-import com.vio.authorization_service.repository.SyncUserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
@@ -21,7 +20,6 @@ import java.time.LocalDateTime;
 public class UserSyncConsumer {
 
     private final CredentialRepository credentialRepository;
-    private final SyncUserRepository syncUserRepository;
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
     @RabbitListener(queues = RabbitMQConfig.USER_SYNC_QUEUE_AUTH)
@@ -59,7 +57,7 @@ public class UserSyncConsumer {
 
         if (credentialRepository.existsByUsername(event.getUsername())) {
             log.warn("Username already exists: {}", event.getUsername());
-            throw new RuntimeException("Username already exists: " + event.getUsername());
+            throw new UsernameAlreadyExistsException("Username already exists: " + event.getUsername());
         }
 
         Credential credential = Credential.builder()
@@ -73,14 +71,6 @@ public class UserSyncConsumer {
 
         credentialRepository.save(credential);
 
-        SyncUser syncUser = SyncUser.builder()
-                .userId(event.getUserId())
-                .username(event.getUsername())
-                .role(event.getRole())
-                .build();
-
-        syncUserRepository.save(syncUser);
-
         log.info("Credentials and sync user created successfully for userId: {}", event.getUserId());
     }
 
@@ -92,7 +82,7 @@ public class UserSyncConsumer {
                     log.warn("Credential not found for userId: {}, creating new one", event.getUserId());
 
                     if (event.getUsername() != null && credentialRepository.existsByUsername(event.getUsername())) {
-                        throw new RuntimeException("Username already exists: " + event.getUsername());
+                        throw new UsernameAlreadyExistsException("Username already exists: " + event.getUsername());
                     }
 
                     Credential newCredential = Credential.builder()
@@ -107,35 +97,20 @@ public class UserSyncConsumer {
                     return credentialRepository.save(newCredential);
                 });
 
-        SyncUser syncUser = syncUserRepository.findById(event.getUserId())
-                .orElseGet(() -> {
-                    log.warn("SyncUser not found for userId: {}, creating new one", event.getUserId());
-
-                    SyncUser newSyncUser = SyncUser.builder()
-                            .userId(event.getUserId())
-                            .username(event.getUsername() != null ? event.getUsername() : credential.getUsername())
-                            .role(event.getRole() != null ? event.getRole() : credential.getRole())
-                            .build();
-
-                    return syncUserRepository.save(newSyncUser);
-                });
-
         boolean updated = false;
 
-        // Update username
         if (event.getUsername() != null && !credential.getUsername().equals(event.getUsername())) {
 
             if (credentialRepository.existsByUsername(event.getUsername())) {
                 credentialRepository.findByUsername(event.getUsername())
                         .ifPresent(existingCred -> {
                             if (!existingCred.getUserId().equals(event.getUserId())) {
-                                throw new RuntimeException("Username already exists: " + event.getUsername());
+                                throw new UsernameAlreadyExistsException("Username already exists: " + event.getUsername());
                             }
                         });
             }
 
             credential.setUsername(event.getUsername());
-            syncUser.setUsername(event.getUsername());
             updated = true;
             log.info("Updated username for userId: {} to: {}", event.getUserId(), event.getUsername());
         }
@@ -149,7 +124,6 @@ public class UserSyncConsumer {
         if (event.getRole() != null &&
                 !credential.getRole().equals(event.getRole())) {
             credential.setRole(event.getRole());
-            syncUser.setRole(event.getRole());
             updated = true;
             log.info("Updated role for userId: {} to: {}", event.getUserId(), event.getRole());
         }
@@ -157,7 +131,6 @@ public class UserSyncConsumer {
         if (updated) {
             credential.setUpdatedAt(LocalDateTime.now());
             credentialRepository.save(credential);
-            syncUserRepository.save(syncUser);
             log.info("Credentials and sync user updated successfully for userId: {}", event.getUserId());
         } else {
             log.info("No updates needed for userId: {}", event.getUserId());
@@ -174,15 +147,6 @@ public class UserSyncConsumer {
                             log.info("Credential deleted for userId: {}", event.getUserId());
                         },
                         () -> log.warn("Credential not found for deletion, userId: {}", event.getUserId())
-                );
-
-        syncUserRepository.findById(event.getUserId())
-                .ifPresentOrElse(
-                        syncUser -> {
-                            syncUserRepository.delete(syncUser);
-                            log.info("SyncUser deleted for userId: {}", event.getUserId());
-                        },
-                        () -> log.warn("SyncUser not found for deletion, userId: {}", event.getUserId())
                 );
 
         log.info("Credentials and sync user deletion process completed for userId: {}", event.getUserId());

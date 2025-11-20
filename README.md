@@ -88,7 +88,6 @@ Once all services are running:
 ### Default Routes
 
 - `http://localhost/login` - Login page
-- `http://localhost/register` - Registration page
 - `http://localhost/admin` - Admin dashboard (requires ADMIN role)
 - `http://localhost/client` - Client dashboard (requires CLIENT role)
 
@@ -97,35 +96,36 @@ Once all services are running:
 ### Public Endpoints (No Authentication Required)
 
 ```
-POST   http://localhost/api/auth/register       - Register new user
-POST   http://localhost/api/auth/login          - Login and get JWT token
+POST   http://localhost/api/auth/login                      - Login and get JWT token
 ```
 
 ### Protected Endpoints (Authentication Required)
 
 #### Authorization Service
 ```
-POST   http://localhost/api/auth/logout         - Logout (invalidate token)
-GET    http://localhost/api/auth/user           - Get current user info
+POST   http://localhost/api/auth/logout                     - Logout (invalidate token)
+GET    http://localhost/api/auth/user                       - Get current user info
 ```
 
 #### User Service
 ```
-GET    http://localhost/api/users                - List all users (ADMIN only)
-POST   http://localhost/api/users                - Create user (ADMIN only)
-GET    http://localhost/api/users/{id}           - Get user by ID
-PATCH  http://localhost/api/users/{id}           - Update user (ADMIN only)
-DELETE http://localhost/api/users/{id}           - Delete user (ADMIN only)
+GET    http://localhost/api/users                           - List all users (ADMIN only)
+POST   http://localhost/api/users                           - Create user (ADMIN only)
+GET    http://localhost/api/users/{id}                      - Get user by ID
+PATCH  http://localhost/api/users/{id}                      - Update user (ADMIN only)
+DELETE http://localhost/api/users/{id}                      - Delete user (ADMIN only)
 ```
 
 #### Device Service
 ```
-GET    http://localhost/api/devices               - List devices (ADMIN: all, CLIENT: assigned only)
-POST   http://localhost/api/devices               - Create device (ADMIN only)
-GET    http://localhost/api/devices/{id}          - Get device by ID
-PATCH  http://localhost/api/devices/{id}          - Update device (ADMIN only)
-DELETE http://localhost/api/devices/{id}          - Delete device (ADMIN only)
-PATCH  http://localhost/api/devices/{id}/assign   - Assign device to user (ADMIN only)
+GET    http://localhost/api/devices                         - List devices (ADMIN: all, CLIENT: assigned only)
+POST   http://localhost/api/devices                         - Create device (ADMIN only)
+GET    http://localhost/api/devices/{id}                    - Get device by ID
+PATCH  http://localhost/api/devices/{id}                    - Update device (ADMIN only)
+DELETE http://localhost/api/devices/{id}                    - Delete device (ADMIN only)
+PATCH  http://localhost/api/devices/{id}/assign/{user_id}   - Assign device to user (ADMIN only)
+PATCH  http://localhost/api/devices/{id}/unassign           - Unassign device (ADMIN only)
+
 ```
 
 ## Stopping the Application

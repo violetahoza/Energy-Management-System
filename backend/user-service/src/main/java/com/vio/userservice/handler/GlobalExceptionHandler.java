@@ -135,21 +135,6 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
     }
 
-    @ExceptionHandler(ServiceCommunicationException.class)
-    public ResponseEntity<ErrorResponse> handleServiceCommunicationException(ServiceCommunicationException ex, WebRequest request) {
-        log.error("Service communication error: {}", ex.getMessage());
-
-        ErrorResponse errorResponse = new ErrorResponse(
-                LocalDateTime.now(),
-                HttpStatus.SERVICE_UNAVAILABLE.value(),
-                "Service Unavailable",
-                ex.getMessage(),
-                request.getDescription(false).replace("uri=", "")
-        );
-
-        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(errorResponse);
-    }
-
     @ExceptionHandler(HttpClientErrorException.class)
     public ResponseEntity<ErrorResponse> handleHttpClientErrorException(HttpClientErrorException ex, WebRequest request) {
         log.error("HTTP client error: {} - {}", ex.getStatusCode(), ex.getMessage());
