@@ -82,47 +82,6 @@ services:
       timeout: 5s
       retries: 5
 
-  monitoring_db:
-    image: mysql
-    container_name: monitoring_db
-    ports:
-      - "4003:3306"
-    environment:
-      MYSQL_DATABASE: monitoring_db
-      MYSQL_USER: monitoring_user
-      MYSQL_PASSWORD: monitoring_pass
-      MYSQL_ROOT_PASSWORD: root_password
-    volumes:
-      - monitoring_data:/var/lib/mysql
-    networks:
-      - energy_management_network
-    restart: always
-    healthcheck:
-      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  rabbitmq:
-    image: rabbitmq:3.13-management
-    container_name: rabbitmq
-    ports:
-      - "5672:5672"   # AMQP port
-      - "15672:15672" # management UI
-    environment:
-      RABBITMQ_DEFAULT_USER: rabbitmq_user
-      RABBITMQ_DEFAULT_PASS: rabbitmq_pass
-    volumes:
-      - rabbitmq_data:/var/lib/rabbitmq
-    networks:
-      - energy_management_network
-    restart: always
-    healthcheck:
-      test: [ "CMD", "rabbitmq-diagnostics", "-q", "ping" ]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
   authorization-service:
     build: ./backend/authorization-service
     container_name: authorization-service
@@ -133,17 +92,11 @@ services:
     depends_on:
       credentials_db:
         condition: service_healthy
-      rabbitmq:
-        condition: service_healthy
     environment:
       DB_HOST: credentials_db
       DB_USER: credentials_user
       DB_PASS: credentials_pass
       DB_NAME: credentials_db
-      RABBITMQ_HOST: rabbitmq
-      RABBITMQ_PORT: 5672
-      RABBITMQ_USER: rabbitmq_user
-      RABBITMQ_PASS: rabbitmq_pass
     networks:
       - energy_management_network
     labels:
@@ -186,14 +139,8 @@ services:
       DB_USER: users_user
       DB_PASS: users_pass
       DB_NAME: users_db
-      RABBITMQ_HOST: rabbitmq
-      RABBITMQ_PORT: 5672
-      RABBITMQ_USER: rabbitmq_user
-      RABBITMQ_PASS: rabbitmq_pass
     depends_on:
       users_db:
-        condition: service_healthy
-      rabbitmq:
         condition: service_healthy
     networks:
       - energy_management_network
@@ -223,14 +170,8 @@ services:
       DB_USER: devices_user
       DB_PASS: devices_pass
       DB_NAME: devices_db
-      RABBITMQ_HOST: rabbitmq
-      RABBITMQ_PORT: 5672
-      RABBITMQ_USER: rabbitmq_user
-      RABBITMQ_PASS: rabbitmq_pass
     depends_on:
       devices_db:
-        condition: service_healthy
-      rabbitmq:
         condition: service_healthy
     networks:
       - energy_management_network
@@ -247,36 +188,6 @@ services:
       - "traefik.http.routers.devices.priority=100"
       - "traefik.http.routers.devices.middlewares=auth-middleware,cors-headers"
       - "traefik.http.services.devices.loadbalancer.server.port=8082"
-    restart: always
-
-  monitoring-service:
-    build: ./backend/monitoring-service
-    container_name: monitoring-service
-    ports:
-      - "8084:8084"
-    environment:
-      DB_HOST: monitoring_db
-      DB_USER: monitoring_user
-      DB_PASS: monitoring_pass
-      DB_NAME: monitoring_db
-      RABBITMQ_HOST: rabbitmq
-      RABBITMQ_PORT: 5672
-      RABBITMQ_USER: rabbitmq_user
-      RABBITMQ_PASS: rabbitmq_pass
-    depends_on:
-      monitoring_db:
-        condition: service_healthy
-      rabbitmq:
-        condition: service_healthy
-    networks:
-      - energy_management_network
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.monitoring.rule=PathPrefix(`/api/monitoring`)"
-      - "traefik.http.routers.monitoring.entrypoints=web"
-      - "traefik.http.routers.monitoring.priority=50"
-      - "traefik.http.routers.monitoring.middlewares=auth-middleware,cors-headers"
-      - "traefik.http.services.monitoring.loadbalancer.server.port=8084"
     restart: always
 
   frontend:
@@ -318,8 +229,6 @@ volumes:
   credentials_data:
   users_data:
   devices_data:
-  monitoring_data:
-  rabbitmq_data:
   traefik_logs:
 
 networks:
