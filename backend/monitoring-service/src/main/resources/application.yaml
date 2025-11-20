@@ -3,7 +3,7 @@ spring:
     name: monitoring-service
 
   datasource:
-    url: jdbc:mysql://devices_db:3306/monitoring_db
+    url: jdbc:mysql://monitoring_db:3306/monitoring_db
     username: monitoring_user
     password: monitoring_pass
     driver-class-name: com.mysql.cj.jdbc.Driver
@@ -17,24 +17,44 @@ spring:
         dialect: org.hibernate.dialect.MySQLDialect
 
   rabbitmq:
-    host: rabbitmq
-    port: 5672
-    username: rabbitmq_user
-    password: rabbitmq_pass
-    listener:
-      simple:
-        retry:
-          enabled: true
-          initial-interval: 3000
-          max-attempts: 3
-          multiplier: 2
-        default-requeue-rejected: false
-      template:
-        retry:
-          enabled: true
-          initial-interval: 1000
-          max-attempts: 3
-          multiplier: 2
+    sync:
+      host: synchronization-broker
+      port: 5672
+      username: rabbitmq_user
+      password: rabbitmq_pass
+      listener:
+        simple:
+          retry:
+            enabled: true
+            initial-interval: 3000
+            max-attempts: 3
+            multiplier: 2
+          default-requeue-rejected: false
+        template:
+          retry:
+            enabled: true
+            initial-interval: 1000
+            max-attempts: 3
+            multiplier: 2
+    data:
+      host: data-collection-broker
+      port: 5672
+      username: rabbitmq_user
+      password: rabbitmq_pass
+      listener:
+        simple:
+          retry:
+            enabled: true
+            initial-interval: 3000
+            max-attempts: 3
+            multiplier: 2
+          default-requeue-rejected: false
+        template:
+          retry:
+            enabled: true
+            initial-interval: 1000
+            max-attempts: 3
+            multiplier: 2
 
 server:
   port: 8084

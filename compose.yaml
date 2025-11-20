@@ -19,12 +19,30 @@ services:
       - energy_management_network
     restart: always
 
-  rabbitmq:
+  synchronization-broker:
     image: rabbitmq:3.13-management
-    container_name: rabbitmq
+    container_name: synchronization-broker
     ports:
       - "5672:5672" # AMQP port
       - "15672:15672" # Management UI
+    environment:
+      RABBITMQ_DEFAULT_USER: rabbitmq_user
+      RABBITMQ_DEFAULT_PASS: rabbitmq_pass
+    networks:
+      - energy_management_network
+    healthcheck:
+      test: [ "CMD", "rabbitmq-diagnostics", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: always
+
+  data-collection-broker:
+    image: rabbitmq:3.13-management
+    container_name: data-collection-broker
+    ports:
+      - "5673:5672" # AMQP port
+      - "15673:15672" # Management UI
     environment:
       RABBITMQ_DEFAULT_USER: rabbitmq_user
       RABBITMQ_DEFAULT_PASS: rabbitmq_pass
@@ -131,7 +149,7 @@ services:
     depends_on:
       credentials_db:
         condition: service_healthy
-      rabbitmq:
+      synchronization-broker:
         condition: service_healthy
     environment:
       DB_HOST: credentials_db
@@ -171,7 +189,7 @@ services:
     depends_on:
       users_db:
         condition: service_healthy
-      rabbitmq:
+      synchronization-broker:
         condition: service_healthy
     networks:
       - energy_management_network
@@ -198,7 +216,7 @@ services:
     depends_on:
       devices_db:
         condition: service_healthy
-      rabbitmq:
+      synchronization-broker:
         condition: service_healthy
     networks:
       - energy_management_network
@@ -224,7 +242,9 @@ services:
     depends_on:
       monitoring_db:
         condition: service_healthy
-      rabbitmq:
+      data-collection-broker:
+        condition: service_healthy
+      synchronization-broker:
         condition: service_healthy
     networks:
       - energy_management_network

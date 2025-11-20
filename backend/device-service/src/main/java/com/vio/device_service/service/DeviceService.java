@@ -4,6 +4,7 @@ import com.vio.device_service.dto.*;
 import com.vio.device_service.handler.*;
 import com.vio.device_service.model.Device;
 import com.vio.device_service.model.SyncUser;
+import com.vio.device_service.producer.DeviceEventPublisher;
 import com.vio.device_service.repository.DeviceRepository;
 import com.vio.device_service.repository.SyncUserRepository;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +23,7 @@ import java.util.Map;
 public class DeviceService {
     private final DeviceRepository deviceRepository;
     private final SyncUserRepository syncUserRepository;
+    private final DeviceEventPublisher devicePublisher;
 
     public List<DeviceResponse> getAllDevices() {
         log.info("Fetching all devices");
@@ -81,6 +83,8 @@ public class DeviceService {
                     .build();
 
             Device savedDevice = deviceRepository.save(device);
+            devicePublisher.publishDeviceCreated(savedDevice.getDeviceId());
+
             log.info("Device created successfully with id: {}", savedDevice.getDeviceId());
             return mapToResponse(savedDevice);
         } catch (UserServiceException | IllegalArgumentException e) {
@@ -202,6 +206,7 @@ public class DeviceService {
         try {
             Device device = deviceRepository.findById(deviceId).orElseThrow(() -> new DeviceNotFoundException(deviceId));
             deviceRepository.delete(device);
+            devicePublisher.publishDeviceDeleted(deviceId);
             log.info("Device deleted successfully with id: {}", deviceId);
         } catch (DeviceNotFoundException | IllegalArgumentException e) {
             throw e;

@@ -16,7 +16,4 @@ import lombok.*;
 public class MonitoredDevice {
     @Id
     private Long deviceId;
-
-    @Column(nullable = false)
-    private double maxConsumption;
 }

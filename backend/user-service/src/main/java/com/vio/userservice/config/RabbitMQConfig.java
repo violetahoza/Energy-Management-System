@@ -32,7 +32,7 @@ public class RabbitMQConfig {
     }
 
     @Bean
-    public Binding bindingDevice(Queue userSyncQueueDevice, TopicExchange userSyncExchange) {
+    public Binding userSyncBindingDevice(Queue userSyncQueueDevice, TopicExchange userSyncExchange) {
         return BindingBuilder.bind(userSyncQueueDevice)
                 .to(userSyncExchange)
                 .with(USER_SYNC_ROUTING_KEY);
