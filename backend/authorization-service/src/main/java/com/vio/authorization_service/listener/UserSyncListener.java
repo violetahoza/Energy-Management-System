@@ -58,7 +58,7 @@ public class UserSyncListener {
 
         } catch (Exception e) {
             log.error("Error processing sync event: {}", message, e);
-            throw e; // Re-throw to trigger RabbitMQ retry/DLQ if configured
+            throw e;
         }
     }
 
@@ -85,7 +85,6 @@ public class UserSyncListener {
                         .createdAt(LocalDateTime.now())
                         .updatedAt(LocalDateTime.now())
                         .build();
-
                 credentialRepository.save(credential);
                 log.info("Credentials created for userId: {}", userId);
             }
@@ -98,7 +97,6 @@ public class UserSyncListener {
                 syncedUser.setUserId(userId);
                 syncedUser.setUsername(username);
                 syncedUser.setRole(role.toUpperCase());
-
                 syncedUserRepository.save(syncedUser);
                 log.info("User synced to synced_users: userId={}, username={}", userId, username);
             }
@@ -162,7 +160,6 @@ public class UserSyncListener {
             } else {
                 log.warn("SyncedUser not found for update: userId={}", userId);
             }
-
         } catch (Exception e) {
             log.error("Failed to handle user update: userId={}", userId, e);
             throw e;
@@ -184,7 +181,6 @@ public class UserSyncListener {
             } else {
                 log.warn("User not found in synced_users during deletion: userId={}", userId);
             }
-
         } catch (Exception e) {
             log.error("Failed to handle user deletion: userId={}", userId, e);
             throw e;

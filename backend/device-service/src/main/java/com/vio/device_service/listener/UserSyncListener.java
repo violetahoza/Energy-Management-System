@@ -17,97 +17,66 @@ public class UserSyncListener {
 
     private final SyncedUserRepository syncedUserRepository;
 
-    @RabbitListener(queues = "${app.rabbitmq.queue.sync:sync.queue}")
+    @RabbitListener(queues = "sync.queue")
     @Transactional
-    public void handleUserSyncEvent(Map<String, Object> message) {
+    public void handleSyncEvent(Map<String, Object> message) {
+        log.info("DEVICE SERVICE RECEIVED MESSAGE: {}", message);
+
         try {
             String eventType = (String) message.get("eventType");
-
             if (eventType == null) {
-                log.warn("Received sync event without eventType");
+                log.warn("No eventType in message");
                 return;
             }
+            log.info("Event type: {}", eventType);
 
-            // Only process USER events (ignore DEVICE events from this same queue)
-            if (!message.containsKey("userId") || !message.containsKey("username")) {
-                log.debug("Ignoring non-user event");
-                return;
-            }
+            boolean hasUserId = message.containsKey("userId");
+            boolean hasUsername = message.containsKey("username");
 
-            Long userId = getLongValue(message.get("userId"));
+            log.info("hasUserId: {}, hasUsername: {}", hasUserId, hasUsername);
 
-            switch (eventType) {
-                case "CREATED":
+            if (hasUserId && hasUsername) {
+                log.info("Processing USER event...");
+                Long userId = getLongValue(message.get("userId"));
+
+                if ("CREATED".equals(eventType)) {
                     handleUserCreated(userId, message);
-                    break;
-                case "UPDATED":
-                    handleUserUpdated(userId, message);
-                    break;
-                case "DELETED":
-                    handleUserDeleted(userId);
-                    break;
-                default:
-                    log.warn("Unknown event type: {}", eventType);
+                }
+            } else {
+                log.info("Not a USER event, ignoring");
             }
 
         } catch (Exception e) {
             log.error("Error processing sync event: {}", message, e);
-            // Don't rethrow - we don't want to block the queue
         }
     }
 
     private void handleUserCreated(Long userId, Map<String, Object> message) {
         try {
             String username = (String) message.get("username");
+            String role = (String) message.get("role");
+
+            log.info("CREATING SYNCED USER - userId: {}, username: {}, role: {}",
+                    userId, username, role);
 
             if (syncedUserRepository.existsById(userId)) {
-                log.warn("User already exists in synced_users: userId={}", userId);
+                log.warn("User already exists: {}", userId);
                 return;
             }
 
             SyncedUser syncedUser = new SyncedUser();
             syncedUser.setUserId(userId);
             syncedUser.setUsername(username);
+            syncedUser.setRole(role != null ? role : "CLIENT");
 
             syncedUserRepository.save(syncedUser);
-            log.info("User synced to Device Service: userId={}, username={}", userId, username);
+
+            log.info("SUCCESS! User saved to Device Service DB: userId={}, username={}, role={}",
+                    userId, username, role);
+
         } catch (Exception e) {
-            log.error("Failed to sync user creation: userId={}", userId, e);
-        }
-    }
-
-    private void handleUserUpdated(Long userId, Map<String, Object> message) {
-        try {
-            String username = (String) message.get("username");
-
-            SyncedUser syncedUser = syncedUserRepository.findById(userId).orElse(null);
-
-            if (syncedUser == null) {
-                log.warn("User not found in synced_users during update: userId={}", userId);
-                // Create it if it doesn't exist
-                syncedUser = new SyncedUser();
-                syncedUser.setUserId(userId);
-            }
-
-            syncedUser.setUsername(username);
-            syncedUserRepository.save(syncedUser);
-
-            log.info("User updated in Device Service: userId={}, username={}", userId, username);
-        } catch (Exception e) {
-            log.error("Failed to sync user update: userId={}", userId, e);
-        }
-    }
-
-    private void handleUserDeleted(Long userId) {
-        try {
-            if (syncedUserRepository.existsById(userId)) {
-                syncedUserRepository.deleteById(userId);
-                log.info("User deleted from Device Service synced_users: userId={}", userId);
-            } else {
-                log.warn("User not found in synced_users during deletion: userId={}", userId);
-            }
-        } catch (Exception e) {
-            log.error("Failed to sync user deletion: userId={}", userId, e);
+            log.error("FAILED to sync user: userId={}", userId, e);
+            throw e;
         }
     }
 
@@ -116,6 +85,8 @@ public class UserSyncListener {
             return ((Integer) value).longValue();
         } else if (value instanceof Long) {
             return (Long) value;
+        } else if (value instanceof String) {
+            return Long.parseLong((String) value);
         }
         throw new IllegalArgumentException("Cannot convert to Long: " + value);
     }

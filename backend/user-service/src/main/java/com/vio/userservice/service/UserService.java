@@ -1,5 +1,6 @@
 package com.vio.userservice.service;
 
+import com.vio.userservice.client.AuthServiceClient;
 import com.vio.userservice.dto.*;
 import com.vio.userservice.handler.*;
 import com.vio.userservice.model.User;
@@ -11,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -19,13 +21,22 @@ import java.util.stream.Collectors;
 public class UserService {
     private final UserRepository userRepository;
     private final UserEventPublisher userEventPublisher;
+    private final AuthServiceClient authServiceClient;
 
     public List<UserResponse> getAllUsers() {
         log.info("Fetching all users");
         try {
             List<User> users = userRepository.findAll();
+
+            List<Long> userIds = users.stream()
+                    .map(User::getUserId)
+                    .collect(Collectors.toList());
+
+            Map<Long, Map<String, String>> credentialsMap =
+                    authServiceClient.getUserCredentialsBatch(userIds);
+
             return users.stream()
-                    .map(this::buildUserResponse)
+                    .map(user -> buildUserResponseWithCredentials(user, credentialsMap.get(user.getUserId())))
                     .collect(Collectors.toList());
         } catch (Exception e) {
             log.error("Error fetching all users: {}", e.getMessage(), e);
@@ -61,7 +72,7 @@ public class UserService {
         User savedUser = userRepository.save(user);
         log.info("User profile created with id: {}", savedUser.getUserId());
 
-        // Publish event to create credentials in Auth Service
+        // Publish sync event pentru Authorization Service și Device Service
         userEventPublisher.publishUserCreated(
                 savedUser.getUserId(),
                 request.username(),
@@ -69,48 +80,60 @@ public class UserService {
                 request.role()
         );
 
-        log.info("User created successfully: {}", request.username());
-        return buildUserResponse(savedUser);
+        // Build response cu credentials
+        return buildUserResponseWithCredentials(savedUser, Map.of(
+                "username", request.username(),
+                "role", request.role()
+        ));
     }
 
     @Transactional
     public UserResponse updateUser(Long userId, UserRequest request) {
-        log.info("Updating user with id: {}", userId);
+        log.info("Updating user: {}", userId);
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException(userId));
 
-        boolean profileUpdated = false;
-        boolean credentialsUpdated = false;
+        boolean hasProfileUpdates = hasProfileUpdates(request);
+        boolean hasCredentialUpdates = hasCredentialUpdates(request);
 
-        // Update profile fields
-        if (hasProfileUpdates(request)) {
-            updateUserProfile(user, request);
-            profileUpdated = true;
+        if (!hasProfileUpdates && !hasCredentialUpdates) {
+            throw new InvalidUpdateException("No fields to update");
         }
 
-        // Update credentials via RabbitMQ
-        if (hasCredentialUpdates(request)) {
+        if (hasProfileUpdates) {
+            updateUserProfile(user, request);
+        }
+
+        if (hasCredentialUpdates) {
             userEventPublisher.publishUserUpdated(
                     userId,
                     request.username(),
                     request.password(),
                     request.role()
             );
-            credentialsUpdated = true;
         }
 
-        if (!profileUpdated && !credentialsUpdated) {
-            throw new InvalidUpdateException("No fields to update");
-        }
-
-        log.info("User updated successfully: {}", userId);
         return buildUserResponse(user);
     }
 
     @Transactional
+    public void deleteUser(Long userId) {
+        log.info("Deleting user: {}", userId);
+
+        if (!userRepository.existsById(userId)) {
+            throw new UserNotFoundException(userId);
+        }
+
+        userRepository.deleteById(userId);
+        log.info("User deleted: {}", userId);
+
+        userEventPublisher.publishUserDeleted(userId);
+    }
+
+    @Transactional
     public User createUserProfile(UserProfileRequest request) {
-        log.info("Creating user profile only: {}", request.email());
+        log.info("Creating user profile for email: {}", request.email());
 
         if (userRepository.existsByEmail(request.email())) {
             throw new UserEmailAlreadyExistsException(request.email());
@@ -123,35 +146,22 @@ public class UserService {
                 .address(request.address())
                 .build();
 
-        User savedUser = userRepository.save(user);
-        log.info("User profile created with id: {}", savedUser.getUserId());
-
-        return savedUser;
+        return userRepository.save(user);
     }
 
     @Transactional
     public void deleteUserProfile(Long userId) {
         log.info("Deleting user profile: {}", userId);
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new UserNotFoundException(userId));
-        userRepository.delete(user);
-        log.info("User profile deleted: {}", userId);
+
+        if (!userRepository.existsById(userId)) {
+            throw new UserNotFoundException(userId);
+        }
+
+        userRepository.deleteById(userId);
     }
 
-    @Transactional
-    public void deleteUser(Long userId) {
-        log.info("Deleting user: {}", userId);
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new UserNotFoundException(userId));
-
-        // Delete user profile
-        userRepository.delete(user);
-        log.info("User profile deleted: {}", userId);
-
-        // Publish event to delete credentials in Auth Service
-        userEventPublisher.publishUserDeleted(userId);
-
-        log.info("User deletion event published for userId: {}", userId);
+    public boolean validateUserExists(Long userId) {
+        return userRepository.existsById(userId);
     }
 
     private void validateUserCreationRequest(UserRequest request) {
@@ -163,12 +173,6 @@ public class UserService {
         }
         if (request.role() == null || request.role().isEmpty()) {
             throw new InvalidUserCreationException("Role is required");
-        }
-        if (!request.role().equalsIgnoreCase("CLIENT") && !request.role().equalsIgnoreCase("ADMIN")) {
-            throw new InvalidUserCreationException("Role must be either CLIENT or ADMIN");
-        }
-        if (request.email() == null || request.email().isEmpty()) {
-            throw new InvalidUserCreationException("Email is required");
         }
         if (request.firstName() == null || request.firstName().isEmpty()) {
             throw new InvalidUserCreationException("First name is required");
@@ -213,14 +217,24 @@ public class UserService {
     }
 
     private UserResponse buildUserResponse(User user) {
+        // Fetch credentials de la Authorization Service
+        Map<String, String> credentials = authServiceClient.getUserCredentials(user.getUserId());
+
+        return buildUserResponseWithCredentials(user, credentials);
+    }
+
+    private UserResponse buildUserResponseWithCredentials(User user, Map<String, String> credentials) {
+        String username = credentials != null ? credentials.get("username") : null;
+        String role = credentials != null ? credentials.get("role") : null;
+
         return new UserResponse(
                 user.getUserId(),
                 user.getFirstName(),
                 user.getLastName(),
                 user.getEmail(),
                 user.getAddress(),
-                null, // username will be fetched separately if needed
-                null, // role will be fetched separately if needed
+                username,
+                role,
                 user.getCreatedAt(),
                 user.getUpdatedAt(),
                 null,

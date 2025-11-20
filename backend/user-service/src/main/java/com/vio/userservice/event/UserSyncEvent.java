@@ -13,7 +13,7 @@ public class UserSyncEvent implements Serializable {
     private Long userId;
     private String eventType; // "CREATED", "UPDATED", "DELETED"
     private String username;
-    private String password; // Plain text password - will be hashed in Auth Service
+    private String password;
     private String role;
 
     public static UserSyncEvent created(Long userId, String username, String password, String role) {
