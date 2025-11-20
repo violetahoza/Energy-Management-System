@@ -3,7 +3,9 @@ package com.vio.device_service.service;
 import com.vio.device_service.dto.*;
 import com.vio.device_service.handler.*;
 import com.vio.device_service.model.Device;
+import com.vio.device_service.model.SyncUser;
 import com.vio.device_service.repository.DeviceRepository;
+import com.vio.device_service.repository.SyncUserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -19,9 +21,7 @@ import java.util.Map;
 @Slf4j
 public class DeviceService {
     private final DeviceRepository deviceRepository;
-    private final RestTemplate restTemplate;
-
-    private static final String USER_SERVICE_URL = "http://user-service:8081/api/users";
+    private final SyncUserRepository syncUserRepository;
 
     public List<DeviceResponse> getAllDevices() {
         log.info("Fetching all devices");
@@ -264,30 +264,15 @@ public class DeviceService {
     private void validateUserIsClient(Long userId) {
         log.debug("Validating user {} has CLIENT role", userId);
 
-        try {
-            ResponseEntity<Map> response = restTemplate.getForEntity(USER_SERVICE_URL  + "/internal/role/" + userId, Map.class);
+        SyncUser syncUser = syncUserRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException("User with id " + userId + " does not exist"));
 
-            if (response.getBody() == null) {
-                throw new UserServiceException("Empty response when fetching user role");
-            }
-
-            String role = (String) response.getBody().get("role");
-
-            if (role == null || !role.equals("CLIENT")) {
-                log.error("User {} has role {} which is not CLIENT", userId, role);
-                throw new UserServiceException("Devices can only be assigned to users with CLIENT role");
-            }
-
-            log.debug("User {} validation successful: has CLIENT role", userId);
-        } catch (HttpClientErrorException.NotFound e) {
-            log.error("User not found with id: {}", userId);
-            throw new UserNotFoundException("User with id " + userId + " does not exist");
-        } catch (UserServiceException | UserNotFoundException  e) {
-            throw e;
-        } catch (Exception e) {
-            log.error("Error validating user role for user {}: {}", userId, e.getMessage());
-            throw new UserServiceException("Failed to validate user role: " + e.getMessage(), e);
+        if (!"CLIENT".equals(syncUser.getRole())) {
+            log.error("User {} has role {} which is not CLIENT", userId, syncUser.getRole());
+            throw new UserServiceException("Devices can only be assigned to users with CLIENT role");
         }
+
+        log.debug("User {} validation successful: has CLIENT role", userId);
     }
 
     private DeviceResponse mapToResponse(Device device) {

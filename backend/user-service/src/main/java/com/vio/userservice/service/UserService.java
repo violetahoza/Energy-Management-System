@@ -1,8 +1,10 @@
 package com.vio.userservice.service;
 
 import com.vio.userservice.dto.*;
+import com.vio.userservice.event.UserSyncEvent;
 import com.vio.userservice.handler.*;
 import com.vio.userservice.model.User;
+import com.vio.userservice.producer.UserEventPublisher;
 import com.vio.userservice.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,10 +25,11 @@ import java.util.stream.Collectors;
 @Slf4j
 public class UserService {
     private final UserRepository userRepository;
+    private final UserEventPublisher eventPublisher;
+
     private final RestTemplate restTemplate;
 
     private static final String AUTH_SERVICE_URL = "http://authorization-service:8083/api/auth/internal/credentials";
-    private static final String DEVICE_SERVICE_URL = "http://device-service:8082/api/devices/sync/unassign-user";
 
     public List<UserResponse> getAllUsers() {
         log.info("Fetching all users with credentials");
@@ -81,6 +84,15 @@ public class UserService {
             throw e;
         }
 
+        // Publish user created event for synchronization
+        UserSyncEvent syncEvent = UserSyncEvent.builder()
+                .userId(savedUser.getUserId())
+                .username(request.username())
+                .role(request.role() != null ? request.role().toUpperCase() : "CLIENT")
+                .build();
+
+        eventPublisher.publishUserCreated(syncEvent);
+
         log.info("User and credentials created successfully: {}", request.username());
         return buildUserResponse(savedUser, credentialData);
     }
@@ -102,6 +114,15 @@ public class UserService {
         if (hasCredentialUpdates(request)) {
             updateCredentialsInAuthService(userId, request);
             credentialsUpdated = true;
+
+            // Publish user updated event for synchronization
+            UserSyncEvent syncEvent = UserSyncEvent.builder()
+                    .userId(userId)
+                    .username(request.username())
+                    .role(request.role())
+                    .build();
+
+            eventPublisher.publishUserUpdated(syncEvent);
         }
 
         if (!profileUpdated && !credentialsUpdated) {
@@ -146,7 +167,10 @@ public class UserService {
         log.info("Deleting user: {}", userId);
         User user = userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException(userId));
         deleteCredentialsInAuthService(userId);
-        notifyDeviceServiceUserDeletion(userId);
+
+        // Publish user deleted event - Device Service will handle device unassignment
+        eventPublisher.publishUserDeleted(userId);
+
         userRepository.delete(user);
         log.info("User profile deleted: {}", userId);
         log.info("User deleted successfully: {}", userId);
@@ -289,18 +313,6 @@ public class UserService {
         } catch (Exception e) {
             log.error("Unexpected error deleting credentials: {}", e.getMessage());
             throw new ServiceCommunicationException("authorization-service", "Unexpected error: " + e.getMessage(), e);
-        }
-    }
-
-    private void notifyDeviceServiceUserDeletion(Long userId) {
-        try {
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_JSON);
-            HttpEntity<Void> entity = new HttpEntity<>(headers);
-            restTemplate.postForEntity(DEVICE_SERVICE_URL + "/" + userId, entity, Void.class);
-            log.info("Device unassignment triggered for user: {}", userId);
-        } catch (Exception e) {
-            log.warn("Failed to notify Device Service about user deletion: {}", e.getMessage());
         }
     }
 

@@ -16,6 +16,12 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.MySQLDialect
 
+  rabbitmq:
+    host: rabbitmq
+    port: 5672
+    username: rabbitmq_user
+    password: rabbitmq_pass
+
 server:
   port: 8081
 
