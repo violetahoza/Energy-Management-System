@@ -121,22 +121,10 @@ services:
       - energy_management_network
     labels:
       - "traefik.enable=true"
-      # Public endpoints (login, register) - no auth required
-      - "traefik.http.routers.auth-public.rule=PathPrefix(`/api/auth`) && (Path(`/api/auth/login`) || Path(`/api/auth/register`))"
+      - "traefik.http.routers.auth-public.rule=PathPrefix(`/api/auth`) && (Path(`/api/auth/login`))"
       - "traefik.http.routers.auth-public.entrypoints=web"
       - "traefik.http.routers.auth-public.priority=100"
       - "traefik.http.routers.auth-public.middlewares=cors-headers"
-      # Protected endpoints (logout, user) - require auth
-      - "traefik.http.routers.auth-protected.rule=PathPrefix(`/api/auth`) && !PathPrefix(`/api/auth/internal`) && !(Path(`/api/auth/login`) || Path(`/api/auth/register`))"
-      - "traefik.http.routers.auth-protected.entrypoints=web"
-      - "traefik.http.routers.auth-protected.priority=99"
-      - "traefik.http.routers.auth-protected.middlewares=auth-middleware,cors-headers"
-      # Internal endpoints (service to service) - no auth, higher priority
-      - "traefik.http.routers.auth-internal.rule=PathPrefix(`/api/auth/internal`)"
-      - "traefik.http.routers.auth-internal.entrypoints=web"
-      - "traefik.http.routers.auth-internal.priority=101"
-      - "traefik.http.routers.auth-internal.middlewares=cors-headers"
-      # Service configuration
       - "traefik.http.services.auth.loadbalancer.server.port=8083"
       # CORS Middleware
       - "traefik.http.middlewares.cors-headers.headers.accessControlAllowOriginList=http://localhost:3000"
@@ -168,13 +156,7 @@ services:
       - energy_management_network
     labels:
       - "traefik.enable=true"
-      # Internal endpoints - highest priority, no auth
-      - "traefik.http.routers.users-internal.rule=PathPrefix(`/api/users/internal`)"
-      - "traefik.http.routers.users-internal.entrypoints=web"
-      - "traefik.http.routers.users-internal.priority=101"
-      - "traefik.http.routers.users-internal.middlewares=cors-headers"
-      # Regular endpoints - require auth
-      - "traefik.http.routers.users.rule=PathPrefix(`/api/users`) && !PathPrefix(`/api/users/internal`)"
+      - "traefik.http.routers.users.rule=PathPrefix(`/api/users`)"
       - "traefik.http.routers.users.entrypoints=web"
       - "traefik.http.routers.users.priority=50"
       - "traefik.http.routers.users.middlewares=auth-middleware,cors-headers"

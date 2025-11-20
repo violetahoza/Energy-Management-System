@@ -47,27 +47,27 @@ export const AuthProvider = ({ children }) => {
         return data;
     };
 
-    const register = async (userData) => {
-        const registerData = {
-            ...userData,   // userData should contain: username, password, firstName, lastName, email, address
-            role: 'CLIENT' // role is always CLIENT for regular registration
-        };
-
-        const response = await fetch('http://localhost/api/auth/register', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(registerData),
-        });
-
-        if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.message || 'Registration failed');
-        }
-
-        return await response.json();
-    };
+    // const register = async (userData) => {
+    //     const registerData = {
+    //         ...userData,   // userData should contain: username, password, firstName, lastName, email, address
+    //         role: 'CLIENT' // role is always CLIENT for regular registration
+    //     };
+    //
+    //     const response = await fetch('http://localhost/api/auth/register', {
+    //         method: 'POST',
+    //         headers: {
+    //             'Content-Type': 'application/json',
+    //         },
+    //         body: JSON.stringify(registerData),
+    //     });
+    //
+    //     if (!response.ok) {
+    //         const error = await response.json();
+    //         throw new Error(error.message || 'Registration failed');
+    //     }
+    //
+    //     return await response.json();
+    // };
 
     const logout = async () => {
         const token = localStorage.getItem('token');
@@ -93,7 +93,7 @@ export const AuthProvider = ({ children }) => {
 
     // return a Provider component that makes the auth context available to any child component
     return (
-        <AuthContext.Provider value={{ user, login, register, logout, loading }}>
+        <AuthContext.Provider value={{ user, login, logout, loading }}>
             {children}
         </AuthContext.Provider>
     );

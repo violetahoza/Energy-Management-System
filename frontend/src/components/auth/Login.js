@@ -81,10 +81,10 @@ const Login = () => {
                     </button>
                 </form>
 
-                <div className="auth-footer">
-                    Don't have an account?{' '}
-                    <Link to="/register" className="auth-link"> Sign up </Link>
-                </div>
+                {/*<div className="auth-footer">*/}
+                {/*    Don't have an account?{' '}*/}
+                {/*    <Link to="/register" className="auth-link"> Sign up </Link>*/}
+                {/*</div>*/}
             </div>
         </div>
     );

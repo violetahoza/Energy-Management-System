@@ -1,4 +1,4 @@
-package com.vio.userservice.event;
+package com.vio.authorization_service.event;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

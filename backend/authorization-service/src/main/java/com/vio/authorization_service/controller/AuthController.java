@@ -24,21 +24,6 @@ import java.util.Map;
 public class AuthController {
     private final AuthService authService;
 
-    @PostMapping("/register")
-    @Operation(summary = "Register new user", description = "Create a new user account with credentials and profile information. This endpoint creates both the user profile in the User Service and the credentials. Returns a JWT token upon successful registration.")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "201", description = "User successfully registered", content = @Content(schema = @Schema(implementation = AuthResponse.class))),
-            @ApiResponse(responseCode = "400", description = "Invalid request data or validation failed", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
-            @ApiResponse(responseCode = "409", description = "Username already exists", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
-            @ApiResponse(responseCode = "503", description = "User Service unavailable", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
-            @ApiResponse(responseCode = "500", description = "Internal server error during registration", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
-    })
-    public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest request) {
-        log.info("Register endpoint called for user: {}", request.username());
-        AuthResponse response = authService.register(request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
-    }
-
     @PostMapping("/login")
     @Operation(summary = "User login", description = "Authenticate user with username and password. Returns a JWT token that should be included in the Authorization header (as 'Bearer {token}') for subsequent requests to protected endpoints.")
     @ApiResponses(value = {

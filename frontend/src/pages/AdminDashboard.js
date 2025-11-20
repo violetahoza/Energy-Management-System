@@ -424,8 +424,7 @@ const UserModal = ({ user, onClose, onSuccess }) => {
                                 className="form-input"
                                 value={formData.username}
                                 onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                                required={!user}
-                                disabled={!!user}
+                                required
                                 minLength="3"
                                 maxLength="50"
                             />

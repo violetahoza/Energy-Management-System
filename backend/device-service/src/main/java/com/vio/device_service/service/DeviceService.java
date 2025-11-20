@@ -211,29 +211,6 @@ public class DeviceService {
         }
     }
 
-    @Transactional
-    public void unassignDevicesForDeletedUser(Long userId) {
-        log.info("Unassigning all devices for deleted user: {}", userId);
-
-        List<Device> userDevices = deviceRepository.findByUserId(userId);
-
-        if (userDevices.isEmpty()) {
-            log.info("No devices found for user: {}", userId);
-            return;
-        }
-
-        // Set userId to null - devices persist but are unassigned
-        userDevices.forEach(device -> {
-            log.info("Unassigning device {} from deleted user {}", device.getDeviceId(), userId);
-            device.setUserId(null);
-            device.setUpdatedAt(LocalDateTime.now());
-        });
-
-        deviceRepository.saveAll(userDevices);
-        log.info("Successfully unassigned {} devices from deleted user {}", userDevices.size(), userId);
-    }
-
-    // Validation methods
     private void validateDeviceId(Long deviceId) {
         if (deviceId == null || deviceId <= 0) {
             throw new IllegalArgumentException("Device ID must be a positive number");

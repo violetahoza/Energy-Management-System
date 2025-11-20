@@ -26,8 +26,7 @@ public class UserSyncConsumer {
     @RabbitListener(queues = RabbitMQConfig.USER_SYNC_QUEUE_DEVICE)
     @Transactional
     public void handleUserSyncEvent(UserSyncEvent event) {
-        log.info("Received user sync event: {} for userId: {}",
-                event.getEventType(), event.getUserId());
+        log.info("Received user sync event: {} for userId: {}", event.getEventType(), event.getUserId());
 
         try {
             switch (event.getEventType()) {
@@ -45,12 +44,9 @@ public class UserSyncConsumer {
             }
         } catch (DataIntegrityViolationException e) {
             // Idempotency: if user already exists, just log and continue
-            log.warn("Data integrity violation for userId {}: {}",
-                    event.getUserId(), e.getMessage());
+            log.warn("Data integrity violation for userId {}: {}", event.getUserId(), e.getMessage());
         } catch (Exception e) {
-            log.error("=== Error processing user sync event for userId: {} ===",
-                    event.getUserId(), e);
-            // Re-throw to trigger retry mechanism
+            log.error("=== Error processing user sync event for userId: {} ===", event.getUserId(), e);
             throw new RuntimeException("Failed to process user sync event", e);
         }
     }
@@ -58,7 +54,6 @@ public class UserSyncConsumer {
     private void handleUserCreated(UserSyncEvent event) {
         log.info("Handling user created event for userId: {}", event.getUserId());
 
-        // Check if user already exists (idempotency)
         if (syncUserRepository.existsById(event.getUserId())) {
             log.warn("User {} already exists in sync_users, skipping creation", event.getUserId());
             return;
@@ -71,8 +66,7 @@ public class UserSyncConsumer {
                 .build();
 
         syncUserRepository.save(syncUser);
-        log.info("Successfully synced new user: {} with role: {} and username: {}",
-                event.getUserId(), event.getRole(), event.getUsername());
+        log.info("Successfully synced new user: {} with role: {} and username: {}", event.getUserId(), event.getRole(), event.getUsername());
     }
 
     private void handleUserUpdated(UserSyncEvent event) {
@@ -94,16 +88,14 @@ public class UserSyncConsumer {
 
                     if (updated) {
                         syncUserRepository.save(syncUser);
-                        log.info("Successfully updated sync user: {} - username: {}, role: {}",
-                                event.getUserId(), syncUser.getUsername(), syncUser.getRole());
+                        log.info("Successfully updated sync user: {} - username: {}, role: {}", event.getUserId(), syncUser.getUsername(), syncUser.getRole());
                     } else {
                         log.info("No changes detected for sync user: {}", event.getUserId());
                     }
                 },
                 () -> {
                     // User doesn't exist locally, create it
-                    log.warn("User {} not found in sync_users during update, creating new entry",
-                            event.getUserId());
+                    log.warn("User {} not found in sync_users during update, creating new entry", event.getUserId());
                     handleUserCreated(event);
                 }
         );
@@ -112,28 +104,25 @@ public class UserSyncConsumer {
     private void handleUserDeleted(Long userId) {
         log.info("Handling user deleted event for userId: {}", userId);
 
-        // First, unassign all devices from this user
+        // unassign all devices from this user
         List<Device> userDevices = deviceRepository.findByUserId(userId);
 
         if (!userDevices.isEmpty()) {
-            log.info("Found {} devices assigned to user {}, unassigning them",
-                    userDevices.size(), userId);
+            log.info("Found {} devices assigned to user {}, unassigning them", userDevices.size(), userId);
 
             userDevices.forEach(device -> {
-                log.info("Unassigning device {} (name: {}) from user {}",
-                        device.getDeviceId(), device.getName(), userId);
+                log.info("Unassigning device {} (name: {}) from user {}", device.getDeviceId(), device.getName(), userId);
                 device.setUserId(null);
                 device.setUpdatedAt(LocalDateTime.now());
             });
 
             deviceRepository.saveAll(userDevices);
-            log.info("Successfully unassigned {} devices from deleted user {}",
-                    userDevices.size(), userId);
+            log.info("Successfully unassigned {} devices from deleted user {}", userDevices.size(), userId);
         } else {
             log.info("No devices assigned to user {}", userId);
         }
 
-        // Then delete the sync user record
+        // delete the sync user record
         if (syncUserRepository.existsById(userId)) {
             syncUserRepository.deleteById(userId);
             log.info("Successfully deleted sync user: {}", userId);
