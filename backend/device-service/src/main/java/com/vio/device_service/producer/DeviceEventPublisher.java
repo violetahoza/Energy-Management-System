@@ -13,28 +13,14 @@ import org.springframework.stereotype.Service;
 public class DeviceEventPublisher {
     private final RabbitTemplate rabbitTemplate;
 
-    public void publishDeviceCreated(Long deviceId) {
+    public void publishDeviceSyncEvent(Long deviceId, Long userId, String action) {
         DeviceSyncEvent message = DeviceSyncEvent.builder()
                 .deviceId(deviceId)
-                .action("CREATED")
+                .userId(action.equals("DELETE") ? null : userId)
+                .action(action)
                 .build();
 
-        log.info("Publishing device created event: deviceId={}", deviceId);
-
-        rabbitTemplate.convertAndSend(
-                RabbitMQConfig.DEVICE_SYNC_EXCHANGE,
-                RabbitMQConfig.DEVICE_SYNC_ROUTING_KEY,
-                message
-        );
-    }
-
-    public void publishDeviceDeleted(Long deviceId) {
-        DeviceSyncEvent message = DeviceSyncEvent.builder()
-                .deviceId(deviceId)
-                .action("DELETED")
-                .build();
-
-        log.info("Publishing device deleted event: deviceId={}", deviceId);
+        log.info("Publishing device sync event: action={}, deviceId={}, userId={}", action, deviceId, userId);
 
         rabbitTemplate.convertAndSend(
                 RabbitMQConfig.DEVICE_SYNC_EXCHANGE,

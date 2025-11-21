@@ -9,5 +9,6 @@ import lombok.*;
 @Builder
 public class DeviceSyncEvent {
     private Long deviceId;
-    private String action; // "CREATED", "UPDATED", "DELETED"
+    private Long userId;
+    private String action; // CREATED, DELETED, UPDATED
 }

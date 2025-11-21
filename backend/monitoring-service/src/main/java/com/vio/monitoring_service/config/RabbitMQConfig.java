@@ -1,21 +1,20 @@
 package com.vio.monitoring_service.config;
 
 import org.springframework.amqp.core.*;
+import org.springframework.amqp.rabbit.config.SimpleRabbitListenerContainerFactory;
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.amqp.support.converter.MessageConverter;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.boot.autoconfigure.amqp.RabbitProperties;
-import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 
 @Configuration
 public class RabbitMQConfig {
-
     public static final String DEVICE_SYNC_EXCHANGE = "device.sync.exchange";
     public static final String DEVICE_SYNC_QUEUE_MONITORING = "device.sync.queue.monitoring";
     public static final String DEVICE_SYNC_ROUTING_KEY = "device.sync";
@@ -24,48 +23,57 @@ public class RabbitMQConfig {
     public static final String DEVICE_DATA_EXCHANGE = "device.data.exchange";
     public static final String DEVICE_DATA_ROUTING_KEY = "device.data";
 
+    @Value("${spring.rabbitmq.sync.host}")
+    private String syncHost;
 
-    // Connection Factory for synchronization-broker (device sync messages)
-    @Bean
-    @Primary
-    @ConfigurationProperties(prefix = "spring.rabbitmq.sync")
-    public RabbitProperties syncRabbitProperties() {
-        return new RabbitProperties();
-    }
+    @Value("${spring.rabbitmq.sync.port}")
+    private int syncPort;
 
-    @Bean
+    @Value("${spring.rabbitmq.sync.username}")
+    private String syncUsername;
+
+    @Value("${spring.rabbitmq.sync.password}")
+    private String syncPassword;
+
+    @Value("${spring.rabbitmq.data.host}")
+    private String dataHost;
+
+    @Value("${spring.rabbitmq.data.port}")
+    private int dataPort;
+
+    @Value("${spring.rabbitmq.data.username}")
+    private String dataUsername;
+
+    @Value("${spring.rabbitmq.data.password}")
+    private String dataPassword;
+
+    @Bean(name = "syncConnectionFactory")
     @Primary
     public ConnectionFactory syncConnectionFactory() {
-        CachingConnectionFactory connectionFactory = new CachingConnectionFactory();
-        RabbitProperties props = syncRabbitProperties();
-        connectionFactory.setHost(props.getHost());
-        connectionFactory.setPort(props.getPort());
-        connectionFactory.setUsername(props.getUsername());
-        connectionFactory.setPassword(props.getPassword());
-        return connectionFactory;
+        CachingConnectionFactory factory = new CachingConnectionFactory();
+        factory.setHost(syncHost);
+        factory.setPort(syncPort);
+        factory.setUsername(syncUsername);
+        factory.setPassword(syncPassword);
+        return factory;
     }
 
-    // Connection Factory for data-collection-broker (device measurements)
-    @Bean
-    @ConfigurationProperties(prefix = "spring.rabbitmq.data")
-    public RabbitProperties dataRabbitProperties() {
-        return new RabbitProperties();
+    @Bean(name = "syncRabbitTemplate")
+    @Primary
+    public RabbitTemplate syncRabbitTemplate(@Qualifier("syncConnectionFactory") ConnectionFactory connectionFactory) {
+        RabbitTemplate rabbitTemplate = new RabbitTemplate(connectionFactory);
+        rabbitTemplate.setMessageConverter(jsonMessageConverter());
+        return rabbitTemplate;
     }
 
-    @Bean
-    public ConnectionFactory dataConnectionFactory() {
-        CachingConnectionFactory connectionFactory = new CachingConnectionFactory();
-        RabbitProperties props = dataRabbitProperties();
-        connectionFactory.setHost(props.getHost());
-        connectionFactory.setPort(props.getPort());
-        connectionFactory.setUsername(props.getUsername());
-        connectionFactory.setPassword(props.getPassword());
-        return connectionFactory;
-    }
-
-    @Bean
-    public TopicExchange deviceSyncExchange() {
-        return new TopicExchange(DEVICE_SYNC_EXCHANGE, true, false);
+    @Bean(name = "syncListenerContainerFactory")
+    @Primary
+    public SimpleRabbitListenerContainerFactory syncListenerContainerFactory(
+            @Qualifier("syncConnectionFactory") ConnectionFactory connectionFactory) {
+        SimpleRabbitListenerContainerFactory factory = new SimpleRabbitListenerContainerFactory();
+        factory.setConnectionFactory(connectionFactory);
+        factory.setMessageConverter(jsonMessageConverter());
+        return factory;
     }
 
     @Bean
@@ -74,11 +82,41 @@ public class RabbitMQConfig {
     }
 
     @Bean
+    public TopicExchange deviceSyncExchange() {
+        return new TopicExchange(DEVICE_SYNC_EXCHANGE, true, false);
+    }
+
+    @Bean
     public Binding deviceSyncBinding() {
         return BindingBuilder
                 .bind(deviceSyncQueueMonitoring())
                 .to(deviceSyncExchange())
                 .with(DEVICE_SYNC_ROUTING_KEY);
+    }
+
+    @Bean(name = "dataConnectionFactory")
+    public ConnectionFactory dataConnectionFactory() {
+        CachingConnectionFactory factory = new CachingConnectionFactory();
+        factory.setHost(dataHost);
+        factory.setPort(dataPort);
+        factory.setUsername(dataUsername);
+        factory.setPassword(dataPassword);
+        return factory;
+    }
+
+    @Bean(name = "dataRabbitTemplate")
+    public RabbitTemplate dataRabbitTemplate(@Qualifier("dataConnectionFactory") ConnectionFactory connectionFactory) {
+        RabbitTemplate rabbitTemplate = new RabbitTemplate(connectionFactory);
+        rabbitTemplate.setMessageConverter(jsonMessageConverter());
+        return rabbitTemplate;
+    }
+
+    @Bean(name = "dataListenerContainerFactory")
+    public SimpleRabbitListenerContainerFactory dataListenerContainerFactory(@Qualifier("dataConnectionFactory") ConnectionFactory connectionFactory) {
+        SimpleRabbitListenerContainerFactory factory = new SimpleRabbitListenerContainerFactory();
+        factory.setConnectionFactory(connectionFactory);
+        factory.setMessageConverter(jsonMessageConverter());
+        return factory;
     }
 
     @Bean
@@ -102,20 +140,5 @@ public class RabbitMQConfig {
     @Bean
     public MessageConverter jsonMessageConverter() {
         return new Jackson2JsonMessageConverter();
-    }
-
-    @Bean
-    @Primary
-    public RabbitTemplate syncRabbitTemplate(@Qualifier("syncConnectionFactory") ConnectionFactory connectionFactory) {
-        RabbitTemplate rabbitTemplate = new RabbitTemplate(connectionFactory);
-        rabbitTemplate.setMessageConverter(jsonMessageConverter());
-        return rabbitTemplate;
-    }
-
-    @Bean
-    public RabbitTemplate dataRabbitTemplate(@Qualifier("dataConnectionFactory") ConnectionFactory connectionFactory) {
-        RabbitTemplate rabbitTemplate = new RabbitTemplate(connectionFactory);
-        rabbitTemplate.setMessageConverter(jsonMessageConverter());
-        return rabbitTemplate;
     }
 }

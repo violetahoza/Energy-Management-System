@@ -83,7 +83,7 @@ public class DeviceService {
                     .build();
 
             Device savedDevice = deviceRepository.save(device);
-            devicePublisher.publishDeviceCreated(savedDevice.getDeviceId());
+            devicePublisher.publishDeviceSyncEvent(savedDevice.getDeviceId(), savedDevice.getUserId(), "CREATED");
 
             log.info("Device created successfully with id: {}", savedDevice.getDeviceId());
             return mapToResponse(savedDevice);
@@ -168,6 +168,7 @@ public class DeviceService {
             device.setUserId(userId);
             device.setUpdatedAt(LocalDateTime.now());
             Device updatedDevice = deviceRepository.save(device);
+            devicePublisher.publishDeviceSyncEvent(deviceId, userId, "UPDATED");
             log.info("Device assigned successfully");
             return mapToResponse(updatedDevice);
         } catch (DeviceNotFoundException | UserServiceException | IllegalArgumentException e) {
@@ -185,11 +186,16 @@ public class DeviceService {
 
         try {
             Device device = deviceRepository.findById(deviceId).orElseThrow(() -> new DeviceNotFoundException(deviceId));
-            device.setUserId(null);
-            device.setUpdatedAt(LocalDateTime.now());
-            Device updatedDevice = deviceRepository.save(device);
-            log.info("Device unassigned successfully");
-            return mapToResponse(updatedDevice);
+            if (device.getUserId() != null) {
+                device.setUserId(null);
+                device.setUpdatedAt(LocalDateTime.now());
+                deviceRepository.save(device);
+                devicePublisher.publishDeviceSyncEvent(deviceId, device.getUserId(), "UPDATED");
+                log.info("Device {} unassigned successfully", deviceId);
+            } else {
+                log.info("Device {} was not assigned to any user", deviceId);
+            }
+            return mapToResponse(device);
         } catch (DeviceNotFoundException | IllegalArgumentException e) {
             throw e;
         } catch (Exception e) {
@@ -206,7 +212,7 @@ public class DeviceService {
         try {
             Device device = deviceRepository.findById(deviceId).orElseThrow(() -> new DeviceNotFoundException(deviceId));
             deviceRepository.delete(device);
-            devicePublisher.publishDeviceDeleted(deviceId);
+            devicePublisher.publishDeviceSyncEvent(deviceId, null, "DELETED");
             log.info("Device deleted successfully with id: {}", deviceId);
         } catch (DeviceNotFoundException | IllegalArgumentException e) {
             throw e;
