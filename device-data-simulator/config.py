@@ -5,7 +5,7 @@ class Config:
 
     # RabbitMQ Connection
     RABBITMQ_HOST = os.getenv('RABBITMQ_HOST', 'localhost')
-    RABBITMQ_PORT = int(os.getenv('RABBITMQ_PORT', 5672))
+    RABBITMQ_PORT = int(os.getenv('RABBITMQ_PORT', 5673))
     RABBITMQ_USER = os.getenv('RABBITMQ_USER', 'rabbitmq_user')
     RABBITMQ_PASS = os.getenv('RABBITMQ_PASS', 'rabbitmq_pass')
 

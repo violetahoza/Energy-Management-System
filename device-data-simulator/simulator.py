@@ -97,7 +97,7 @@ class DeviceSimulator:
         timestamp = self.get_current_time_str()
         message = {
             "timestamp": timestamp,
-            "device_id": self.device_id,
+            "device_id": int(self.device_id),
             "measured_value": measurement
         }
         self.log_to_csv(timestamp, measurement)

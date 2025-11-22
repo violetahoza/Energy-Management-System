@@ -17,6 +17,6 @@ public class DeviceDataMessage {
     @JsonProperty("device_id")
     private Long deviceId;
 
-    @JsonProperty("measurement_value")
+    @JsonProperty("measured_value")
     private Double measurementValue;
 }
