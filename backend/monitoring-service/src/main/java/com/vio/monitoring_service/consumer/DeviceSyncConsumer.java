@@ -18,10 +18,7 @@ public class DeviceSyncConsumer {
 
     private final MonitoredDeviceRepository monitoredDeviceRepository;
 
-    @RabbitListener(
-            queues = "device.sync.queue.monitoring",
-            containerFactory = "syncListenerContainerFactory"
-    )
+    @RabbitListener(queues = "device.sync.queue.monitoring", containerFactory = "syncListenerContainerFactory")
     @Transactional
     public void handleDeviceSync(DeviceSyncEvent event) {
         log.info("Received device sync event: action={}, deviceId={}, userId={}",

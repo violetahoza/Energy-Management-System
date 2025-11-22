@@ -1,5 +1,6 @@
 package com.vio.monitoring_service.consumer;
 
+import com.vio.monitoring_service.config.RabbitMQConfig;
 import com.vio.monitoring_service.event.DeviceDataMessage;
 import com.vio.monitoring_service.model.Measurement;
 import com.vio.monitoring_service.model.MonitoredDevice;
@@ -22,7 +23,7 @@ public class DeviceDataConsumer {
     private final MeasurementRepository measurementRepository;
     private final MonitoredDeviceRepository monitoredDeviceRepository;
 
-    @RabbitListener(queues = "#{rabbitMQConfig.DEVICE_DATA_QUEUE}")
+    @RabbitListener(queues = RabbitMQConfig.DEVICE_DATA_QUEUE, containerFactory = "dataListenerContainerFactory")
     @Transactional
     public void handleDeviceData(DeviceDataMessage event) {
         log.info("Received device data: deviceId={}, timestamp={}, value={}",

@@ -56,6 +56,17 @@ class DeviceSimulator:
                     durable=True
                 )
 
+                self.channel.queue_declare(
+                    queue='device.data.queue',
+                    durable=True
+                )
+
+                self.channel.queue_bind(
+                    queue='device.data.queue',
+                    exchange=self.config.EXCHANGE,
+                    routing_key=self.config.ROUTING_KEY
+                )
+
                 print(f"✓ [Device {self.device_id}] Connected to RabbitMQ")
                 return True
 

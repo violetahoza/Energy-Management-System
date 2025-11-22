@@ -1,0 +1,99 @@
+# Device Data Simulator
+
+The **Device Data Simulator** is a Python-based application that generates realistic energy consumption data for smart metering devices. It simulates sensor readings at configurable intervals (default 10 minutes), applying time-of-day patterns to create realistic consumption profiles. Data is published to RabbitMQ and saved locally as CSV files for testing and analysis.
+
+### ⚙️ Technology Stack
+
+* **Language**: Python 3.9
+* **Messaging**: RabbitMQ (pika library)
+* **Data Format**: CSV, JSON
+* **Containerization**: Docker
+* **Timezone Handling**: pytz library
+
+### 📁 Project Structure
+
+```
+Device Simulator
+├── simulator.py         # Main application logic
+├── config.py            # Configuration management
+├── requirements.txt     # Python dependencies
+├── Dockerfile           # Container definition
+└── sensor_data/         # CSV output directory (created at runtime)
+```
+### 🚀 Architecture & Flow
+
+1. **Multi-Device Simulation**: Runs concurrent threads for each configured device ID, allowing independent simulation of multiple devices simultaneously.
+2. **Realistic Data Generation**: Applies time-of-day multipliers to base consumption rates:
+    - Night hours (00:00-06:00): 0.5x base rate (reduced consumption)
+    - Morning/Evening (06:00-09:00, 18:00-22:00): 1.5x base rate (peak usage)
+    - Daytime (09:00-18:00): 1.0x base rate (normal consumption)
+    - Late night (22:00-00:00): 0.8x base rate (winding down)
+3. **Data Publishing**: Sends measurements to RabbitMQ's `device.data.exchange` with routing key `device.data`, consumed by the Monitoring Service.
+4. **Local Storage**: Saves all measurements to CSV files (`sensor_data/<device_id>.csv`) for backup and analysis.
+
+### 📊 Data Format
+
+**Published Message (JSON)**:
+```json
+{
+  "timestamp": "2025-11-22T14:32:26",
+  "device_id": 1,
+  "measured_value": 0.5545
+}
+```
+
+### Energy Consumption Patterns
+
+The simulator generates realistic consumption based on time of day:
+
+| Time Period | Hours      | Load Factor | Typical Usage         |
+|-------------|------------|-------------|-----------------------|
+| Night       | 00:00-06:00| 0.5 - 0.7   | Minimal (sleep)       |
+| Morning     | 06:00-09:00| 0.8 - 1.1   | Moderate (wake up)    |
+| Day         | 09:00-17:00| 0.7 - 0.9   | Low-Moderate (work)   |
+| Evening     | 17:00-24:00| 1.0 - 1.4   | High (peak usage)     |
+
+Each device has a unique `base_load` (0.3-0.8 kWh) with random fluctuations (±0.05 kWh).
+
+### 🔧 Configuration
+
+### Environment Variables
+
+| Variable          | Description                          | Default               |
+|-------------------|--------------------------------------|-----------------------|
+| `RABBITMQ_HOST`   | RabbitMQ server hostname            | `localhost`           |
+| `RABBITMQ_PORT`   | RabbitMQ server port                | `5673`                |
+| `RABBITMQ_USER`   | RabbitMQ username                   | `rabbitmq_user`       |
+| `RABBITMQ_PASS`   | RabbitMQ password                   | `rabbitmq_pass`       |
+| `DEVICE_IDS`      | Comma-separated device IDs          | `1,2,6,7,8,9,10,11`   |
+| `DATA_FOLDER_PATH`| CSV output directory                | `sensor_data`         |
+
+### RabbitMQ Configuration
+
+- **Exchange**: `device.data.exchange` (topic, durable)
+- **Queue**: `device.data.queue` (durable)
+- **Routing Key**: `device.data`
+- **Message Format**: JSON with persistent delivery
+
+### 🚀 Running the Simulator
+
+**Local Development** (Python environment):
+```bash
+# Install dependencies
+pip install -r requirements.txt
+
+# Run with default 10-minute interval
+python simulator.py
+
+# Run with custom interval (e.g., 1 minute for testing)
+python simulator.py 1
+```
+
+### 🔗 Integration with Monitoring Service
+
+The Device Data Simulator works in tandem with the Monitoring Service:
+
+1. **Simulator**: Publishes raw measurements every 10 minutes to `device.data.queue`
+2. **Monitoring Service**: Consumes messages, aggregates data into hourly consumption records
+3. **Result**: Historical energy consumption data accessible via `/api/monitoring/devices/{deviceId}/consumption/daily`
+

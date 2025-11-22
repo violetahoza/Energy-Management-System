@@ -276,7 +276,7 @@ services:
 #    build: ./device-data-simulator
 #    container_name: device-simulator
 #    environment:
-#      RABBITMQ_HOST: rabbitmq
+#      RABBITMQ_HOST: data-collection-broker
 #      RABBITMQ_PORT: 5672
 #      RABBITMQ_USER: rabbitmq_user
 #      RABBITMQ_PASS: rabbitmq_pass
@@ -286,7 +286,7 @@ services:
 #    volumes:
 #      - ./device-data-simulator/data:/app/data
 #    depends_on:
-#      rabbitmq:
+#      data-collection-broker:
 #        condition: service_healthy
 #    networks:
 #      - energy_management_network
