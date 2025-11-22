@@ -1,4 +1,4 @@
-# Energy Management System - Assignment 1
+# Energy Management System
 
 ## Project Overview
 
