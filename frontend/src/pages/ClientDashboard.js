@@ -4,6 +4,8 @@ import { useAuth } from '../context/AuthContext';
 import { deviceAPI } from '../services/api';
 import Alert from '../components/common/Alert';
 import LoadingSpinner from '../components/common/LoadingSpinner';
+import EnergyConsumptionChart from '../components/charts/EnergyConsumptionChart';
+import TotalUserConsumptionChart from '../components/charts/TotalUserConsumptionChart';
 import '../styles/App.css';
 
 const ClientDashboard = () => {
@@ -13,6 +15,9 @@ const ClientDashboard = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [selectedDevice, setSelectedDevice] = useState(null);
+    const [showConsumptionModal, setShowConsumptionModal] = useState(false);
+    const [showTotalConsumptionModal, setShowTotalConsumptionModal] = useState(false);
+    const [selectedDeviceForChart, setSelectedDeviceForChart] = useState(null);
 
     useEffect(() => {
         if (user?.role !== 'CLIENT') {
@@ -42,6 +47,15 @@ const ClientDashboard = () => {
 
     const getTotalConsumption = () => {
         return devices.reduce((sum, device) => sum + (device.maximumConsumption || 0), 0).toFixed(2);
+    };
+
+    const handleViewConsumption = (device) => {
+        setSelectedDeviceForChart(device);
+        setShowConsumptionModal(true);
+    };
+
+    const handleViewTotalConsumption = () => {
+        setShowTotalConsumptionModal(true);
     };
 
     return (
@@ -85,6 +99,14 @@ const ClientDashboard = () => {
                             <div className="stat-card-value">{getTotalConsumption()}</div>
                             <div className="stat-card-label">Total Max Consumption (kWh)</div>
                         </div>
+
+                        {devices.length > 0 && (
+                            <div className="card card-center" style={{ cursor: 'pointer' }} onClick={handleViewTotalConsumption}>
+                                <div className="stat-card-icon">📊</div>
+                                <div className="stat-card-value">View</div>
+                                <div className="stat-card-label">Total Consumption Chart</div>
+                            </div>
+                        )}
                     </div>
 
                     <div className="card">
@@ -103,7 +125,12 @@ const ClientDashboard = () => {
                         ) : (
                             <div className="device-grid">
                                 {devices.map(device => (
-                                    <DeviceCard key={device.deviceId} device={device} onClick={() => setSelectedDevice(device)}/>
+                                    <DeviceCard
+                                        key={device.deviceId}
+                                        device={device}
+                                        onViewDetails={() => setSelectedDevice(device)}
+                                        onViewConsumption={() => handleViewConsumption(device)}
+                                    />
                                 ))}
                             </div>
                         )}
@@ -115,15 +142,36 @@ const ClientDashboard = () => {
                 <DeviceDetailModal
                     device={selectedDevice}
                     onClose={() => setSelectedDevice(null)}
+                    onViewConsumption={() => {
+                        setSelectedDevice(null);
+                        handleViewConsumption(selectedDevice);
+                    }}
+                />
+            )}
+
+            {showConsumptionModal && selectedDeviceForChart && (
+                <ConsumptionModal
+                    device={selectedDeviceForChart}
+                    onClose={() => {
+                        setShowConsumptionModal(false);
+                        setSelectedDeviceForChart(null);
+                    }}
+                />
+            )}
+
+            {showTotalConsumptionModal && (
+                <TotalConsumptionModal
+                    devices={devices}
+                    onClose={() => setShowTotalConsumptionModal(false)}
                 />
             )}
         </div>
     );
 };
 
-const DeviceCard = ({device, onClick}) => {
+const DeviceCard = ({device, onViewDetails, onViewConsumption}) => {
     return (
-        <div className="card device-card" onClick={onClick}>
+        <div className="card device-card">
             <div className="device-card-header">
                 <div className="device-card-icon">📱</div>
                 <div className="device-card-info">
@@ -139,15 +187,19 @@ const DeviceCard = ({device, onClick}) => {
 
             <p className="device-card-description">{device.description}</p>
 
-            <div className="device-card-footer">
-                <span>ID: {device.deviceId}</span>
-                <span>Click for details →</span>
+            <div className="device-card-actions">
+                <button className="btn btn-sm btn-secondary" onClick={onViewDetails}>
+                    📋 Details
+                </button>
+                <button className="btn btn-sm btn-primary" onClick={onViewConsumption}>
+                    📊 View Consumption
+                </button>
             </div>
         </div>
     );
 };
 
-const DeviceDetailModal = ({ device, onClose }) => {
+const DeviceDetailModal = ({ device, onClose, onViewConsumption }) => {
     return (
         <div className="modal-overlay" onClick={onClose}>
             <div className="modal modal-wide" onClick={(e) => e.stopPropagation()}>
@@ -168,6 +220,53 @@ const DeviceDetailModal = ({ device, onClose }) => {
                         <DetailRow label="Created At" value={new Date(device.createdAt).toLocaleString()}/>
                         <DetailRow label="Last Updated" value={new Date(device.updatedAt).toLocaleString()}/>
                     </div>
+                </div>
+                <div className="modal-footer">
+                    <button className="btn btn-secondary" onClick={onClose}>Close</button>
+                    <button className="btn btn-primary" onClick={onViewConsumption}>
+                        📊 View Energy Consumption
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+const ConsumptionModal = ({ device, onClose }) => {
+    return (
+        <div className="modal-overlay" onClick={onClose}>
+            <div className="modal modal-xl" onClick={(e) => e.stopPropagation()}>
+                <div className="modal-header">
+                    <div className="modal-header-content">
+                        <div className="modal-header-icon">📊</div>
+                        <h2 className="modal-title">Energy Consumption - {device.name}</h2>
+                    </div>
+                    <button className="modal-close" onClick={onClose}>✕</button>
+                </div>
+                <div className="modal-body">
+                    <EnergyConsumptionChart device={device} />
+                </div>
+                <div className="modal-footer">
+                    <button className="btn btn-primary" onClick={onClose}>Close</button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+const TotalConsumptionModal = ({ devices, onClose }) => {
+    return (
+        <div className="modal-overlay" onClick={onClose}>
+            <div className="modal modal-xl" onClick={(e) => e.stopPropagation()}>
+                <div className="modal-header">
+                    <div className="modal-header-content">
+                        <div className="modal-header-icon">📊</div>
+                        <h2 className="modal-title">Total Energy Consumption - All Devices</h2>
+                    </div>
+                    <button className="modal-close" onClick={onClose}>✕</button>
+                </div>
+                <div className="modal-body">
+                    <TotalUserConsumptionChart devices={devices} />
                 </div>
                 <div className="modal-footer">
                     <button className="btn btn-primary" onClick={onClose}>Close</button>

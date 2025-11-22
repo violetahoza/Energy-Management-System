@@ -10,7 +10,7 @@ import pika
 import pytz
 from config import Config
 
-# Lock for thread-safe file operations (though writing to separate files is generally safe, creating them might race)
+# Lock for thread-safe file operations
 file_lock = threading.Lock()
 
 class DeviceSimulator:
@@ -25,7 +25,6 @@ class DeviceSimulator:
         self.tz = pytz.timezone(self.config.TIMEZONE)
 
     def get_current_time_str(self):
-        # Get current UTC time and convert to target timezone
         now = datetime.now(pytz.utc).astimezone(self.tz)
         return now.strftime("%Y-%m-%dT%H:%M:%S")
 
@@ -113,7 +112,7 @@ class DeviceSimulator:
                     content_type='application/json'
                 )
             )
-            #print(f"✓ [Device {self.device_id}] Sent {measurement} kWh at {timestamp}")
+            print(f"✓ [Device {self.device_id}] Sent {measurement} kWh at {timestamp}")
             return True
         except Exception as e:
             print(f"✗ [Device {self.device_id}] Send Error: {e}")
