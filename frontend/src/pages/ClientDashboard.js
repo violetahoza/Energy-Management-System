@@ -83,7 +83,7 @@ const ClientDashboard = () => {
                         <div className="card card-center">
                             <div className="stat-card-icon">⚡</div>
                             <div className="stat-card-value">{getTotalConsumption()}</div>
-                            <div className="stat-card-label">Total Max Consumption (kW)</div>
+                            <div className="stat-card-label">Total Max Consumption (kWh)</div>
                         </div>
                     </div>
 
@@ -133,7 +133,7 @@ const DeviceCard = ({device, onClick}) => {
             </div>
 
             <div className="device-card-consumption">
-                <div className="device-card-consumption-value">{device.maximumConsumption} kW</div>
+                <div className="device-card-consumption-value">{device.maximumConsumption} kWh</div>
                 <div className="device-card-consumption-label">Maximum Consumption</div>
             </div>
 
@@ -164,7 +164,7 @@ const DeviceDetailModal = ({ device, onClose }) => {
                         <DetailRow label="Name" value={device.name} />
                         <DetailRow label="Description" value={device.description} />
                         <DetailRow label="Location" value={device.location} />
-                        <DetailRow label="Maximum Consumption" value={`${device.maximumConsumption} kW`} highlight/>
+                        <DetailRow label="Maximum Consumption" value={`${device.maximumConsumption} kWh`} highlight/>
                         <DetailRow label="Created At" value={new Date(device.createdAt).toLocaleString()}/>
                         <DetailRow label="Last Updated" value={new Date(device.updatedAt).toLocaleString()}/>
                     </div>

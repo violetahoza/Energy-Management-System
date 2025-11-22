@@ -284,7 +284,7 @@ const DevicesTable = ({ devices, users, onEdit, onDelete, onAssign }) => {
                 <th>Name</th>
                 <th>Description</th>
                 <th>Location</th>
-                <th>Max Consumption (kW)</th>
+                <th>Max Consumption (kWh)</th>
                 <th>Assigned To</th>
                 <th>Actions</th>
             </tr>
@@ -544,7 +544,7 @@ const DeviceModal = ({ device, users, onClose, onSuccess }) => {
                             />
                         </div>
                         <div className="form-group">
-                            <label className="form-label">Maximum Consumption (kW) *</label>
+                            <label className="form-label">Maximum Consumption (kWh) *</label>
                             <input
                                 type="number"
                                 step="0.01"
