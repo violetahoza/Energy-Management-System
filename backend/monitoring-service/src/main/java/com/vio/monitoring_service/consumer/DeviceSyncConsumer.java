@@ -21,8 +21,7 @@ public class DeviceSyncConsumer {
     @RabbitListener(queues = "device.sync.queue.monitoring", containerFactory = "syncListenerContainerFactory")
     @Transactional
     public void handleDeviceSync(DeviceSyncEvent event) {
-        log.info("Received device sync event: action={}, deviceId={}, userId={}",
-                event.getAction(), event.getDeviceId(), event.getUserId());
+        log.info("Received device sync event: action={}, deviceId={}, userId={}", event.getAction(), event.getDeviceId(), event.getUserId());
 
         try {
             switch (event.getAction()) {
@@ -39,8 +38,7 @@ public class DeviceSyncConsumer {
                     log.warn("Unknown action type: {}", event.getAction());
             }
         } catch (Exception e) {
-            log.error("Error processing device sync event for deviceId {}: {}",
-                    event.getDeviceId(), e.getMessage(), e);
+            log.error("Error processing device sync event for deviceId {}: {}", event.getDeviceId(), e.getMessage(), e);
             throw e;
         }
     }

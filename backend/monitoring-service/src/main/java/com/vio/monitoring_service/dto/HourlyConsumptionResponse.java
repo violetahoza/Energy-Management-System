@@ -10,5 +10,5 @@ import lombok.*;
 public class HourlyConsumptionResponse {
     private Integer hour; // 0-23
     private Double consumption; // kWh for this hour
-    private Integer measurementCount; // Number of 10-min readings aggregated
+    private Integer measurementCount; // nr of 10-min readings aggregated
 }

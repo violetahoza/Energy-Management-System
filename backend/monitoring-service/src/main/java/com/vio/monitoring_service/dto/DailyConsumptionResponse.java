@@ -14,5 +14,5 @@ public class DailyConsumptionResponse {
     private Long deviceId;
     private LocalDate date;
     private List<HourlyConsumptionResponse> hourlyData;
-    private Double totalDailyConsumption; // Sum of all hourly consumptions
+    private Double totalDailyConsumption; // sum of all hourly consumptions
 }

@@ -13,7 +13,6 @@ class Config:
     EXCHANGE = 'device.data.exchange'
     ROUTING_KEY = 'device.data'
 
-    # Simulator Settings
     # List of Device IDs to simulate
     DEVICE_IDS = os.getenv('DEVICE_IDS', '1,2,6,7,8,9,10,11').split(',')
 

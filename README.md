@@ -2,25 +2,54 @@
 
 ## Project Overview
 
-The Energy Management System is a microservices-based application that allows authenticated users to access, monitor, and manage smart energy metering devices. The system implements role-based access control with two user types: Administrators (full CRUD operations) and Clients (view assigned devices).
+The Energy Management System is a microservices-based application that allows authenticated users to access, monitor, and manage smart energy metering devices with consumption tracking. The system implements role-based access control with two user types: Administrators (full CRUD operations) and Clients (view assigned devices and consumption data).
 
 ## Architecture
 
-### Components
-- **Frontend**: React-based application
-- **Authorization Service**: Handles authentication, JWT token generation and validation
-- **User Management Service**: CRUD operations for user accounts
-- **Device Management Service**: CRUD operations for devices and device-user associations
-- **Traefik**: Reverse proxy and API Gateway with ForwardAuth middleware
-- **MySQL Databases**: Three separate databases for credentials, users, and devices
+### System Components
+
+#### Backend Microservices
+- **Authorization Service** (Port 8083): JWT authentication, token validation, and ForwardAuth endpoint for Traefik
+- **User Service** (Port 8081): User profile management and CRUD operations
+- **Device Service** (Port 8082): Device management and user-device assignment
+- **Monitoring Service** (Port 8084): Energy consumption data aggregation and historical analysis
+
+#### Infrastructure
+- **Traefik v3.2**: Reverse proxy and API Gateway with ForwardAuth middleware for centralized authentication
+- **RabbitMQ Brokers** (2 instances):
+    - **Synchronization Broker** (Ports 5672/15672): Handles user and device synchronization events
+    - **Data Collection Broker** (Ports 5673/15673): Processes real-time device measurement data
+- **MySQL Databases** (4 instances): Separate databases for each service (credentials_db, users_db, devices_db, monitoring_db)
+
+#### Additional Components
+- **Frontend**: React 18-based single-page application with authentication context and role-based routing
+- **Device Data Simulator**: Python application generating realistic energy consumption data every 10 minutes
 
 ### Technology Stack
-- **Backend**: Java 21, Spring Boot 3.x, Spring Security, JPA/Hibernate
-- **Frontend**: React 18, React Router, Axios
-- **Reverse Proxy**: Traefik v3.2
-- **Database**: MySQL 8
-- **Containerization**: Docker & Docker Compose
-- **Authentication**: JWT (JSON Web Tokens)
+
+**Backend**
+- Java 21, Spring Boot 3.x
+- Spring Security (method-level authorization with @PreAuthorize)
+- Spring Data JPA with Hibernate
+- RabbitMQ (AMQP messaging)
+- JWT (JSON Web Tokens)
+- Swagger/OpenAPI documentation
+
+**Frontend**
+- React 18, React Router v6
+- Axios for API communication
+- Context API for authentication state
+
+**Infrastructure**
+- Traefik v3.2 (API Gateway)
+- MySQL 8 (persistent data storage)
+- RabbitMQ 3.13 (message broker)
+- Docker & Docker Compose (containerization)
+
+**Data Simulation**
+- Python 3.9
+- Pika (RabbitMQ client library)
+- Pytz (timezone handling)
 
 ## Prerequisites
 
@@ -69,11 +98,12 @@ docker-compose up --build
 ```
 
 This command will:
-- Build Docker images for all services
-- Start MySQL databases with health checks
-- Start the backend microservices
-- Start the frontend application
-- Configure Traefik reverse proxy
+- Build Docker images for all microservices
+- Start 4 MySQL databases with health checks
+- Start 2 RabbitMQ brokers (synchronization and data collection)
+- Launch all backend microservices
+- Start the React frontend
+- Configure Traefik reverse proxy with routing rules
 
 4. **Wait for all services to be healthy** 
 
@@ -84,49 +114,14 @@ Once all services are running:
 - **Frontend Application**: http://localhost
 - **Traefik Dashboard**: http://localhost:8080
 - **API Endpoints**: http://localhost/api/...
+- **Synchronization Broker Management**: http://localhost:15672 (credentials: `rabbitmq_user/rabbitmq_pass`)
+- **Data Collection Broker Management**: http://localhost:15673 (credentials: `rabbitmq_user/rabbitmq_pass`)
 
 ### Default Routes
 
 - `http://localhost/login` - Login page
 - `http://localhost/admin` - Admin dashboard (requires ADMIN role)
 - `http://localhost/client` - Client dashboard (requires CLIENT role)
-
-## API Endpoints
-
-### Public Endpoints (No Authentication Required)
-
-```
-POST   http://localhost/api/auth/login                      - Login and get JWT token
-```
-
-### Protected Endpoints (Authentication Required)
-
-#### Authorization Service
-```
-POST   http://localhost/api/auth/logout                     - Logout (invalidate token)
-GET    http://localhost/api/auth/user                       - Get current user info
-```
-
-#### User Service
-```
-GET    http://localhost/api/users                           - List all users (ADMIN only)
-POST   http://localhost/api/users                           - Create user (ADMIN only)
-GET    http://localhost/api/users/{id}                      - Get user by ID
-PATCH  http://localhost/api/users/{id}                      - Update user (ADMIN only)
-DELETE http://localhost/api/users/{id}                      - Delete user (ADMIN only)
-```
-
-#### Device Service
-```
-GET    http://localhost/api/devices                         - List devices (ADMIN: all, CLIENT: assigned only)
-POST   http://localhost/api/devices                         - Create device (ADMIN only)
-GET    http://localhost/api/devices/{id}                    - Get device by ID
-PATCH  http://localhost/api/devices/{id}                    - Update device (ADMIN only)
-DELETE http://localhost/api/devices/{id}                    - Delete device (ADMIN only)
-PATCH  http://localhost/api/devices/{id}/assign/{user_id}   - Assign device to user (ADMIN only)
-PATCH  http://localhost/api/devices/{id}/unassign           - Unassign device (ADMIN only)
-
-```
 
 ## Stopping the Application
 
@@ -159,6 +154,9 @@ docker-compose up --build -d user-service
 # Rebuild and restart device service
 docker-compose up --build -d device-service
 
+# Rebuild and restart monitoring service
+docker-compose up --build -d monitoring-service
+
 # Rebuild and restart frontend
 docker-compose up --build -d frontend
 ```
@@ -173,51 +171,9 @@ docker-compose up --build -d frontend
 6. **User Headers**: Valid tokens result in user info headers (X-User-Id, X-Username, X-User-Role)
 7. **Service Authorization**: Backend services read headers and enforce permissions
 
-
 ## Testing the Application
 
-### 1. Register an Admin User
-
-```bash
-curl -X POST http://localhost/api/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{
-    "username": "admin",
-    "password": "admin123",
-    "email": "admin@example.com",
-    "fullName": "Admin User",
-    "address": "123 Admin Street",
-    "role": "ADMIN"
-  }'
-```
-
-**Expected Response:**
-```json
-{
-  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "userId": 1,
-  "username": "admin",
-  "role": "ADMIN",
-  "message": "Registration successful"
-}
-```
-
-### 2. Register a Client User
-
-```bash
-curl -X POST http://localhost/api/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{
-    "username": "client1",
-    "password": "client123",
-    "email": "client1@example.com",
-    "fullName": "John Doe",
-    "address": "456 Client Avenue",
-    "role": "CLIENT"
-  }'
-```
-
-### 3. Login and Get Token
+### Login and Get Token
 
 ```bash
 curl -X POST http://localhost/api/auth/login \
@@ -230,14 +186,8 @@ curl -X POST http://localhost/api/auth/login \
 
 **Save the token from the response for subsequent requests.**
 
-### 4. Get Current User Info
 
-```bash
-curl -X GET http://localhost/api/auth/user \
-  -H "Authorization: Bearer $TOKEN"
-```
-
-### 5. Create a User (Admin Only)
+### Create a User (Admin Only)
 
 ```bash
 curl -X POST http://localhost/api/users \
@@ -254,14 +204,14 @@ curl -X POST http://localhost/api/users \
   }'
 ```
 
-### 6. List All Users (Admin Only)
+### List All Users (Admin Only)
 
 ```bash
 curl -X GET http://localhost/api/users \
   -H "Authorization: Bearer $TOKEN"
 ```
 
-### 7. Get Specific User
+### Get Specific User
 
 ```bash
 # Replace {id} with actual user ID
@@ -269,7 +219,7 @@ curl -X GET http://localhost/api/users/1 \
   -H "Authorization: Bearer $TOKEN"
 ```
 
-### 8. Update User (Admin Only)
+### Update User (Admin Only)
 
 ```bash
 curl -X PATCH http://localhost/api/users/2 \
@@ -280,7 +230,7 @@ curl -X PATCH http://localhost/api/users/2 \
   }'
 ```
 
-### 9. Create a Device (Admin Only)
+### Create a Device (Admin Only)
 
 ```bash
 curl -X POST http://localhost/api/devices \
@@ -294,7 +244,7 @@ curl -X POST http://localhost/api/devices \
   }'
 ```
 
-### 10. List All Devices
+### List All Devices
 
 ```bash
 # Admin sees all devices
@@ -303,14 +253,14 @@ curl -X GET http://localhost/api/devices \
   -H "Authorization: Bearer $TOKEN"
 ```
 
-### 11. Get Specific Device
+### Get Specific Device
 
 ```bash
 curl -X GET http://localhost/api/devices/1 \
   -H "Authorization: Bearer $TOKEN"
 ```
 
-### 12. Update Device (Admin Only)
+### Update Device (Admin Only)
 
 ```bash
 curl -X PATCH http://localhost/api/devices/1 \
@@ -322,7 +272,7 @@ curl -X PATCH http://localhost/api/devices/1 \
   }'
 ```
 
-### 13. Assign Device to User (Admin Only)
+### Assign Device to User (Admin Only)
 
 ```bash
 # Assign device ID 1 to user ID 2
@@ -334,21 +284,21 @@ curl -X PATCH http://localhost/api/devices/1/assign \
   }'
 ```
 
-### 14. Delete Device (Admin Only)
+### Delete Device (Admin Only)
 
 ```bash
 curl -X DELETE http://localhost/api/devices/1 \
   -H "Authorization: Bearer $TOKEN"
 ```
 
-### 15. Delete User (Admin Only)
+### Delete User (Admin Only)
 
 ```bash
 curl -X DELETE http://localhost/api/users/2 \
   -H "Authorization: Bearer $TOKEN"
 ```
 
-### 16. Logout
+### Logout
 
 ```bash
 curl -X POST http://localhost/api/auth/logout \
@@ -362,6 +312,7 @@ Each microservice provides API documentation via Swagger UI. Once all services a
 - **Authorization Service**: http://localhost:8083/swagger-ui/index.html
 - **User Service**: http://localhost:8081/swagger-ui/index.html
 - **Device Service**: http://localhost:8082/swagger-ui/index.html
+- **Monitoring Service**: http://localhost:8084/swagger-ui/index.html
 
 ## Authors
 

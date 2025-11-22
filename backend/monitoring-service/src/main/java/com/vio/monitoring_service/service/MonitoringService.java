@@ -83,12 +83,4 @@ public class MonitoringService {
 
         return completeData;
     }
-
-    public List<Measurement> getConsumptionRange(Long deviceId, LocalDate startDate, LocalDate endDate) {
-        log.info("Fetching consumption for device {} from {} to {}", deviceId, startDate, endDate);
-        if (!monitoredDeviceRepository.existsById(deviceId)) {
-            throw new IllegalArgumentException("Device " + deviceId + " not found in monitoring system");
-        }
-        return measurementRepository.findByDeviceIdAndDateRange(deviceId, startDate, endDate);
-    }
 }

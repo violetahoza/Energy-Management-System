@@ -3,7 +3,6 @@ package com.vio.monitoring_service.consumer;
 import com.vio.monitoring_service.config.RabbitMQConfig;
 import com.vio.monitoring_service.event.DeviceDataMessage;
 import com.vio.monitoring_service.model.Measurement;
-import com.vio.monitoring_service.model.MonitoredDevice;
 import com.vio.monitoring_service.repository.MeasurementRepository;
 import com.vio.monitoring_service.repository.MonitoredDeviceRepository;
 import lombok.RequiredArgsConstructor;
@@ -30,33 +29,25 @@ public class DeviceDataConsumer {
                 event.getDeviceId(), event.getTimestamp(), event.getMeasurementValue());
 
         try {
-            // Validate device exists in monitored devices
             if (!monitoredDeviceRepository.existsById(event.getDeviceId())) {
                 log.warn("Device {} is not in monitored devices list. Synchronization may be pending.", event.getDeviceId());
                 return;
             }
 
-            // Extract date and hour from timestamp
             LocalDate date = event.getTimestamp().toLocalDate();
             Integer hour = event.getTimestamp().getHour();
 
-            // Find or create measurement record for this device, date, and hour
             Optional<Measurement> existingMeasurement = measurementRepository.findByDeviceIdAndDateAndHour(event.getDeviceId(), date, hour);
 
             Measurement measurement;
             if (existingMeasurement.isPresent()) {
-                // Update existing measurement (aggregate)
+                // update existing measurement
                 measurement = existingMeasurement.get();
-                measurement.setHourlyConsumption(
-                        measurement.getHourlyConsumption() + event.getMeasurementValue()
-                );
+                measurement.setHourlyConsumption(measurement.getHourlyConsumption() + event.getMeasurementValue());
                 measurement.setMeasurementCount(measurement.getMeasurementCount() + 1);
-                log.debug("Updated measurement for device {} on {} hour {}: total={} kWh, count={}",
-                        event.getDeviceId(), date, hour,
-                        measurement.getHourlyConsumption(),
-                        measurement.getMeasurementCount());
+                log.debug("Updated measurement for device {} on {} hour {}: total={} kWh, count={}", event.getDeviceId(), date, hour, measurement.getHourlyConsumption(), measurement.getMeasurementCount());
             } else {
-                // Create new measurement
+                // create new measurement
                 measurement = Measurement.builder()
                         .deviceId(event.getDeviceId())
                         .date(date)
@@ -64,17 +55,13 @@ public class DeviceDataConsumer {
                         .hourlyConsumption(event.getMeasurementValue())
                         .measurementCount(1)
                         .build();
-                log.debug("Created new measurement for device {} on {} hour {}: {} kWh",
-                        event.getDeviceId(), date, hour, event.getMeasurementValue());
+                log.debug("Created new measurement for device {} on {} hour {}: {} kWh", event.getDeviceId(), date, hour, event.getMeasurementValue());
             }
 
             measurementRepository.save(measurement);
-            log.info("Successfully processed device data for device {} - Date: {}, Hour: {}, Total: {} kWh",
-                    event.getDeviceId(), date, hour, measurement.getHourlyConsumption());
-
+            log.info("Successfully processed device data for device {} - Date: {}, Hour: {}, Total: {} kWh", event.getDeviceId(), date, hour, measurement.getHourlyConsumption());
         } catch (Exception e) {
-            log.error("Error processing device data for deviceId {}: {}",
-                    event.getDeviceId(), e.getMessage(), e);
+            log.error("Error processing device data for deviceId {}: {}", event.getDeviceId(), e.getMessage(), e);
             throw e;
         }
     }

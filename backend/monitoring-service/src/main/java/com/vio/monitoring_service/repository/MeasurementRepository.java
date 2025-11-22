@@ -13,7 +13,6 @@ public interface MeasurementRepository extends JpaRepository<Measurement, Long> 
     Optional<Measurement> findByDeviceIdAndDateAndHour(Long deviceId, LocalDate date, Integer hour);
     List<Measurement> findByDeviceIdAndDateOrderByHourAsc(Long deviceId, LocalDate date);
 
-    @Query("SELECT m FROM Measurement m WHERE m.deviceId = :deviceId " +
-            "AND m.date BETWEEN :startDate AND :endDate ORDER BY m.date, m.hour")
+    @Query("SELECT m FROM Measurement m WHERE m.deviceId = :deviceId AND m.date BETWEEN :startDate AND :endDate ORDER BY m.date, m.hour")
     List<Measurement> findByDeviceIdAndDateRange(@Param("deviceId") Long deviceId, @Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate);
 }
