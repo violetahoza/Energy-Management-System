@@ -5,6 +5,7 @@ import com.vio.monitoring_service.dto.HourlyConsumptionResponse;
 import com.vio.monitoring_service.model.Measurement;
 import com.vio.monitoring_service.repository.MeasurementRepository;
 import com.vio.monitoring_service.repository.MonitoredDeviceRepository;
+import com.vio.monitoring_service.handler.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -26,7 +27,7 @@ public class MonitoringService {
         log.info("Fetching daily consumption for device {} on {}", deviceId, date);
 
         if (!monitoredDeviceRepository.existsById(deviceId)) {
-            throw new IllegalArgumentException("Device " + deviceId + " not found in monitoring system");
+            throw new ResourceNotFoundException("Device " + deviceId + " not found in monitoring system");
         }
 
         // Fetch measurements for the day

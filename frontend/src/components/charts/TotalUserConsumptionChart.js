@@ -205,27 +205,27 @@ const TotalUserConsumptionChart = ({ devices }) => {
                         )}
                     </div>
 
-                    <div className="chart-table-container">
-                        <h3>Hourly Breakdown - All Devices</h3>
-                        <table className="table">
-                            <thead>
-                            <tr>
-                                <th>Hour</th>
-                                <th>Total (kWh)</th>
-                                <th>Measurements</th>
-                            </tr>
-                            </thead>
-                            <tbody>
-                            {totalData.hourlyData.map((hour) => (
-                                <tr key={hour.hour}>
-                                    <td>{hour.hour}:00 - {hour.hour + 1}:00</td>
-                                    <td>{hour.consumption.toFixed(3)}</td>
-                                    <td>{hour.measurementCount}</td>
-                                </tr>
-                            ))}
-                            </tbody>
-                        </table>
-                    </div>
+                    {/*<div className="chart-table-container">*/}
+                    {/*    <h3>Hourly Breakdown - All Devices</h3>*/}
+                    {/*    <table className="table">*/}
+                    {/*        <thead>*/}
+                    {/*        <tr>*/}
+                    {/*            <th>Hour</th>*/}
+                    {/*            <th>Total (kWh)</th>*/}
+                    {/*            <th>Measurements</th>*/}
+                    {/*        </tr>*/}
+                    {/*        </thead>*/}
+                    {/*        <tbody>*/}
+                    {/*        {totalData.hourlyData.map((hour) => (*/}
+                    {/*            <tr key={hour.hour}>*/}
+                    {/*                <td>{hour.hour}:00 - {hour.hour + 1}:00</td>*/}
+                    {/*                <td>{hour.consumption.toFixed(3)}</td>*/}
+                    {/*                <td>{hour.measurementCount}</td>*/}
+                    {/*            </tr>*/}
+                    {/*        ))}*/}
+                    {/*        </tbody>*/}
+                    {/*    </table>*/}
+                    {/*</div>*/}
 
                     <div className="chart-devices-list">
                         <h4 style={{ marginBottom: '10px' }}>Included Devices:</h4>
