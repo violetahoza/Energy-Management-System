@@ -17,4 +17,6 @@ public class MonitoredDevice {
     private Long deviceId;
 
     private Long userId;
+
+    private Double maxConsumption;
 }

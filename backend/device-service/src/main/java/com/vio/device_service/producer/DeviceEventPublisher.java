@@ -13,14 +13,15 @@ import org.springframework.stereotype.Service;
 public class DeviceEventPublisher {
     private final RabbitTemplate rabbitTemplate;
 
-    public void publishDeviceSyncEvent(Long deviceId, Long userId, String action) {
+    public void publishDeviceSyncEvent(Long deviceId, Long userId, Double maxConsumption, String action) {
         DeviceSyncEvent message = DeviceSyncEvent.builder()
                 .deviceId(deviceId)
                 .userId(action.equals("DELETE") ? null : userId)
+                .maxConsumption(maxConsumption)
                 .action(action)
                 .build();
 
-        log.info("Publishing device sync event: action={}, deviceId={}, userId={}", action, deviceId, userId);
+        log.info("Publishing device sync event: action={}, deviceId={}, userId={}, maxConsumption={}", action, deviceId, userId, maxConsumption);
 
         rabbitTemplate.convertAndSend(
                 RabbitMQConfig.DEVICE_SYNC_EXCHANGE,

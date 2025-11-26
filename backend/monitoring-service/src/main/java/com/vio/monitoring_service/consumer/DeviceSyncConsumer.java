@@ -21,18 +21,18 @@ public class DeviceSyncConsumer {
     @RabbitListener(queues = "device.sync.queue.monitoring", containerFactory = "syncListenerContainerFactory")
     @Transactional
     public void handleDeviceSync(DeviceSyncEvent event) {
-        log.info("Received device sync event: action={}, deviceId={}, userId={}", event.getAction(), event.getDeviceId(), event.getUserId());
+        log.info("Received device sync event: action={}, deviceId={}, userId={}, maxConsumption={}", event.getAction(), event.getDeviceId(), event.getUserId(), event.getMaxConsumption());
 
         try {
             switch (event.getAction()) {
                 case "CREATED":
-                    handleDeviceCreated(event.getDeviceId(), event.getUserId());
+                    handleDeviceCreated(event.getDeviceId(), event.getUserId(), event.getMaxConsumption());
                     break;
                 case "DELETED":
                     handleDeviceDeleted(event.getDeviceId());
                     break;
                 case "UPDATED":
-                    handleDeviceUpdated(event.getDeviceId(), event.getUserId());
+                    handleDeviceUpdated(event.getDeviceId(), event.getUserId(), event.getMaxConsumption());
                     break;
                 default:
                     log.warn("Unknown action type: {}", event.getAction());
@@ -43,12 +43,13 @@ public class DeviceSyncConsumer {
         }
     }
 
-    private void handleDeviceCreated(Long deviceId, Long userId) {
+    private void handleDeviceCreated(Long deviceId, Long userId, Double maxConsumption) {
         if (monitoredDeviceRepository.existsById(deviceId)) {
             log.info("Device {} already exists in monitoring service, updating userId", deviceId);
             Optional<MonitoredDevice> existing = monitoredDeviceRepository.findById(deviceId);
             existing.ifPresent(device -> {
                 device.setUserId(userId);
+                device.setMaxConsumption(maxConsumption);
                 monitoredDeviceRepository.save(device);
             });
             return;
@@ -57,6 +58,7 @@ public class DeviceSyncConsumer {
         MonitoredDevice monitoredDevice = MonitoredDevice.builder()
                 .deviceId(deviceId)
                 .userId(userId)
+                .maxConsumption(maxConsumption)
                 .build();
 
         monitoredDeviceRepository.save(monitoredDevice);
@@ -73,17 +75,18 @@ public class DeviceSyncConsumer {
         log.info("Successfully deleted device {} from monitoring service", deviceId);
     }
 
-    private void handleDeviceUpdated(Long deviceId, Long userId) {
+    private void handleDeviceUpdated(Long deviceId, Long userId, Double maxConsumption) {
         Optional<MonitoredDevice> deviceOpt = monitoredDeviceRepository.findById(deviceId);
 
         if (deviceOpt.isEmpty()) {
             log.warn("Device {} not found in monitoring service, creating it", deviceId);
-            handleDeviceCreated(deviceId, userId);
+            handleDeviceCreated(deviceId, userId, maxConsumption);
             return;
         }
 
         MonitoredDevice device = deviceOpt.get();
         device.setUserId(userId);
+        device.setMaxConsumption(maxConsumption);
         monitoredDeviceRepository.save(device);
 
         log.info("Successfully updated device {}", deviceId);

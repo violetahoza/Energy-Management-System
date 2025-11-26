@@ -10,5 +10,6 @@ import lombok.*;
 public class DeviceSyncEvent {
     private Long deviceId;
     private Long userId;
+    private Double maxConsumption;
     private String action; // CREATED, DELETED, UPDATED
 }
