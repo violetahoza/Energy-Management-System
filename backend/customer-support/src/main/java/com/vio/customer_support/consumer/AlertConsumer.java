@@ -17,16 +17,25 @@ public class AlertConsumer {
 
     @RabbitListener(queues = RabbitMQConfig.OVERCONSUMPTION_QUEUE)
     public void handleOverconsumptionAlert(OverconsumptionAlert alert) {
-        log.info("Received overconsumption alert for device {} and user {}",
-                alert.getDeviceId(), alert.getUserId());
+        log.info("========== ALERT RECEIVED ==========");
+        log.info("Received overconsumption alert for device {} and user {}", alert.getDeviceId(), alert.getUserId());
+        log.info("Alert details: {}", alert);
 
-        // Send to specific user
-        messagingTemplate.convertAndSendToUser(
-                alert.getUserId().toString(),
-                "/queue/alerts",
-                alert
-        );
+        try {
+            String userDestination = "/user/" + alert.getUserId() + "/queue/alerts";
+            messagingTemplate.convertAndSendToUser(
+                    alert.getUserId().toString(),
+                    "/queue/alerts",
+                    alert
+            );
+            log.info("✓ Sent alert to user-specific destination: {}", userDestination);
 
-        log.info("Sent alert to user {}", alert.getUserId());
+            messagingTemplate.convertAndSend("/topic/alerts/" + alert.getUserId(), alert);
+            log.info("✓ Broadcast alert to topic: /topic/alerts/{}", alert.getUserId());
+
+            log.info("========== ALERT SENT SUCCESSFULLY ==========");
+        } catch (Exception e) {
+            log.error("❌ Failed to send alert via WebSocket", e);
+        }
     }
 }

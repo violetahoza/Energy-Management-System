@@ -111,7 +111,7 @@ class DeviceSimulator:
             "device_id": int(self.device_id),
             "measured_value": measurement
         }
-        self.log_to_csv(timestamp, measurement)
+        #self.log_to_csv(timestamp, measurement)
 
         try:
             self.channel.basic_publish(
