@@ -3,6 +3,8 @@ package com.vio.monitoring_service.consumer;
 import com.vio.monitoring_service.config.RabbitMQConfig;
 import com.vio.monitoring_service.event.DeviceDataMessage;
 import com.vio.monitoring_service.model.Measurement;
+import com.vio.monitoring_service.model.MonitoredDevice;
+import com.vio.monitoring_service.producer.AlertPublisher;
 import com.vio.monitoring_service.repository.MeasurementRepository;
 import com.vio.monitoring_service.repository.MonitoredDeviceRepository;
 import lombok.RequiredArgsConstructor;
@@ -18,9 +20,9 @@ import java.util.Optional;
 @RequiredArgsConstructor
 @Slf4j
 public class DeviceDataConsumer {
-
     private final MeasurementRepository measurementRepository;
     private final MonitoredDeviceRepository monitoredDeviceRepository;
+    private final AlertPublisher alertPublisher;  // Add this
 
     @RabbitListener(queues = RabbitMQConfig.DEVICE_DATA_QUEUE, containerFactory = "dataListenerContainerFactory")
     @Transactional
@@ -60,6 +62,26 @@ public class DeviceDataConsumer {
 
             measurementRepository.save(measurement);
             log.info("Successfully processed device data for device {} - Date: {}, Hour: {}, Total: {} kWh", event.getDeviceId(), date, hour, measurement.getHourlyConsumption());
+
+            // Check for overconsumption after saving measurement
+            MonitoredDevice device = monitoredDeviceRepository.findById(event.getDeviceId()).orElse(null);
+            if (device != null && device.getMaxConsumption() != null) {
+                Double hourlyConsumption = measurement.getHourlyConsumption();
+                Double maxConsumption = device.getMaxConsumption();
+
+                // Alert if hourly consumption exceeds device maximum
+                if (hourlyConsumption > maxConsumption) {
+                    log.warn("Overconsumption detected for device {}: {} > {}",
+                            event.getDeviceId(), hourlyConsumption, maxConsumption);
+
+                    alertPublisher.publishOverconsumptionAlert(
+                            event.getDeviceId(),
+                            device.getUserId(),
+                            hourlyConsumption,
+                            maxConsumption
+                    );
+                }
+            }
         } catch (Exception e) {
             log.error("Error processing device data for deviceId {}: {}", event.getDeviceId(), e.getMessage(), e);
             throw e;

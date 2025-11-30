@@ -23,6 +23,10 @@ public class RabbitMQConfig {
     public static final String DEVICE_DATA_EXCHANGE = "device.data.exchange";
     public static final String DEVICE_DATA_ROUTING_KEY = "device.data";
 
+    public static final String OVERCONSUMPTION_EXCHANGE = "overconsumption.exchange";
+    public static final String OVERCONSUMPTION_QUEUE = "overconsumption.alert.queue";
+    public static final String OVERCONSUMPTION_ROUTING_KEY = "overconsumption.alert";
+
     @Value("${spring.rabbitmq.sync.host}")
     private String syncHost;
 
@@ -46,6 +50,24 @@ public class RabbitMQConfig {
 
     @Value("${spring.rabbitmq.data.password}")
     private String dataPassword;
+
+    @Bean
+    public TopicExchange overconsumptionExchange() {
+        return new TopicExchange(OVERCONSUMPTION_EXCHANGE, true, false);
+    }
+
+    @Bean
+    public Queue overconsumptionQueue() {
+        return new Queue(OVERCONSUMPTION_QUEUE, true);
+    }
+
+    @Bean
+    public Binding overconsumptionBinding() {
+        return BindingBuilder
+                .bind(overconsumptionQueue())
+                .to(overconsumptionExchange())
+                .with(OVERCONSUMPTION_ROUTING_KEY);
+    }
 
     @Bean(name = "syncConnectionFactory")
     @Primary
