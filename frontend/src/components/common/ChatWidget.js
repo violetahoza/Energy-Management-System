@@ -15,21 +15,37 @@ const ChatWidget = () => {
         if (user) {
             const token = localStorage.getItem('token');
 
-            websocketService.connect(user.userId, token, {
-                onConnect: () => {
-                    setIsConnected(true);
-                    console.log('Chat connected');
-                },
-                onMessage: (message) => {
-                    setMessages(prev => [...prev, message]);
-                },
-                onDisconnect: () => {
-                    setIsConnected(false);
-                }
-            });
+            const handleMessage = (message) => {
+                console.log('ChatWidget received message:', message);
+                setMessages(prev => [...prev, message]);
+            };
+
+            const handleConnect = () => {
+                setIsConnected(true);
+                console.log('ChatWidget: Connected');
+            };
+
+            const handleDisconnect = () => {
+                setIsConnected(false);
+                console.log('ChatWidget: Disconnected');
+            };
+
+            websocketService.subscribe('messages', handleMessage);
+            websocketService.subscribe('connect', handleConnect);
+            websocketService.subscribe('disconnect', handleDisconnect);
+
+            if (!websocketService.isConnected()) {
+                console.log('ChatWidget: Connecting WebSocket for user:', user.userId);
+                websocketService.connect(user.userId, token);
+            } else {
+                console.log('ChatWidget: WebSocket already connected');
+                setIsConnected(true);
+            }
 
             return () => {
-                websocketService.disconnect();
+                websocketService.unsubscribe('messages', handleMessage);
+                websocketService.unsubscribe('connect', handleConnect);
+                websocketService.unsubscribe('disconnect', handleDisconnect);
             };
         }
     }, [user]);

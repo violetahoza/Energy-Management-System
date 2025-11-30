@@ -5,9 +5,21 @@ class WebSocketService {
     constructor() {
         this.client = null;
         this.connected = false;
+        this.subscribers = {
+            alerts: [],
+            messages: [],
+            connect: [],
+            disconnect: [],
+            error: []
+        };
     }
 
-    connect(userId, token, callbacks = {}) {
+    connect(userId, token) {
+        if (this.client && this.connected) {
+            console.log('⚠️ WebSocket already connected, skipping reconnect');
+            return;
+        }
+
         console.log('=== WebSocket Connection Initiated ===');
         console.log('User ID:', userId);
 
@@ -26,43 +38,64 @@ class WebSocketService {
                 console.log('✓ WebSocket Connected Successfully');
                 this.connected = true;
 
-                // Subscribe to chat messages
                 this.client.subscribe(`/user/queue/messages`, (message) => {
                     console.log('📨 Received chat message:', message.body);
                     const chatMessage = JSON.parse(message.body);
-                    callbacks.onMessage && callbacks.onMessage(chatMessage);
+                    this.notifySubscribers('messages', chatMessage);
                 });
                 console.log(`✓ Subscribed to: /user/queue/messages`);
 
                 this.client.subscribe(`/user/queue/alerts`, (message) => {
-                    console.log('🚨 Received alert (user queue):', message.body);
+                    console.log('🚨 Received alert:', message.body);
                     const alert = JSON.parse(message.body);
-                    callbacks.onAlert && callbacks.onAlert(alert);
+                    this.notifySubscribers('alerts', alert);
                 });
                 console.log(`✓ Subscribed to: /user/queue/alerts`);
 
-                this.client.subscribe(`/topic/alerts/${userId}`, (message) => {
-                    console.log('🚨 Received alert (topic):', message.body);
-                    const alert = JSON.parse(message.body);
-                    callbacks.onAlert && callbacks.onAlert(alert);
-                });
-                console.log(`✓ Subscribed to: /topic/alerts/${userId}`);
-
-                callbacks.onConnect && callbacks.onConnect();
                 console.log('=== All Subscriptions Active ===');
+                this.notifySubscribers('connect');
             },
             onDisconnect: () => {
                 console.log('❌ WebSocket Disconnected');
                 this.connected = false;
-                callbacks.onDisconnect && callbacks.onDisconnect();
+                this.notifySubscribers('disconnect');
             },
             onStompError: (frame) => {
                 console.error('❌ STOMP error:', frame);
-                callbacks.onError && callbacks.onError(frame);
+                this.notifySubscribers('error', frame);
             }
         });
 
         this.client.activate();
+    }
+
+    subscribe(eventType, callback) {
+        if (this.subscribers[eventType]) {
+            this.subscribers[eventType].push(callback);
+            console.log(`📝 Added subscriber for ${eventType}. Total: ${this.subscribers[eventType].length}`);
+        }
+    }
+
+    unsubscribe(eventType, callback) {
+        if (this.subscribers[eventType]) {
+            const index = this.subscribers[eventType].indexOf(callback);
+            if (index > -1) {
+                this.subscribers[eventType].splice(index, 1);
+                console.log(`🗑️ Removed subscriber for ${eventType}. Total: ${this.subscribers[eventType].length}`);
+            }
+        }
+    }
+
+    notifySubscribers(eventType, data) {
+        if (this.subscribers[eventType]) {
+            this.subscribers[eventType].forEach(callback => {
+                try {
+                    callback(data);
+                } catch (error) {
+                    console.error(`Error in ${eventType} subscriber:`, error);
+                }
+            });
+        }
     }
 
     sendMessage(content) {
@@ -82,8 +115,19 @@ class WebSocketService {
         if (this.client) {
             this.client.deactivate();
             this.connected = false;
-            console.log('🔌 WebSocket disconnected');
+            this.subscribers = {
+                alerts: [],
+                messages: [],
+                connect: [],
+                disconnect: [],
+                error: []
+            };
+            console.log('🔌 WebSocket disconnected and subscribers cleared');
         }
+    }
+
+    isConnected() {
+        return this.connected;
     }
 }
 

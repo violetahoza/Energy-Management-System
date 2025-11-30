@@ -13,29 +13,28 @@ const NotificationBell = () => {
     useEffect(() => {
         if (user) {
             const token = localStorage.getItem('token');
-            console.log('Connecting WebSocket for user:', user.userId);
 
-            websocketService.connect(user.userId, token, {
-                onAlert: (alert) => {
-                    console.log('Received alert:', alert);
-                    setAlerts(prev => [alert, ...prev]);
-                    setUnreadCount(prev => prev + 1);
-                },
-                onConnect: () => {
-                    console.log('WebSocket connected successfully');
-                },
-                onError: (error) => {
-                    console.error('WebSocket error:', error);
-                }
-            });
+            const handleAlert = (alert) => {
+                console.log('NotificationBell received alert:', alert);
+                setAlerts(prev => [alert, ...prev]);
+                setUnreadCount(prev => prev + 1);
+            };
+
+            websocketService.subscribe('alerts', handleAlert);
+
+            if (!websocketService.isConnected()) {
+                console.log('NotificationBell: Connecting WebSocket for user:', user.userId);
+                websocketService.connect(user.userId, token);
+            } else {
+                console.log('NotificationBell: WebSocket already connected');
+            }
+
+            return () => {
+                websocketService.unsubscribe('alerts', handleAlert);
+            };
         }
-
-        return () => {
-            websocketService.disconnect();
-        };
     }, [user]);
 
-    // Close dropdown when clicking outside
     useEffect(() => {
         const handleClickOutside = (event) => {
             if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -115,14 +114,14 @@ const NotificationBell = () => {
                                 >
                                     <div className="notification-icon">⚠️</div>
                                     <div className="notification-content">
-                                        <div className="notification-message">
+                                        <div className="notification-title">
                                             Overconsumption Alert
                                         </div>
-                                        <div className="notification-details">
+                                        <div className="notification-message">
                                             Device #{alert.deviceId} exceeded limit by{' '}
                                             {alert.exceededBy?.toFixed(2)} kWh
                                         </div>
-                                        <div className="notification-subdetails">
+                                        <div className="notification-details">
                                             Current: {alert.currentConsumption?.toFixed(2)} kWh |
                                             Max: {alert.maxConsumption?.toFixed(2)} kWh
                                         </div>

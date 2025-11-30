@@ -36,6 +36,23 @@ public class DeviceDataConsumer {
                 return;
             }
 
+            // check overconsumption and send alert if necessary
+            MonitoredDevice device = monitoredDeviceRepository.findById(event.getDeviceId()).orElse(null);
+            if (device != null && device.getMaxConsumption() != null) {
+                Double currentValue = event.getMeasurementValue();
+                Double maxConsumption = device.getMaxConsumption();
+
+                if (currentValue > maxConsumption) {
+                    log.warn("Overconsumption detected for device {}: current reading {} > max {}", event.getDeviceId(), currentValue, maxConsumption);
+                    alertPublisher.publishOverconsumptionAlert(
+                            event.getDeviceId(),
+                            device.getUserId(),
+                            currentValue,
+                            maxConsumption
+                    );
+                }
+            }
+
             LocalDate date = event.getTimestamp().toLocalDate();
             Integer hour = event.getTimestamp().getHour();
 
@@ -62,26 +79,6 @@ public class DeviceDataConsumer {
 
             measurementRepository.save(measurement);
             log.info("Successfully processed device data for device {} - Date: {}, Hour: {}, Total: {} kWh", event.getDeviceId(), date, hour, measurement.getHourlyConsumption());
-
-            // Check for overconsumption after saving measurement
-            MonitoredDevice device = monitoredDeviceRepository.findById(event.getDeviceId()).orElse(null);
-            if (device != null && device.getMaxConsumption() != null) {
-                Double hourlyConsumption = measurement.getHourlyConsumption();
-                Double maxConsumption = device.getMaxConsumption();
-
-                // Alert if hourly consumption exceeds device maximum
-                if (hourlyConsumption > maxConsumption) {
-                    log.warn("Overconsumption detected for device {}: {} > {}",
-                            event.getDeviceId(), hourlyConsumption, maxConsumption);
-
-                    alertPublisher.publishOverconsumptionAlert(
-                            event.getDeviceId(),
-                            device.getUserId(),
-                            hourlyConsumption,
-                            maxConsumption
-                    );
-                }
-            }
         } catch (Exception e) {
             log.error("Error processing device data for deviceId {}: {}", event.getDeviceId(), e.getMessage(), e);
             throw e;

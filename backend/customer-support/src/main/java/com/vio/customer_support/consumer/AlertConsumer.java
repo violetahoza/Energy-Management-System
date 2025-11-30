@@ -12,7 +12,6 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 @Slf4j
 public class AlertConsumer {
-
     private final SimpMessagingTemplate messagingTemplate;
 
     @RabbitListener(queues = RabbitMQConfig.OVERCONSUMPTION_QUEUE)
@@ -22,17 +21,12 @@ public class AlertConsumer {
         log.info("Alert details: {}", alert);
 
         try {
-            String userDestination = "/user/" + alert.getUserId() + "/queue/alerts";
             messagingTemplate.convertAndSendToUser(
                     alert.getUserId().toString(),
                     "/queue/alerts",
                     alert
             );
-            log.info("✓ Sent alert to user-specific destination: {}", userDestination);
-
-            messagingTemplate.convertAndSend("/topic/alerts/" + alert.getUserId(), alert);
-            log.info("✓ Broadcast alert to topic: /topic/alerts/{}", alert.getUserId());
-
+            log.info("✓ Sent alert to user {} at /user/{}/queue/alerts", alert.getUserId(), alert.getUserId());
             log.info("========== ALERT SENT SUCCESSFULLY ==========");
         } catch (Exception e) {
             log.error("❌ Failed to send alert via WebSocket", e);
