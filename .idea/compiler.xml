@@ -24,11 +24,11 @@
         <module name="customer-support" />
         <module name="authorization-service" />
         <module name="user-service" />
-        <module name="websocket-service" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
       <module name="api-gateway" target="21" />
+      <module name="websocket-service" target="21" />
     </bytecodeTargetLevel>
   </component>
   <component name="JavacSettings">
