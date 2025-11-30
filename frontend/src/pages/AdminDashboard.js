@@ -105,7 +105,7 @@ const AdminDashboard = () => {
                     </div>
                     <div className="navbar-user">
                         <span className="user-badge">{user?.role}</span>
-                        <NotificationBell />
+                        {/*<NotificationBell />*/}
                         <button onClick={handleLogout} className="btn-logout">
                             <span>🚪</span>
                             <span>Logout</span>

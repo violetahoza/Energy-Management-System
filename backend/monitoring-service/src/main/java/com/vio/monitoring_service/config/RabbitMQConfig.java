@@ -69,6 +69,13 @@ public class RabbitMQConfig {
                 .with(OVERCONSUMPTION_ROUTING_KEY);
     }
 
+    @Bean(name = "alertRabbitTemplate")
+    public RabbitTemplate alertRabbitTemplate(@Qualifier("syncConnectionFactory") ConnectionFactory connectionFactory) {
+        RabbitTemplate template = new RabbitTemplate(connectionFactory);
+        template.setMessageConverter(jsonMessageConverter());
+        return template;
+    }
+
     @Bean(name = "syncConnectionFactory")
     @Primary
     public ConnectionFactory syncConnectionFactory() {
