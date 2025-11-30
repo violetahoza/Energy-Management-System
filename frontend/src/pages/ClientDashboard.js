@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { deviceAPI } from '../services/api';
 import Alert from '../components/common/Alert';
 import LoadingSpinner from '../components/common/LoadingSpinner';
-import ChatWidget from "../components/common/ChatWidget";
+import ChatWidget from "../components/chat/ChatWidget";
 import NotificationBell from "../components/common/NotificationBell";
 import EnergyConsumptionChart from '../components/charts/EnergyConsumptionChart';
 import TotalUserConsumptionChart from '../components/charts/TotalUserConsumptionChart';

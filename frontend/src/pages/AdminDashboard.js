@@ -5,8 +5,7 @@ import { userAPI, deviceAPI } from '../services/api';
 import '../styles/App.css';
 import Alert from '../components/common/Alert';
 import LoadingSpinner from '../components/common/LoadingSpinner';
-import ChatWidget from "../components/common/ChatWidget";
-import NotificationBell from "../components/common/NotificationBell";
+import AdminChatPanel from "../components/chat/AdminChatPanel";
 
 const AdminDashboard = () => {
     const navigate = useNavigate();
@@ -136,16 +135,28 @@ const AdminDashboard = () => {
                                 >
                                     📱 Devices
                                 </button>
+                                <button
+                                    className={`btn btn-sm ${activeTab === 'chat' ? 'btn-primary' : 'btn-secondary'}`}
+                                    onClick={() => setActiveTab('chat')}
+                                >
+                                    💬 Support
+                                </button>
                             </div>
-                            <button
-                                className="btn btn-sm btn-success"
-                                onClick={() => activeTab === 'users' ? setShowUserModal(true) : setShowDeviceModal(true)}
-                            >
-                                ➕ Add {activeTab === 'users' ? 'User' : 'Device'}
-                            </button>
+                            {activeTab !== 'chat' && (
+                                <button
+                                    className="btn btn-sm btn-success"
+                                    onClick={() => activeTab === 'users' ? setShowUserModal(true) : setShowDeviceModal(true)}
+                                >
+                                    ➕ Add {activeTab === 'users' ? 'User' : 'Device'}
+                                </button>
+                            )}
                         </div>
 
-                        {loading ? (
+                        {activeTab === 'chat' ? (
+                            <div style={{ padding: '20px' }}>
+                                <AdminChatPanel />
+                            </div>
+                        ) : loading ? (
                             <LoadingSpinner message={`Loading ${activeTab}...`} />
                         ) : activeTab === 'users' ? (
                             <UsersTable
@@ -217,8 +228,6 @@ const AdminDashboard = () => {
                     onAssign={handleAssignDevice}
                 />
             )}
-
-            <ChatWidget />
         </div>
     );
 };
