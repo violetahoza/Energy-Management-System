@@ -257,6 +257,27 @@ services:
       - "traefik.http.services.monitoring.loadbalancer.server.port=8084"
     restart: always
 
+  customer-support:
+    build: ./backend/customer-support
+    container_name: customer-support
+    ports:
+      - "8085:8085"
+    env_file:
+      - ./backend/customer-support/.env
+    depends_on:
+      synchronization-broker:
+        condition: service_healthy
+    networks:
+      - energy_management_network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.support.rule=PathPrefix(`/api/support`) || PathPrefix(`/ws`)"
+      - "traefik.http.routers.support.entrypoints=web"
+      - "traefik.http.routers.support.priority=100"
+      - "traefik.http.routers.support.middlewares=cors-headers"
+      - "traefik.http.services.support.loadbalancer.server.port=8085"
+    restart: always
+
   frontend:
     build: ./frontend
     container_name: frontend

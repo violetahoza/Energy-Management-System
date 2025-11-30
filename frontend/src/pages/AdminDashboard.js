@@ -5,6 +5,8 @@ import { userAPI, deviceAPI } from '../services/api';
 import '../styles/App.css';
 import Alert from '../components/common/Alert';
 import LoadingSpinner from '../components/common/LoadingSpinner';
+import ChatWidget from "../components/common/ChatWidget";
+import NotificationBell from "../components/common/NotificationBell";
 
 const AdminDashboard = () => {
     const navigate = useNavigate();
@@ -103,6 +105,7 @@ const AdminDashboard = () => {
                     </div>
                     <div className="navbar-user">
                         <span className="user-badge">{user?.role}</span>
+                        <NotificationBell />
                         <button onClick={handleLogout} className="btn-logout">
                             <span>🚪</span>
                             <span>Logout</span>
@@ -214,6 +217,8 @@ const AdminDashboard = () => {
                     onAssign={handleAssignDevice}
                 />
             )}
+
+            <ChatWidget />
         </div>
     );
 };

@@ -35,12 +35,6 @@ class WebSocketService {
                     callbacks.onAlert && callbacks.onAlert(alert);
                 });
 
-                // Subscribe to system notifications
-                this.client.subscribe('/topic/notifications', (message) => {
-                    const notification = JSON.parse(message.body);
-                    callbacks.onNotification && callbacks.onNotification(notification);
-                });
-
                 callbacks.onConnect && callbacks.onConnect();
             },
             onDisconnect: () => {

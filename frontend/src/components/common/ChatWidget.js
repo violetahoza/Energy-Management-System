@@ -1,0 +1,123 @@
+import React, { useState, useEffect, useRef } from 'react';
+import websocketService from '../../services/websocket';
+import { useAuth } from '../../context/AuthContext';
+import '../../styles/App.css';
+
+const ChatWidget = () => {
+    const { user } = useAuth();
+    const [isOpen, setIsOpen] = useState(false);
+    const [messages, setMessages] = useState([]);
+    const [inputMessage, setInputMessage] = useState('');
+    const [isConnected, setIsConnected] = useState(false);
+    const messagesEndRef = useRef(null);
+
+    useEffect(() => {
+        if (user) {
+            const token = localStorage.getItem('token');
+
+            websocketService.connect(user.userId, token, {
+                onConnect: () => {
+                    setIsConnected(true);
+                    console.log('Chat connected');
+                },
+                onMessage: (message) => {
+                    setMessages(prev => [...prev, message]);
+                },
+                onDisconnect: () => {
+                    setIsConnected(false);
+                }
+            });
+
+            return () => {
+                websocketService.disconnect();
+            };
+        }
+    }, [user]);
+
+    useEffect(() => {
+        scrollToBottom();
+    }, [messages]);
+
+    const scrollToBottom = () => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    };
+
+    const handleSendMessage = (e) => {
+        e.preventDefault();
+        if (inputMessage.trim() && isConnected) {
+            websocketService.sendMessage(inputMessage);
+            setInputMessage('');
+        }
+    };
+
+    const getMessageClassName = (type) => {
+        switch (type) {
+            case 'USER_MESSAGE':
+                return 'message-user';
+            case 'ADMIN_MESSAGE':
+                return 'message-admin';
+            case 'RULE_RESPONSE':
+                return 'message-system rule-based';
+            case 'AI_RESPONSE':
+                return 'message-system ai-based';
+            default:
+                return 'message-system';
+        }
+    };
+
+    return (
+        <>
+            <div className={`chat-widget ${isOpen ? 'open' : ''}`}>
+                <div className="chat-header" onClick={() => setIsOpen(!isOpen)}>
+                    <span>💬 Customer Support</span>
+                    <span className="chat-status">
+                        {isConnected ? '🟢' : '🔴'}
+                    </span>
+                </div>
+
+                {isOpen && (
+                    <div className="chat-body">
+                        <div className="chat-messages">
+                            {messages.map((msg, index) => (
+                                <div key={index} className={`message ${getMessageClassName(msg.type)}`}>
+                                    <div className="message-sender">{msg.senderName}</div>
+                                    <div className="message-content">{msg.content}</div>
+                                    <div className="message-time">
+                                        {new Date(msg.timestamp).toLocaleTimeString()}
+                                    </div>
+                                </div>
+                            ))}
+                            <div ref={messagesEndRef} />
+                        </div>
+
+                        <form className="chat-input-form" onSubmit={handleSendMessage}>
+                            <input
+                                type="text"
+                                value={inputMessage}
+                                onChange={(e) => setInputMessage(e.target.value)}
+                                placeholder="Type your message..."
+                                className="chat-input"
+                                disabled={!isConnected}
+                            />
+                            <button
+                                type="submit"
+                                className="chat-send-btn"
+                                disabled={!isConnected || !inputMessage.trim()}
+                            >
+                                Send
+                            </button>
+                        </form>
+                    </div>
+                )}
+            </div>
+
+            {!isOpen && (
+                <button className="chat-toggle-btn" onClick={() => setIsOpen(true)}>
+                    💬
+                </button>
+            )}
+        </>
+    );
+};
+
+export default ChatWidget;

@@ -4,6 +4,8 @@ import { useAuth } from '../context/AuthContext';
 import { deviceAPI } from '../services/api';
 import Alert from '../components/common/Alert';
 import LoadingSpinner from '../components/common/LoadingSpinner';
+import ChatWidget from "../components/common/ChatWidget";
+import NotificationBell from "../components/common/NotificationBell";
 import EnergyConsumptionChart from '../components/charts/EnergyConsumptionChart';
 import TotalUserConsumptionChart from '../components/charts/TotalUserConsumptionChart';
 import '../styles/App.css';
@@ -72,6 +74,7 @@ const ClientDashboard = () => {
                     </div>
                     <div className="navbar-user">
                         <span className="user-badge">{user?.role}</span>
+                        <NotificationBell />
                         <button onClick={handleLogout} className="btn-logout">
                             <span>🚪</span>
                             <span>Logout</span>
@@ -165,6 +168,8 @@ const ClientDashboard = () => {
                     onClose={() => setShowTotalConsumptionModal(false)}
                 />
             )}
+
+            <ChatWidget />
         </div>
     );
 };
