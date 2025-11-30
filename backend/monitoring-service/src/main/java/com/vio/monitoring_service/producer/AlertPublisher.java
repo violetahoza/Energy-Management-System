@@ -1,6 +1,6 @@
 package com.vio.monitoring_service.producer;
 
-import com.vio.monitoring_service.dto.OverconsumptionAlertDTO;
+import com.vio.monitoring_service.event.OverconsumptionAlert;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -16,7 +16,7 @@ public class AlertPublisher {
     public void publishOverconsumptionAlert(Long deviceId, Long userId, Double current, Double max) {
         Double exceeded = current - max;
 
-        OverconsumptionAlertDTO alert = OverconsumptionAlertDTO.builder()
+        OverconsumptionAlert alert = OverconsumptionAlert.builder()
                 .deviceId(deviceId)
                 .userId(userId)
                 .currentConsumption(current)

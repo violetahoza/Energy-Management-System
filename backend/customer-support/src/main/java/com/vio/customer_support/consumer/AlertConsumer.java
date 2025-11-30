@@ -1,7 +1,7 @@
 package com.vio.customer_support.consumer;
 
 import com.vio.customer_support.config.RabbitMQConfig;
-import com.vio.customer_support.dto.OverconsumptionAlert;
+import com.vio.customer_support.event.OverconsumptionAlert;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;

@@ -1,4 +1,4 @@
-package com.vio.monitoring_service.dto;
+package com.vio.customer_support.event;
 
 import lombok.*;
 import java.time.LocalDateTime;
@@ -8,7 +8,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class OverconsumptionAlertDTO {
+public class OverconsumptionAlert {
     private Long deviceId;
     private Long userId;
     private Double currentConsumption;

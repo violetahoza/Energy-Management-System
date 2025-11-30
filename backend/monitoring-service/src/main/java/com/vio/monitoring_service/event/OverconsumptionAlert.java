@@ -1,4 +1,4 @@
-package com.vio.customer_support.dto;
+package com.vio.monitoring_service.event;
 
 import lombok.*;
 import java.time.LocalDateTime;
@@ -16,5 +16,4 @@ public class OverconsumptionAlert {
     private Double exceededBy;
     private LocalDateTime timestamp;
     private String message;
-    private boolean read = false;
 }
