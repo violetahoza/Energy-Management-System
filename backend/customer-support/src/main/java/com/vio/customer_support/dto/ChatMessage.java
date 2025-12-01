@@ -9,7 +9,7 @@ import lombok.*;
 @Builder
 public class ChatMessage {
     private String content;
-    private String sender; // userId or "ADMIN" or "SYSTEM"
+    private String sender;
     private String senderName;
     private MessageType type;
     private Long timestamp;

@@ -56,7 +56,6 @@ public class GeminiService {
                 .map(this::extractTextFromResponse)
                 .doOnError(error -> {
                     log.error("Error calling Gemini API: {}", error.getMessage());
-                    // Enhanced logging to see the actual response body from Google if available
                     if (error instanceof WebClientResponseException) {
                         WebClientResponseException we = (WebClientResponseException) error;
                         log.error("Google API Response Status: {} Body: {}", we.getStatusCode(), we.getResponseBodyAsString());

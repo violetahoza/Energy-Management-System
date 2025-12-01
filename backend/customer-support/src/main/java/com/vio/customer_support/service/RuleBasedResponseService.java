@@ -84,6 +84,6 @@ public class RuleBasedResponseService {
         }
 
         log.info("No rule matched for message: {}", trimmedMessage.substring(0, Math.min(50, trimmedMessage.length())));
-        return null; // No rule matched
+        return null;
     }
 }
