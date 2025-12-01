@@ -36,7 +36,7 @@ const ChatWidget = () => {
 
             if (!websocketService.isConnected()) {
                 console.log('ChatWidget: Connecting WebSocket for user:', user.userId);
-                websocketService.connect(user.userId, token);
+                websocketService.connect(user.userId, token, false); // Not admin
             } else {
                 console.log('ChatWidget: WebSocket already connected');
                 setIsConnected(true);
@@ -61,6 +61,17 @@ const ChatWidget = () => {
     const handleSendMessage = (e) => {
         e.preventDefault();
         if (inputMessage.trim() && isConnected) {
+            const userMessage = {
+                content: inputMessage,
+                sender: user.userId,
+                senderName: user.username || 'You',
+                type: 'USER_MESSAGE',
+                timestamp: Date.now()
+            };
+
+            setMessages(prev => [...prev, userMessage]);
+
+            // Send to server
             websocketService.sendMessage(inputMessage);
             setInputMessage('');
         }
@@ -94,6 +105,11 @@ const ChatWidget = () => {
                 {isOpen && (
                     <div className="chat-body">
                         <div className="chat-messages">
+                            {messages.length === 0 && (
+                                <div className="chat-welcome">
+                                    <p>👋 Welcome! How can I help you today?</p>
+                                </div>
+                            )}
                             {messages.map((msg, index) => (
                                 <div key={index} className={`message ${getMessageClassName(msg.type)}`}>
                                     <div className="message-sender">{msg.senderName}</div>
@@ -101,6 +117,12 @@ const ChatWidget = () => {
                                     <div className="message-time">
                                         {new Date(msg.timestamp).toLocaleTimeString()}
                                     </div>
+                                    {msg.type === 'RULE_RESPONSE' && (
+                                        <div className="message-badge">🤖 Rule-Based</div>
+                                    )}
+                                    {msg.type === 'AI_RESPONSE' && (
+                                        <div className="message-badge">🧠 AI-Powered</div>
+                                    )}
                                 </div>
                             ))}
                             <div ref={messagesEndRef} />

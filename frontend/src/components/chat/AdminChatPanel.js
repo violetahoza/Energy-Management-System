@@ -16,7 +16,7 @@ const AdminChatPanel = () => {
             const token = localStorage.getItem('token');
 
             const handleAdminMessage = (message) => {
-                console.log('Admin received user message:', message);
+                console.log('Admin received message:', message);
 
                 setActiveSessions(prev => {
                     const newSessions = new Map(prev);
@@ -25,6 +25,8 @@ const AdminChatPanel = () => {
                     newSessions.set(userId, [...userMessages, message]);
                     return newSessions;
                 });
+
+                setSelectedUserId(current => current || message.sender);
             };
 
             const handleConnect = () => {
@@ -43,13 +45,14 @@ const AdminChatPanel = () => {
             websocketService.subscribe('disconnect', handleDisconnect);
 
             if (!websocketService.isConnected()) {
-                console.log('Admin Chat: Connecting WebSocket');
-                websocketService.connect(user.userId, token);
+                console.log('Admin Chat: Connecting WebSocket as ADMIN');
+                websocketService.connect(user.userId, token, true);
             } else {
                 setIsConnected(true);
             }
 
             return () => {
+                console.log('AdminChatPanel: Cleaning up');
                 websocketService.unsubscribe('admin-messages', handleAdminMessage);
                 websocketService.unsubscribe('connect', handleConnect);
                 websocketService.unsubscribe('disconnect', handleDisconnect);
@@ -68,9 +71,6 @@ const AdminChatPanel = () => {
     const handleSendMessage = (e) => {
         e.preventDefault();
         if (inputMessage.trim() && selectedUserId && isConnected) {
-            websocketService.sendAdminResponse(selectedUserId, inputMessage);
-
-            // Add admin message to the session
             const adminMessage = {
                 content: inputMessage,
                 sender: 'ADMIN',
@@ -86,6 +86,8 @@ const AdminChatPanel = () => {
                 return newSessions;
             });
 
+            // Send to server (admin message will be broadcast back via /topic/admin-chat)
+            websocketService.sendAdminResponse(selectedUserId, inputMessage);
             setInputMessage('');
         }
     };
@@ -126,7 +128,9 @@ const AdminChatPanel = () => {
                         {Array.from(activeSessions.keys()).map(userId => {
                             const messages = activeSessions.get(userId);
                             const lastMessage = messages[messages.length - 1];
-                            const unreadCount = messages.filter(m => m.type === 'USER_MESSAGE').length;
+                            const unreadCount = messages.filter(m =>
+                                m.type === 'USER_MESSAGE' && m.sender !== 'ADMIN'
+                            ).length;
 
                             return (
                                 <div
@@ -143,7 +147,8 @@ const AdminChatPanel = () => {
                                             )}
                                         </div>
                                         <div className="session-last-message">
-                                            {lastMessage?.content?.substring(0, 30)}...
+                                            {lastMessage?.content?.substring(0, 30)}
+                                            {lastMessage?.content?.length > 30 ? '...' : ''}
                                         </div>
                                     </div>
                                     <div className="session-time">
@@ -157,7 +162,7 @@ const AdminChatPanel = () => {
                         })}
                         {sessionCount === 0 && (
                             <div className="admin-no-sessions">
-                                <p>No active chat sessions</p>
+                                <p>📭 No active chat sessions</p>
                                 <p className="admin-no-sessions-subtitle">
                                     Waiting for users to start conversations...
                                 </p>
@@ -174,14 +179,19 @@ const AdminChatPanel = () => {
                                     <div className="admin-user-avatar">👤</div>
                                     <div>
                                         <div className="admin-user-name">User {selectedUserId}</div>
-                                        <div className="admin-user-status">Online</div>
+                                        <div className="admin-user-status">🟢 Online</div>
                                     </div>
                                 </div>
                             </div>
 
                             <div className="admin-messages-container">
+                                {selectedMessages.length === 0 && (
+                                    <div className="admin-no-messages">
+                                        <p>No messages yet</p>
+                                    </div>
+                                )}
                                 {selectedMessages.map((msg, index) => (
-                                    <div key={index} className={`admin-message ${getMessageClassName(msg.type)}`}>
+                                    <div key={`${msg.timestamp}-${index}`} className={`admin-message ${getMessageClassName(msg.type)}`}>
                                         <div className="admin-message-sender">{msg.senderName}</div>
                                         <div className="admin-message-content">{msg.content}</div>
                                         <div className="admin-message-time">

@@ -13,6 +13,7 @@ public class ChatMessage {
     private String senderName;
     private MessageType type;
     private Long timestamp;
+    private String recipientUserId;
 
     public enum MessageType {
         USER_MESSAGE,

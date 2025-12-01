@@ -1,74 +1,89 @@
 package com.vio.customer_support.service;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import java.util.*;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.regex.Pattern;
 
 @Service
+@Slf4j
 public class RuleBasedResponseService {
 
-    private final Map<String, String> rules = new HashMap<>();
+    private final Map<Pattern, String> rules = new HashMap<>();
 
     public RuleBasedResponseService() {
         initializeRules();
     }
 
     private void initializeRules() {
-        // Greeting rules
-        rules.put("hello|hi|hey", "Hello! How can I help you with your energy monitoring today?");
-        rules.put("good morning|good afternoon|good evening", "Good day! How may I assist you?");
+        rules.put(Pattern.compile("(?i).*(hello|hi|hey|greetings).*"),
+                "Hello! Welcome to Energy Management System support. How can I help you today?"
+        );
 
-        // Device related
-        rules.put("how.*add.*device|create.*device",
-                "To add a device, navigate to the admin dashboard and click 'Add Device'. Fill in the device details including name, location, and maximum consumption.");
-        rules.put("delete.*device|remove.*device",
-                "To delete a device, go to the devices table in the admin dashboard and click the delete button next to the device you want to remove.");
-        rules.put("assign.*device",
-                "You can assign a device to a user by clicking the assign button in the devices table and selecting the client user.");
+        rules.put(Pattern.compile("(?i).*(register|add|setup)\\s+(device|meter|sensor).*"),
+                "To register a new device, please contact your administrator. Only admins can add new devices to the system."
+        );
 
-        // User related
-        rules.put("create.*user|add.*user|new.*user",
-                "To create a new user, go to the admin dashboard, click 'Add User', and fill in their details including username, password, and role (CLIENT or ADMIN).");
-        rules.put("change.*password|reset.*password",
-                "To change a password, edit the user in the admin dashboard and enter a new password in the password field.");
-        rules.put("user.*role|client.*admin",
-                "There are two user roles: CLIENT (can view assigned devices) and ADMIN (can manage all users and devices).");
+        rules.put(Pattern.compile("(?i).*(view|see|check|show)\\s+(consumption|usage|energy).*"),
+                "You can view your energy consumption in the Monitoring section of your dashboard. It shows hourly consumption data for all your assigned devices."
+        );
 
-        // Consumption related
-        rules.put("view.*consumption|see.*consumption|energy.*data",
-                "To view energy consumption, click on a device and then click 'View Consumption'. You can select different dates to see historical data.");
-        rules.put("overconsumption|exceeded.*limit|too.*much.*energy",
-                "When a device exceeds its maximum consumption limit, you'll receive a notification. Check your notifications icon in the dashboard.");
-        rules.put("maximum.*consumption|consumption.*limit",
-                "The maximum consumption is set when creating or editing a device. It represents the hourly consumption limit in kWh.");
+        rules.put(Pattern.compile("(?i).*(high|too much|excessive)\\s+(consumption|usage|energy).*"),
+                "If you're experiencing high energy consumption, check your device settings and ensure there are no unusual patterns. You'll receive alerts if consumption exceeds your device's maximum threshold."
+        );
 
-        // Navigation
-        rules.put("dashboard|home.*page",
-                "The dashboard shows your devices (for clients) or all system devices (for admins). You can manage devices and view consumption from there.");
-        rules.put("logout|sign.*out",
-                "To logout, click the logout button in the top-right corner of the dashboard.");
+        rules.put(Pattern.compile("(?i).*(alert|notification|warning|notif).*"),
+                "You'll receive real-time alerts when your device consumption exceeds the configured maximum threshold. Make sure notifications are enabled in your browser."
+        );
 
-        // Technical issues
-        rules.put("not.*working|error|problem|issue",
-                "I'm sorry you're experiencing issues. Could you please provide more details about the problem? An administrator will assist you shortly.");
-        rules.put("slow|loading",
-                "If the system is slow, try refreshing the page. If the problem persists, contact the administrator.");
+        rules.put(Pattern.compile("(?i).*(forgot|reset|change)\\s+password.*"),
+                "For password reset, please contact your system administrator. They can update your credentials in the user management section."
+        );
 
-        // Help and support
-        rules.put("help|support|assist",
-                "I'm here to help! You can ask me about managing devices, users, viewing consumption data, or any other features of the Energy Management System.");
-        rules.put("thank|thanks",
-                "You're welcome! Let me know if you need anything else.");
+        rules.put(Pattern.compile("(?i).*(assign|connect|link)\\s+device.*"),
+                "Device assignment is handled by administrators. Contact them to assign or reassign devices to your account."
+        );
+
+        rules.put(Pattern.compile("(?i).*(can't|cannot|unable)\\s+(login|access|log in).*"),
+                "If you're having trouble logging in, verify your username and password. If the issue persists, contact your administrator for assistance."
+        );
+
+        rules.put(Pattern.compile("(?i).*(wrong|incorrect|inaccurate)\\s+(data|reading|value).*"),
+                "Device data is collected in real-time from your smart meters. If you notice inaccuracies, there might be a device issue. Please report this to your administrator."
+        );
+
+        rules.put(Pattern.compile("(?i).*(update|change|modify)\\s+(profile|account|info).*"),
+                "To update your account information, contact your system administrator. They can modify user details in the user management system."
+        );
+
+        rules.put(Pattern.compile("(?i).*(help|support|assist|guide).*"),
+                "I'm here to help! You can ask about viewing consumption, understanding alerts, device information, or any general questions about the Energy Management System."
+        );
+
+        rules.put(Pattern.compile("(?i).*(bye|goodbye|thanks|thank you).*"),
+                "You're welcome! If you need further assistance, feel free to reach out anytime. Have a great day!"
+        );
+
+        log.info("Initialized {} rule-based responses", rules.size());
     }
 
-    public String getResponse(String userMessage) {
-        String normalizedMessage = userMessage.toLowerCase().trim();
+    public String getResponse(String message) {
+        if (message == null || message.trim().isEmpty()) {
+            return null;
+        }
 
-        for (Map.Entry<String, String> entry : rules.entrySet()) {
-            if (normalizedMessage.matches(".*(" + entry.getKey() + ").*")) {
+        String trimmedMessage = message.trim();
+
+        for (Map.Entry<Pattern, String> entry : rules.entrySet()) {
+            if (entry.getKey().matcher(trimmedMessage).matches()) {
+                log.info("✓ Rule matched for message: {}", trimmedMessage.substring(0, Math.min(50, trimmedMessage.length())));
                 return entry.getValue();
             }
         }
 
+        log.info("No rule matched for message: {}", trimmedMessage.substring(0, Math.min(50, trimmedMessage.length())));
         return null; // No rule matched
     }
 }

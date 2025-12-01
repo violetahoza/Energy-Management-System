@@ -8,13 +8,14 @@ class WebSocketService {
         this.subscribers = {
             alerts: [],
             messages: [],
+            'admin-messages': [],
             connect: [],
             disconnect: [],
             error: []
         };
     }
 
-    connect(userId, token) {
+    connect(userId, token, isAdmin = false) {
         if (this.client && this.connected) {
             console.log('⚠️ WebSocket already connected, skipping reconnect');
             return;
@@ -22,6 +23,7 @@ class WebSocketService {
 
         console.log('=== WebSocket Connection Initiated ===');
         console.log('User ID:', userId);
+        console.log('Is Admin:', isAdmin);
 
         const socket = new SockJS('http://localhost/ws');
 
@@ -38,6 +40,7 @@ class WebSocketService {
                 console.log('✓ WebSocket Connected Successfully');
                 this.connected = true;
 
+                // Subscribe to personal message queue (for both clients and admins)
                 this.client.subscribe(`/user/queue/messages`, (message) => {
                     console.log('📨 Received chat message:', message.body);
                     const chatMessage = JSON.parse(message.body);
@@ -45,12 +48,22 @@ class WebSocketService {
                 });
                 console.log(`✓ Subscribed to: /user/queue/messages`);
 
+                // Subscribe to alerts queue
                 this.client.subscribe(`/user/queue/alerts`, (message) => {
                     console.log('🚨 Received alert:', message.body);
                     const alert = JSON.parse(message.body);
                     this.notifySubscribers('alerts', alert);
                 });
                 console.log(`✓ Subscribed to: /user/queue/alerts`);
+
+                if (isAdmin) {
+                    this.client.subscribe(`/topic/admin-chat`, (message) => {
+                        console.log('👤 Admin received user message:', message.body);
+                        const userMessage = JSON.parse(message.body);
+                        this.notifySubscribers('admin-messages', userMessage);
+                    });
+                    console.log(`✓ Subscribed to: /topic/admin-chat`);
+                }
 
                 console.log('=== All Subscriptions Active ===');
                 this.notifySubscribers('connect');
@@ -111,6 +124,19 @@ class WebSocketService {
         console.log('📤 Sent message:', content);
     }
 
+    sendAdminResponse(userId, content) {
+        if (!this.connected) {
+            console.error('WebSocket not connected');
+            return;
+        }
+
+        this.client.publish({
+            destination: '/app/chat.adminResponse',
+            body: JSON.stringify({ userId, content })
+        });
+        console.log('📤 Admin sent message to user:', userId);
+    }
+
     disconnect() {
         if (this.client) {
             this.client.deactivate();
@@ -118,6 +144,7 @@ class WebSocketService {
             this.subscribers = {
                 alerts: [],
                 messages: [],
+                'admin-messages': [],
                 connect: [],
                 disconnect: [],
                 error: []
