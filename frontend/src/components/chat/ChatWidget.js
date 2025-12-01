@@ -6,10 +6,34 @@ import '../../styles/App.css';
 const ChatWidget = () => {
     const { user } = useAuth();
     const [isOpen, setIsOpen] = useState(false);
-    const [messages, setMessages] = useState([]);
+    const [messages, setMessages] = useState(() => {
+        // Load messages from localStorage on mount
+        if (user) {
+            try {
+                const stored = localStorage.getItem(`chat_messages_${user.userId}`);
+                if (stored) {
+                    return JSON.parse(stored);
+                }
+            } catch (e) {
+                console.error('Error loading messages:', e);
+            }
+        }
+        return [];
+    });
     const [inputMessage, setInputMessage] = useState('');
     const [isConnected, setIsConnected] = useState(false);
     const messagesEndRef = useRef(null);
+
+    // Save messages to localStorage whenever they change
+    useEffect(() => {
+        if (user) {
+            try {
+                localStorage.setItem(`chat_messages_${user.userId}`, JSON.stringify(messages));
+            } catch (e) {
+                console.error('Error saving messages:', e);
+            }
+        }
+    }, [messages, user]);
 
     useEffect(() => {
         if (user) {
@@ -36,13 +60,16 @@ const ChatWidget = () => {
 
             if (!websocketService.isConnected()) {
                 console.log('ChatWidget: Connecting WebSocket for user:', user.userId);
-                websocketService.connect(user.userId, token, false); // Not admin
+                websocketService.connect(user.userId, token, false)
+                    .then(() => setIsConnected(true))
+                    .catch(err => console.error('Connection error:', err));
             } else {
                 console.log('ChatWidget: WebSocket already connected');
                 setIsConnected(true);
             }
 
             return () => {
+                console.log('ChatWidget: Cleaning up subscriptions only (not disconnecting)');
                 websocketService.unsubscribe('messages', handleMessage);
                 websocketService.unsubscribe('connect', handleConnect);
                 websocketService.unsubscribe('disconnect', handleDisconnect);
@@ -79,6 +106,15 @@ const ChatWidget = () => {
         }
     };
 
+    const clearChat = () => {
+        if (window.confirm('Clear all chat messages?')) {
+            setMessages([]);
+            if (user) {
+                localStorage.removeItem(`chat_messages_${user.userId}`);
+            }
+        }
+    };
+
     const getMessageClassName = (type) => {
         switch (type) {
             case 'USER_MESSAGE':
@@ -106,6 +142,25 @@ const ChatWidget = () => {
 
                 {isOpen && (
                     <div className="chat-body">
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px', borderBottom: '1px solid #e0e0e0' }}>
+                            <span style={{ fontSize: '12px', color: '#666' }}>
+                                {isConnected ? '🟢 Connected' : '🔴 Disconnected'}
+                            </span>
+                            <button
+                                onClick={clearChat}
+                                style={{
+                                    background: 'none',
+                                    border: 'none',
+                                    cursor: 'pointer',
+                                    fontSize: '12px',
+                                    color: '#666'
+                                }}
+                                title="Clear chat"
+                            >
+                                🗑️ Clear
+                            </button>
+                        </div>
+
                         <div className="chat-messages">
                             {messages.length === 0 && (
                                 <div className="chat-welcome">
@@ -135,7 +190,7 @@ const ChatWidget = () => {
                                 type="text"
                                 value={inputMessage}
                                 onChange={(e) => setInputMessage(e.target.value)}
-                                placeholder="Type your message..."
+                                placeholder={isConnected ? "Type your message..." : "Connecting..."}
                                 className="chat-input"
                                 disabled={!isConnected}
                             />

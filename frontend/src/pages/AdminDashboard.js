@@ -2,10 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { userAPI, deviceAPI } from '../services/api';
+import websocketService from '../services/websocket';
 import '../styles/App.css';
 import Alert from '../components/common/Alert';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import AdminChatPanel from "../components/chat/AdminChatPanel";
+
+const STORAGE_KEY = 'admin_chat_sessions';
 
 const AdminDashboard = () => {
     const navigate = useNavigate();
@@ -20,6 +23,60 @@ const AdminDashboard = () => {
     const [showAssignModal, setShowAssignModal] = useState(false);
     const [selectedUser, setSelectedUser] = useState(null);
     const [selectedDevice, setSelectedDevice] = useState(null);
+
+    const [chatSessions, setChatSessions] = useState(() => {
+        try {
+            const stored = localStorage.getItem(STORAGE_KEY);
+            if (stored) {
+                const parsed = JSON.parse(stored);
+                return new Map(Object.entries(parsed));
+            }
+        } catch (e) {
+            console.error('Error loading chat sessions:', e);
+        }
+        return new Map();
+    });
+
+    useEffect(() => {
+        try {
+            const sessionsObj = Object.fromEntries(chatSessions);
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(sessionsObj));
+        } catch (e) {
+            console.error('Error saving chat sessions:', e);
+        }
+    }, [chatSessions]);
+
+    useEffect(() => {
+        if (user?.role === 'ADMIN') {
+            const token = localStorage.getItem('token');
+
+            const handleAdminMessage = (message) => {
+                console.log('AdminDashboard received message:', message);
+
+                setChatSessions(prev => {
+                    const newSessions = new Map(prev);
+                    const userId = message.recipientUserId || message.sender;
+                    const userMessages = newSessions.get(userId) || [];
+                    newSessions.set(userId, [...userMessages, message]);
+                    return newSessions;
+                });
+            };
+
+            websocketService.subscribe('admin-messages', handleAdminMessage);
+
+            if (!websocketService.isConnected()) {
+                console.log('AdminDashboard: Connecting WebSocket as ADMIN');
+                websocketService.connect(user.userId, token, true)
+                    .catch(err => console.error('WebSocket connection error:', err));
+            }
+
+            return () => {
+                console.log('AdminDashboard: Cleaning up admin-messages subscription');
+                websocketService.unsubscribe('admin-messages', handleAdminMessage);
+                // DO NOT disconnect - keep connection alive
+            };
+        }
+    }, [user]);
 
     useEffect(() => {
         if (user?.role !== 'ADMIN') {
@@ -90,6 +147,8 @@ const AdminDashboard = () => {
         }
     };
 
+    const unreadMessagesCount = chatSessions.size;
+
     return (
         <div className="dashboard-container">
             <div className="dashboard-content">
@@ -104,7 +163,6 @@ const AdminDashboard = () => {
                     </div>
                     <div className="navbar-user">
                         <span className="user-badge">{user?.role}</span>
-                        {/*<NotificationBell />*/}
                         <button onClick={handleLogout} className="btn-logout">
                             <span>🚪</span>
                             <span>Logout</span>
@@ -138,8 +196,24 @@ const AdminDashboard = () => {
                                 <button
                                     className={`btn btn-sm ${activeTab === 'chat' ? 'btn-primary' : 'btn-secondary'}`}
                                     onClick={() => setActiveTab('chat')}
+                                    style={{ position: 'relative' }}
                                 >
                                     💬 Support
+                                    {unreadMessagesCount > 0 && (
+                                        <span className="notification-badge" style={{
+                                            position: 'absolute',
+                                            top: '-5px',
+                                            right: '-5px',
+                                            background: '#ef4444',
+                                            color: 'white',
+                                            borderRadius: '10px',
+                                            padding: '2px 6px',
+                                            fontSize: '11px',
+                                            fontWeight: 'bold'
+                                        }}>
+                                            {unreadMessagesCount}
+                                        </span>
+                                    )}
                                 </button>
                             </div>
                             {activeTab !== 'chat' && (
@@ -154,7 +228,7 @@ const AdminDashboard = () => {
 
                         {activeTab === 'chat' ? (
                             <div style={{ padding: '20px' }}>
-                                <AdminChatPanel />
+                                <AdminChatPanel chatSessions={chatSessions} setChatSessions={setChatSessions}/>
                             </div>
                         ) : loading ? (
                             <LoadingSpinner message={`Loading ${activeTab}...`} />
@@ -171,15 +245,9 @@ const AdminDashboard = () => {
                             <DevicesTable
                                 devices={devices}
                                 users={users}
-                                onEdit={(device) => {
-                                    setSelectedDevice(device);
-                                    setShowDeviceModal(true);
-                                }}
+                                onEdit={(device) => {setSelectedDevice(device);setShowDeviceModal(true);}}
                                 onDelete={handleDeleteDevice}
-                                onAssign={(device) => {
-                                    setSelectedDevice(device);
-                                    setShowAssignModal(true);
-                                }}
+                                onAssign={(device) => {setSelectedDevice(device);setShowAssignModal(true);}}
                             />
                         )}
                     </div>
@@ -189,15 +257,8 @@ const AdminDashboard = () => {
             {showUserModal && (
                 <UserModal
                     user={selectedUser}
-                    onClose={() => {
-                        setShowUserModal(false);
-                        setSelectedUser(null);
-                    }}
-                    onSuccess={() => {
-                        fetchData();
-                        setShowUserModal(false);
-                        setSelectedUser(null);
-                    }}
+                    onClose={() => {setShowUserModal(false);setSelectedUser(null);}}
+                    onSuccess={() => {fetchData();setShowUserModal(false);setSelectedUser(null);}}
                 />
             )}
 
@@ -205,15 +266,8 @@ const AdminDashboard = () => {
                 <DeviceModal
                     device={selectedDevice}
                     users={users}
-                    onClose={() => {
-                        setShowDeviceModal(false);
-                        setSelectedDevice(null);
-                    }}
-                    onSuccess={() => {
-                        fetchData();
-                        setShowDeviceModal(false);
-                        setSelectedDevice(null);
-                    }}
+                    onClose={() => {setShowDeviceModal(false);setSelectedDevice(null);}}
+                    onSuccess={() => {fetchData();setShowDeviceModal(false);setSelectedDevice(null);}}
                 />
             )}
 
@@ -221,10 +275,7 @@ const AdminDashboard = () => {
                 <AssignDeviceModal
                     device={selectedDevice}
                     users={users}
-                    onClose={() => {
-                        setShowAssignModal(false);
-                        setSelectedDevice(null);
-                    }}
+                    onClose={() => {setShowAssignModal(false);setSelectedDevice(null);}}
                     onAssign={handleAssignDevice}
                 />
             )}
@@ -232,13 +283,10 @@ const AdminDashboard = () => {
     );
 };
 
+
 const UsersTable = ({ users, onEdit, onDelete }) => {
     if (users.length === 0) {
-        return (
-            <div className="empty-state">
-                <p className="empty-state-text">No users found</p>
-            </div>
-        );
+        return (<div className="empty-state"><p className="empty-state-text">No users found</p></div>);
     }
 
     return (
@@ -260,9 +308,7 @@ const UsersTable = ({ users, onEdit, onDelete }) => {
                     <td>{user.firstName} {user.lastName}</td>
                     <td>{user.username}</td>
                     <td>{user.email}</td>
-                    <td>
-                        <span className="user-badge">{user.role}</span>
-                    </td>
+                    <td><span className="user-badge">{user.role}</span></td>
                     <td>
                         <div className="action-buttons">
                             <button className="btn btn-sm btn-edit" onClick={() => onEdit(user)} title="Edit user">✏️</button>
@@ -283,11 +329,7 @@ const DevicesTable = ({ devices, users, onEdit, onDelete, onAssign }) => {
     };
 
     if (devices.length === 0) {
-        return (
-            <div className="empty-state">
-                <p className="empty-state-text">No devices found</p>
-            </div>
-        );
+        return (<div className="empty-state"><p className="empty-state-text">No devices found</p></div>);
     }
 
     return (
@@ -593,7 +635,6 @@ const DeviceModal = ({ device, users, onClose, onSuccess }) => {
 
 const AssignDeviceModal = ({ device, users, onClose, onAssign }) => {
     const [selectedUserId, setSelectedUserId] = useState(device.userId || '');
-
     const clientUsers = users.filter(user => user.role === 'CLIENT');
 
     const handleSubmit = (e) => {
@@ -623,9 +664,7 @@ const AssignDeviceModal = ({ device, users, onClose, onAssign }) => {
                             <label className="form-label">Assign to User</label>
                             <select className="form-select" value={selectedUserId} onChange={(e) => setSelectedUserId(e.target.value)} disabled={clientUsers.length === 0}>
                                 <option value="">Unassigned</option>
-                                {clientUsers.map(user => (
-                                    <option key={user.userId} value={user.userId}>{user.firstName} {user.lastName} ({user.username})</option>
-                                ))}
+                                {clientUsers.map(user => (<option key={user.userId} value={user.userId}>{user.firstName} {user.lastName} ({user.username})</option>))}
                             </select>
                         </div>
                         <div className="modal-footer">

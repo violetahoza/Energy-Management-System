@@ -30,14 +30,11 @@ public class ChatService {
                 .timestamp(System.currentTimeMillis())
                 .build();
 
-        // Store message
         chatSessions.computeIfAbsent(userId, k -> new ArrayList<>()).add(userMessage);
 
-        // Send to admin panel - BROADCAST to all admins
         messagingTemplate.convertAndSend("/topic/admin-chat", userMessage);
         log.info("✓ Sent user message to admin panel");
 
-        // Try rule-based response first
         String ruleResponse = ruleBasedService.getResponse(content);
 
         if (ruleResponse != null) {
@@ -45,7 +42,6 @@ public class ChatService {
             sendSystemResponse(userId, ruleResponse, ChatMessage.MessageType.RULE_RESPONSE);
         } else {
             log.info("No rule match, trying AI response for user {}", userId);
-            // Fall back to AI
             geminiService.getAIResponse(content).thenAccept(aiResponse -> {
                 log.info("✓ Got AI response for user {}", userId);
                 sendSystemResponse(userId, aiResponse, ChatMessage.MessageType.AI_RESPONSE);
@@ -72,7 +68,6 @@ public class ChatService {
 
         chatSessions.computeIfAbsent(userId, k -> new ArrayList<>()).add(adminMessage);
 
-        // Send to specific user
         messagingTemplate.convertAndSendToUser(userId, "/queue/messages", adminMessage);
         log.info("✓ Sent admin message to user {}", userId);
 
@@ -111,9 +106,5 @@ public class ChatService {
                 .build();
         messagingTemplate.convertAndSend("/topic/admin-chat", adminBroadcast);
         log.info("✓ Broadcasted {} to admin panel for user {}", type, userId);
-    }
-
-    public List<ChatMessage> getChatHistory(String userId) {
-        return chatSessions.getOrDefault(userId, new ArrayList<>());
     }
 }

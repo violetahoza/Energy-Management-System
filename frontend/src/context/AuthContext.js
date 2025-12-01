@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import websocketService from '../services/websocket';
 
 const AuthContext = createContext(null);
 
@@ -13,7 +14,15 @@ export const AuthProvider = ({ children }) => {
 
         if (token && userData) {
             try {
-                setUser(JSON.parse(userData));
+                const parsedUser = JSON.parse(userData);
+                setUser(parsedUser);
+
+                // Reconnect WebSocket if user was logged in
+                if (!websocketService.isConnected()) {
+                    console.log('AuthContext: Reconnecting WebSocket for user:', parsedUser.userId);
+                    websocketService.connect(parsedUser.userId, token, parsedUser.role === 'ADMIN')
+                        .catch(err => console.error('WebSocket reconnection error:', err));
+                }
             } catch (e) {
                 console.error('Error parsing user data:', e);
                 localStorage.removeItem('token');
@@ -44,30 +53,13 @@ export const AuthProvider = ({ children }) => {
         localStorage.setItem('user', JSON.stringify(data));
         setUser(data);
 
+        // Connect WebSocket
+        console.log('AuthContext: Connecting WebSocket for user:', data.userId);
+        await websocketService.connect(data.userId, data.token, data.role === 'ADMIN')
+            .catch(err => console.error('WebSocket connection error:', err));
+
         return data;
     };
-
-    // const register = async (userData) => {
-    //     const registerData = {
-    //         ...userData,   // userData should contain: username, password, firstName, lastName, email, address
-    //         role: 'CLIENT' // role is always CLIENT for regular registration
-    //     };
-    //
-    //     const response = await fetch('http://localhost/api/auth/register', {
-    //         method: 'POST',
-    //         headers: {
-    //             'Content-Type': 'application/json',
-    //         },
-    //         body: JSON.stringify(registerData),
-    //     });
-    //
-    //     if (!response.ok) {
-    //         const error = await response.json();
-    //         throw new Error(error.message || 'Registration failed');
-    //     }
-    //
-    //     return await response.json();
-    // };
 
     const logout = async () => {
         const token = localStorage.getItem('token');
@@ -85,9 +77,21 @@ export const AuthProvider = ({ children }) => {
             }
         }
 
-        // Clear local storage and state
+        console.log('AuthContext: Disconnecting WebSocket on logout');
+        websocketService.disconnect();
+
         localStorage.removeItem('token');
         localStorage.removeItem('user');
+
+        if (user) {
+            localStorage.removeItem(`chat_messages_${user.userId}`);
+
+            if (user.role === 'ADMIN') {
+                localStorage.removeItem('admin_chat_sessions');
+                console.log('Cleared admin chat sessions on logout');
+            }
+        }
+
         setUser(null);
     };
 

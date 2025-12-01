@@ -1,17 +1,13 @@
 package com.vio.customer_support.controller;
 
-import com.vio.customer_support.dto.ChatMessage;
 import com.vio.customer_support.service.ChatService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
-import java.util.List;
 import java.util.Map;
 
 @Controller
@@ -38,11 +34,5 @@ public class ChatController {
 
         log.info("Admin sending message to user {}", userId);
         chatService.processAdminMessage(userId, content);
-    }
-
-    @GetMapping("/api/chat/history")
-    @ResponseBody
-    public List<ChatMessage> getChatHistory(@AuthenticationPrincipal Principal principal) {
-        return chatService.getChatHistory(principal.getName());
     }
 }
