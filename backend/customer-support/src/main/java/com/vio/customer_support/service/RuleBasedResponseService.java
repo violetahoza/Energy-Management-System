@@ -18,7 +18,7 @@ public class RuleBasedResponseService {
     }
 
     private void initializeRules() {
-        rules.put(Pattern.compile("(?i).*(hello|hi|hey|greetings).*"),
+        rules.put(Pattern.compile("(?i).*(hello|hi|hei|hey|greetings).*"),
                 "Hello! Welcome to Energy Management System support. How can I help you today?"
         );
 

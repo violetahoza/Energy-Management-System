@@ -71,21 +71,6 @@ const AdminChatPanel = () => {
     const handleSendMessage = (e) => {
         e.preventDefault();
         if (inputMessage.trim() && selectedUserId && isConnected) {
-            const adminMessage = {
-                content: inputMessage,
-                sender: 'ADMIN',
-                senderName: 'Administrator',
-                type: 'ADMIN_MESSAGE',
-                timestamp: Date.now()
-            };
-
-            setActiveSessions(prev => {
-                const newSessions = new Map(prev);
-                const messages = newSessions.get(selectedUserId) || [];
-                newSessions.set(selectedUserId, [...messages, adminMessage]);
-                return newSessions;
-            });
-
             // Send to server (admin message will be broadcast back via /topic/admin-chat)
             websocketService.sendAdminResponse(selectedUserId, inputMessage);
             setInputMessage('');
@@ -113,7 +98,7 @@ const AdminChatPanel = () => {
     return (
         <div className="admin-chat-container">
             <div className="admin-chat-header">
-                <h2>💬 Customer Support - Admin Panel</h2>
+                <h2>💬 Customer Support</h2>
                 <span className={`admin-chat-status ${isConnected ? 'connected' : 'disconnected'}`}>
                     {isConnected ? '🟢 Connected' : '🔴 Disconnected'}
                 </span>

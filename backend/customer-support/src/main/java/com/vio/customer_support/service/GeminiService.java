@@ -4,7 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
-import reactor.core.publisher.Mono;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 
 import java.util.Map;
 import java.util.List;
@@ -13,16 +13,16 @@ import java.util.concurrent.CompletableFuture;
 @Service
 @Slf4j
 public class GeminiService {
-
     private final WebClient webClient;
 
     @Value("${gemini.api.key:}")
     private String apiKey;
 
-    public GeminiService() {
-        this.webClient = WebClient.builder()
-                .baseUrl("https://generativelanguage.googleapis.com")
-                .build();
+    @Value("${gemini.api.url}")
+    private String apiUrl;
+
+    public GeminiService(WebClient.Builder webClientBuilder) {
+        this.webClient = webClientBuilder.build();
     }
 
     public CompletableFuture<String> getAIResponse(String userMessage) {
@@ -45,14 +45,23 @@ public class GeminiService {
                 )
         );
 
+        String finalUrl = apiUrl + "?key=" + apiKey;
+
         return webClient.post()
-                .uri("/v1beta/models/gemini-pro:generateContent?key=" + apiKey)
+                .uri(finalUrl)
                 .header("Content-Type", "application/json")
                 .bodyValue(requestBody)
                 .retrieve()
                 .bodyToMono(Map.class)
                 .map(this::extractTextFromResponse)
-                .doOnError(error -> log.error("Error calling Gemini API: ", error))
+                .doOnError(error -> {
+                    log.error("Error calling Gemini API: {}", error.getMessage());
+                    // Enhanced logging to see the actual response body from Google if available
+                    if (error instanceof WebClientResponseException) {
+                        WebClientResponseException we = (WebClientResponseException) error;
+                        log.error("Google API Response Status: {} Body: {}", we.getStatusCode(), we.getResponseBodyAsString());
+                    }
+                })
                 .onErrorReturn("I apologize, but I'm having trouble processing your request. An administrator will assist you shortly.")
                 .toFuture();
     }

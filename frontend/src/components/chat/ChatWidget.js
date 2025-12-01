@@ -61,16 +61,6 @@ const ChatWidget = () => {
     const handleSendMessage = (e) => {
         e.preventDefault();
         if (inputMessage.trim() && isConnected) {
-            const userMessage = {
-                content: inputMessage,
-                sender: user.userId,
-                senderName: user.username || 'You',
-                type: 'USER_MESSAGE',
-                timestamp: Date.now()
-            };
-
-            setMessages(prev => [...prev, userMessage]);
-
             // Send to server
             websocketService.sendMessage(inputMessage);
             setInputMessage('');
