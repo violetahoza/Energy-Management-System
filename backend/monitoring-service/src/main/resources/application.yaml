@@ -30,7 +30,7 @@ spring:
 
 app:
   replica:
-    id: ${REPLICA_ID:1}
+    id: ${APP_REPLICA_ID:1}
 
 server:
   port: 8084

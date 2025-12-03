@@ -28,8 +28,7 @@ public class DeviceDataConsumer {
     @Value("${app.replica.id:1}")
     private int replicaId;
 
-    @RabbitListener(queues = "ingest.queue.#{@environment.getProperty('app.replica.id', '1')}", containerFactory = "dataListenerContainerFactory")
-    @Transactional
+    @RabbitListener(queues = "#{ingestQueue.name}", containerFactory = "dataListenerContainerFactory")    @Transactional
     public void handleDeviceData(DeviceDataMessage event) {
         log.info("[Replica {}] Received device data: deviceId={}, timestamp={}, value={}", replicaId, event.getDeviceId(), event.getTimestamp(), event.getMeasurementValue());
 

@@ -229,13 +229,14 @@ services:
       - "traefik.http.services.devices.loadbalancer.server.port=8082"
     restart: always
 
-  monitoring-service:
+  monitoring-service-1:
     build: ./backend/monitoring-service
     environment:
       DB_HOST: monitoring_db
       DB_USER: monitoring_user
       DB_PASS: monitoring_pass
       DB_NAME: monitoring_db
+      APP_REPLICA_ID: 1
     depends_on:
       monitoring_db:
         condition: service_healthy
@@ -245,8 +246,58 @@ services:
         condition: service_healthy
     networks:
       - energy_management_network
-    deploy:
-        replicas: 3
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.monitoring.rule=PathPrefix(`/api/monitoring`)"
+      - "traefik.http.routers.monitoring.entrypoints=web"
+      - "traefik.http.routers.monitoring.priority=100"
+      - "traefik.http.routers.monitoring.middlewares=auth-middleware,cors-headers"
+      - "traefik.http.services.monitoring.loadbalancer.server.port=8084"
+    restart: always
+
+  monitoring-service-2:
+    build: ./backend/monitoring-service
+    environment:
+      DB_HOST: monitoring_db
+      DB_USER: monitoring_user
+      DB_PASS: monitoring_pass
+      DB_NAME: monitoring_db
+      APP_REPLICA_ID: 2
+    depends_on:
+      monitoring_db:
+        condition: service_healthy
+      data-collection-broker:
+        condition: service_healthy
+      synchronization-broker:
+        condition: service_healthy
+    networks:
+      - energy_management_network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.monitoring.rule=PathPrefix(`/api/monitoring`)"
+      - "traefik.http.routers.monitoring.entrypoints=web"
+      - "traefik.http.routers.monitoring.priority=100"
+      - "traefik.http.routers.monitoring.middlewares=auth-middleware,cors-headers"
+      - "traefik.http.services.monitoring.loadbalancer.server.port=8084"
+    restart: always
+
+  monitoring-service-3:
+    build: ./backend/monitoring-service
+    environment:
+      DB_HOST: monitoring_db
+      DB_USER: monitoring_user
+      DB_PASS: monitoring_pass
+      DB_NAME: monitoring_db
+      APP_REPLICA_ID: 3
+    depends_on:
+      monitoring_db:
+        condition: service_healthy
+      data-collection-broker:
+        condition: service_healthy
+      synchronization-broker:
+        condition: service_healthy
+    networks:
+      - energy_management_network
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.monitoring.rule=PathPrefix(`/api/monitoring`)"
