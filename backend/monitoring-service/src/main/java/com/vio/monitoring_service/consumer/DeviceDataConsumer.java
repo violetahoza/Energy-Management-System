@@ -10,6 +10,7 @@ import com.vio.monitoring_service.repository.MonitoredDeviceRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,17 +23,19 @@ import java.util.Optional;
 public class DeviceDataConsumer {
     private final MeasurementRepository measurementRepository;
     private final MonitoredDeviceRepository monitoredDeviceRepository;
-    private final AlertPublisher alertPublisher;  // Add this
+    private final AlertPublisher alertPublisher;
 
-    @RabbitListener(queues = RabbitMQConfig.DEVICE_DATA_QUEUE, containerFactory = "dataListenerContainerFactory")
+    @Value("${app.replica.id:1}")
+    private int replicaId;
+
+    @RabbitListener(queues = "ingest.queue.#{@environment.getProperty('app.replica.id', '1')}", containerFactory = "dataListenerContainerFactory")
     @Transactional
     public void handleDeviceData(DeviceDataMessage event) {
-        log.info("Received device data: deviceId={}, timestamp={}, value={}",
-                event.getDeviceId(), event.getTimestamp(), event.getMeasurementValue());
+        log.info("[Replica {}] Received device data: deviceId={}, timestamp={}, value={}", replicaId, event.getDeviceId(), event.getTimestamp(), event.getMeasurementValue());
 
         try {
             if (!monitoredDeviceRepository.existsById(event.getDeviceId())) {
-                log.warn("Device {} is not in monitored devices list. Synchronization may be pending.", event.getDeviceId());
+                log.warn("[Replica {}] Device {} is not in monitored devices list. Synchronization may be pending.", replicaId, event.getDeviceId());
                 return;
             }
 
@@ -43,7 +46,7 @@ public class DeviceDataConsumer {
                 Double maxConsumption = device.getMaxConsumption();
 
                 if (currentValue > maxConsumption) {
-                    log.warn("Overconsumption detected for device {}: current reading {} > max {}", event.getDeviceId(), currentValue, maxConsumption);
+                    log.warn("[Replica {}] Overconsumption detected for device {}: current reading {} > max {}", replicaId, event.getDeviceId(), currentValue, maxConsumption);
                     alertPublisher.publishOverconsumptionAlert(
                             event.getDeviceId(),
                             device.getUserId(),
@@ -64,7 +67,7 @@ public class DeviceDataConsumer {
                 measurement = existingMeasurement.get();
                 measurement.setHourlyConsumption(measurement.getHourlyConsumption() + event.getMeasurementValue());
                 measurement.setMeasurementCount(measurement.getMeasurementCount() + 1);
-                log.debug("Updated measurement for device {} on {} hour {}: total={} kWh, count={}", event.getDeviceId(), date, hour, measurement.getHourlyConsumption(), measurement.getMeasurementCount());
+                log.debug("[Replica {}] Updated measurement for device {} on {} hour {}: total={} kWh, count={}", replicaId, event.getDeviceId(), date, hour, measurement.getHourlyConsumption(), measurement.getMeasurementCount());
             } else {
                 // create new measurement
                 measurement = Measurement.builder()
@@ -74,13 +77,13 @@ public class DeviceDataConsumer {
                         .hourlyConsumption(event.getMeasurementValue())
                         .measurementCount(1)
                         .build();
-                log.debug("Created new measurement for device {} on {} hour {}: {} kWh", event.getDeviceId(), date, hour, event.getMeasurementValue());
+                log.debug("[Replica {}] Created new measurement for device {} on {} hour {}: {} kWh", replicaId, event.getDeviceId(), date, hour, event.getMeasurementValue());
             }
 
             measurementRepository.save(measurement);
-            log.info("Successfully processed device data for device {} - Date: {}, Hour: {}, Total: {} kWh", event.getDeviceId(), date, hour, measurement.getHourlyConsumption());
+            log.info("[Replica {}] Successfully processed device data for device {} - Date: {}, Hour: {}, Total: {} kWh", replicaId, event.getDeviceId(), date, hour, measurement.getHourlyConsumption());
         } catch (Exception e) {
-            log.error("Error processing device data for deviceId {}: {}", event.getDeviceId(), e.getMessage(), e);
+            log.error("[Replica {}] Error processing device data for deviceId {}: {}", replicaId, event.getDeviceId(), e.getMessage(), e);
             throw e;
         }
     }

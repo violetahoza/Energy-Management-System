@@ -1,0 +1,32 @@
+server:
+  port: 8086
+
+spring:
+  application:
+    name: load-balancing
+
+  rabbitmq:
+    host: data-collection-broker
+    port: 5672
+    username: rabbitmq_user
+    password: rabbitmq_pass
+
+app:
+  monitoring:
+    replicas: ${MONITORING_REPLICAS:3}
+
+  load-balancing:
+    strategy: ${LOAD_BALANCING_STRATEGY:consistent-hashing}
+
+  rabbitmq:
+    queue:
+      device-data: device.data.queue
+
+    exchange:
+      device-data: device.data.exchange
+      ingest: ingest.exchange
+
+    routing-key:
+      device-data: device.data
+      ingest-prefix: ingest.data.
+

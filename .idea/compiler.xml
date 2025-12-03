@@ -13,7 +13,7 @@
         </processorPath>
         <module name="device-service" />
       </profile>
-      <profile name="Annotation profile for customer-support" enabled="true">
+      <profile name="Annotation profile for load-balancing" enabled="true">
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
@@ -24,6 +24,7 @@
         <module name="customer-support" />
         <module name="authorization-service" />
         <module name="user-service" />
+        <module name="load-balancing" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
@@ -37,6 +38,7 @@
       <module name="authorization-service" options="-parameters" />
       <module name="customer-support" options="-parameters" />
       <module name="device-service" options="-parameters" />
+      <module name="load-balancing" options="-parameters" />
       <module name="monitoring-service" options="-parameters" />
       <module name="user-service" options="-parameters" />
       <module name="websocket-service" options="-parameters" />

@@ -15,6 +15,7 @@
         <option value="$PROJECT_DIR$/backend/monitoring-service/pom.xml" />
         <option value="$PROJECT_DIR$/backend/websocket-service/pom.xml" />
         <option value="$PROJECT_DIR$/backend/customer-support/pom.xml" />
+        <option value="$PROJECT_DIR$/backend/load-balancing/pom.xml" />
       </list>
     </option>
     <option name="ignoredFiles">

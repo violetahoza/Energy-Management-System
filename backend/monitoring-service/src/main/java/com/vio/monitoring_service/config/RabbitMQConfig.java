@@ -19,13 +19,11 @@ public class RabbitMQConfig {
     public static final String DEVICE_SYNC_QUEUE_MONITORING = "device.sync.queue.monitoring";
     public static final String DEVICE_SYNC_ROUTING_KEY = "device.sync";
 
-    public static final String DEVICE_DATA_QUEUE = "device.data.queue";
-    public static final String DEVICE_DATA_EXCHANGE = "device.data.exchange";
-    public static final String DEVICE_DATA_ROUTING_KEY = "device.data";
-
     public static final String OVERCONSUMPTION_EXCHANGE = "overconsumption.exchange";
     public static final String OVERCONSUMPTION_QUEUE = "overconsumption.alert.queue";
     public static final String OVERCONSUMPTION_ROUTING_KEY = "overconsumption.alert";
+
+    public static final String INGEST_EXCHANGE = "ingest.exchange";
 
     @Value("${spring.rabbitmq.sync.host}")
     private String syncHost;
@@ -50,6 +48,9 @@ public class RabbitMQConfig {
 
     @Value("${spring.rabbitmq.data.password}")
     private String dataPassword;
+
+    @Value("${app.replica.id:1}")
+    private int replicaId;
 
     @Bean
     public TopicExchange overconsumptionExchange() {
@@ -149,21 +150,23 @@ public class RabbitMQConfig {
     }
 
     @Bean
-    public Queue deviceDataQueue() {
-        return new Queue(DEVICE_DATA_QUEUE, true);
+    public Queue ingestQueue() {
+        String queueName = "ingest.queue." + replicaId;
+        return new Queue(queueName, true);
     }
 
     @Bean
-    public TopicExchange deviceDataExchange() {
-        return new TopicExchange(DEVICE_DATA_EXCHANGE, true, false);
+    public TopicExchange ingestExchange() {
+        return new TopicExchange(INGEST_EXCHANGE, true, false);
     }
 
     @Bean
-    public Binding deviceDataBinding() {
+    public Binding ingestBinding() {
+        String routingKey = "ingest.data." + replicaId;
         return BindingBuilder
-                .bind(deviceDataQueue())
-                .to(deviceDataExchange())
-                .with(DEVICE_DATA_ROUTING_KEY);
+                .bind(ingestQueue())
+                .to(ingestExchange())
+                .with(routingKey);
     }
 
     @Bean
