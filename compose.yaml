@@ -231,9 +231,6 @@ services:
 
   monitoring-service:
     build: ./backend/monitoring-service
-    container_name: monitoring-service
-    ports:
-      - "8084:8084"
     environment:
       DB_HOST: monitoring_db
       DB_USER: monitoring_user
@@ -248,6 +245,8 @@ services:
         condition: service_healthy
     networks:
       - energy_management_network
+    deploy:
+        replicas: 3
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.monitoring.rule=PathPrefix(`/api/monitoring`)"
@@ -284,7 +283,7 @@ services:
       - "traefik.http.services.support.loadbalancer.server.port=8085"
     restart: always
 
-  load-balancing-service:
+  load-balancing:
     build: ./backend/load-balancing
     container_name: load-balancing
     environment:
