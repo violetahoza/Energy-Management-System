@@ -28,6 +28,7 @@ public class ChatService {
                 .senderName(username)
                 .type(ChatMessage.MessageType.USER_MESSAGE)
                 .timestamp(System.currentTimeMillis())
+                .recipientUserId(userId)
                 .build();
 
         chatSessions.computeIfAbsent(userId, k -> new ArrayList<>()).add(userMessage);
@@ -47,9 +48,7 @@ public class ChatService {
                 sendSystemResponse(userId, aiResponse, ChatMessage.MessageType.AI_RESPONSE);
             }).exceptionally(ex -> {
                 log.error("Error getting AI response: ", ex);
-                sendSystemResponse(userId,
-                        "I apologize, but I'm having trouble processing your request. Please try again or wait for an administrator.",
-                        ChatMessage.MessageType.SYSTEM_MESSAGE);
+                sendSystemResponse(userId, "I apologize, but I'm having trouble processing your request. Please try again or wait for an administrator.", ChatMessage.MessageType.SYSTEM_MESSAGE);
                 return null;
             });
         }
@@ -64,22 +63,15 @@ public class ChatService {
                 .senderName("Administrator")
                 .type(ChatMessage.MessageType.ADMIN_MESSAGE)
                 .timestamp(System.currentTimeMillis())
+                .recipientUserId(userId)
                 .build();
 
         chatSessions.computeIfAbsent(userId, k -> new ArrayList<>()).add(adminMessage);
 
         messagingTemplate.convertAndSendToUser(userId, "/queue/messages", adminMessage);
-        log.info("✓ Sent admin message to user {}", userId);
+        log.info("✓ Sent admin message to user {} at /user/{}/queue/messages", userId, userId);
 
-        ChatMessage adminBroadcast = ChatMessage.builder()
-                .content(content)
-                .sender(userId)
-                .senderName("Administrator")
-                .type(ChatMessage.MessageType.ADMIN_MESSAGE)
-                .timestamp(System.currentTimeMillis())
-                .recipientUserId(userId)
-                .build();
-        messagingTemplate.convertAndSend("/topic/admin-chat", adminBroadcast);
+        messagingTemplate.convertAndSend("/topic/admin-chat", adminMessage);
     }
 
     private void sendSystemResponse(String userId, String content, ChatMessage.MessageType type) {
@@ -94,17 +86,9 @@ public class ChatService {
 
         chatSessions.computeIfAbsent(userId, k -> new ArrayList<>()).add(response);
         messagingTemplate.convertAndSendToUser(userId, "/queue/messages", response);
-        log.info("✓ Sent {} to user {}", type, userId);
+        log.info("✓ Sent {} to user {} at /user/{}/queue/messages", type, userId, userId);
 
-        ChatMessage adminBroadcast = ChatMessage.builder()
-                .content(content)
-                .sender(userId)
-                .senderName("Support Bot")
-                .type(type)
-                .timestamp(System.currentTimeMillis())
-                .recipientUserId(userId)
-                .build();
-        messagingTemplate.convertAndSend("/topic/admin-chat", adminBroadcast);
+        messagingTemplate.convertAndSend("/topic/admin-chat", response);
         log.info("✓ Broadcasted {} to admin panel for user {}", type, userId);
     }
 }

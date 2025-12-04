@@ -1,41 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
-import websocketService from '../../services/websocket';
 import { useAuth } from '../../context/AuthContext';
+import { useWebSocket } from '../../context/WebSocketContext';
 import '../../styles/AdminChat.css';
 
 const AdminChatPanel = ({ chatSessions, setChatSessions }) => {
     const { user } = useAuth();
+    const { isConnected, connect, sendAdminResponse } = useWebSocket();
+
     const [selectedUserId, setSelectedUserId] = useState(null);
     const [inputMessage, setInputMessage] = useState('');
-    const [isConnected, setIsConnected] = useState(false);
     const messagesEndRef = useRef(null);
-
-    useEffect(() => {
-        if (user && user.role === 'ADMIN') {
-            const handleConnect = () => {
-                setIsConnected(true);
-                console.log('Admin Chat Panel: Connected');
-            };
-
-            const handleDisconnect = () => {
-                setIsConnected(false);
-                console.log('Admin Chat Panel: Disconnected');
-            };
-
-            websocketService.subscribe('connect', handleConnect);
-            websocketService.subscribe('disconnect', handleDisconnect);
-
-            if (websocketService.isConnected()) {
-                setIsConnected(true);
-            }
-
-            return () => {
-                console.log('AdminChatPanel: Cleaning up connection subscriptions');
-                websocketService.unsubscribe('connect', handleConnect);
-                websocketService.unsubscribe('disconnect', handleDisconnect);
-            };
-        }
-    }, [user]);
 
     useEffect(() => {
         scrollToBottom();
@@ -48,23 +22,23 @@ const AdminChatPanel = ({ chatSessions, setChatSessions }) => {
     const handleSendMessage = (e) => {
         e.preventDefault();
         if (inputMessage.trim() && selectedUserId && isConnected) {
-            websocketService.sendAdminResponse(selectedUserId, inputMessage);
+            sendAdminResponse(selectedUserId, inputMessage);
             setInputMessage('');
         }
     };
 
+    const handleReconnect = () => {
+        const token = localStorage.getItem('token');
+        connect(user.userId, token, true);
+    };
+
     const getMessageClassName = (type) => {
         switch (type) {
-            case 'USER_MESSAGE':
-                return 'admin-message-user';
-            case 'ADMIN_MESSAGE':
-                return 'admin-message-admin';
-            case 'RULE_RESPONSE':
-                return 'admin-message-system rule-based';
-            case 'AI_RESPONSE':
-                return 'admin-message-system ai-based';
-            default:
-                return 'admin-message-system';
+            case 'USER_MESSAGE': return 'admin-message-user';
+            case 'ADMIN_MESSAGE': return 'admin-message-admin';
+            case 'RULE_RESPONSE': return 'admin-message-system rule-based';
+            case 'AI_RESPONSE': return 'admin-message-system ai-based';
+            default: return 'admin-message-system';
         }
     };
 
@@ -95,12 +69,7 @@ const AdminChatPanel = ({ chatSessions, setChatSessions }) => {
                     {!isConnected && (
                         <button
                             className="btn btn-sm btn-primary"
-                            onClick={() => {
-                                const token = localStorage.getItem('token');
-                                websocketService.connect(user.userId, token, true)
-                                    .then(() => setIsConnected(true))
-                                    .catch(err => console.error('Reconnection error:', err));
-                            }}
+                            onClick={handleReconnect}
                         >
                             Reconnect
                         </button>
@@ -126,9 +95,7 @@ const AdminChatPanel = ({ chatSessions, setChatSessions }) => {
                                 >
                                     <div className="session-user-icon">👤</div>
                                     <div className="session-info">
-                                        <div className="session-user-name">
-                                            User {userId}
-                                        </div>
+                                        <div className="session-user-name">User {userId}</div>
                                         <div className="session-last-message">
                                             {lastMessage?.content?.substring(0, 30)}
                                             {lastMessage?.content?.length > 30 ? '...' : ''}
@@ -136,17 +103,11 @@ const AdminChatPanel = ({ chatSessions, setChatSessions }) => {
                                     </div>
                                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '5px' }}>
                                         <div className="session-time">
-                                            {new Date(lastMessage?.timestamp).toLocaleTimeString([], {
-                                                hour: '2-digit',
-                                                minute: '2-digit'
-                                            })}
+                                            {lastMessage && new Date(lastMessage.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                         </div>
                                         <button
                                             className="btn btn-sm btn-delete"
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                clearSession(userId);
-                                            }}
+                                            onClick={(e) => { e.stopPropagation(); clearSession(userId); }}
                                             title="Clear chat"
                                             style={{ fontSize: '12px', padding: '2px 6px' }}
                                         >
@@ -159,9 +120,7 @@ const AdminChatPanel = ({ chatSessions, setChatSessions }) => {
                         {sessionCount === 0 && (
                             <div className="admin-no-sessions">
                                 <p>📭 No active chat sessions</p>
-                                <p className="admin-no-sessions-subtitle">
-                                    Waiting for users to start conversations...
-                                </p>
+                                <p className="admin-no-sessions-subtitle">Waiting for users to start conversations...</p>
                             </div>
                         )}
                     </div>
@@ -180,34 +139,22 @@ const AdminChatPanel = ({ chatSessions, setChatSessions }) => {
                                         </div>
                                     </div>
                                 </div>
-                                <button
-                                    className="btn btn-sm btn-secondary"
-                                    onClick={() => clearSession(selectedUserId)}
-                                    title="Clear this conversation"
-                                >
+                                <button className="btn btn-sm btn-secondary" onClick={() => clearSession(selectedUserId)} title="Clear this conversation">
                                     🗑️ Clear
                                 </button>
                             </div>
 
                             <div className="admin-messages-container">
                                 {selectedMessages.length === 0 && (
-                                    <div className="admin-no-messages">
-                                        <p>No messages yet</p>
-                                    </div>
+                                    <div className="admin-no-messages"><p>No messages yet</p></div>
                                 )}
                                 {selectedMessages.map((msg, index) => (
                                     <div key={`${msg.timestamp}-${index}`} className={`admin-message ${getMessageClassName(msg.type)}`}>
                                         <div className="admin-message-sender">{msg.senderName}</div>
                                         <div className="admin-message-content">{msg.content}</div>
-                                        <div className="admin-message-time">
-                                            {new Date(msg.timestamp).toLocaleTimeString()}
-                                        </div>
-                                        {msg.type === 'RULE_RESPONSE' && (
-                                            <div className="admin-message-badge">🤖 Rule-Based</div>
-                                        )}
-                                        {msg.type === 'AI_RESPONSE' && (
-                                            <div className="admin-message-badge">🧠 AI-Powered</div>
-                                        )}
+                                        <div className="admin-message-time">{new Date(msg.timestamp).toLocaleTimeString()}</div>
+                                        {msg.type === 'RULE_RESPONSE' && <div className="admin-message-badge">🤖 Rule-Based</div>}
+                                        {msg.type === 'AI_RESPONSE' && <div className="admin-message-badge">🧠 AI-Powered</div>}
                                     </div>
                                 ))}
                                 <div ref={messagesEndRef} />
@@ -222,11 +169,7 @@ const AdminChatPanel = ({ chatSessions, setChatSessions }) => {
                                     className="admin-chat-input"
                                     disabled={!isConnected}
                                 />
-                                <button
-                                    type="submit"
-                                    className="admin-chat-send-btn"
-                                    disabled={!isConnected || !inputMessage.trim()}
-                                >
+                                <button type="submit" className="admin-chat-send-btn" disabled={!isConnected || !inputMessage.trim()}>
                                     Send
                                 </button>
                             </form>

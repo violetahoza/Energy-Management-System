@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { WebSocketProvider } from './context/WebSocketContext';
 import Login from './components/auth/Login';
 // import Register from './components/auth/Register';
 import AdminDashboard from './pages/AdminDashboard';
@@ -39,31 +40,33 @@ function App() {
     return (
         // the AuthProvider makes auth state available throughout the app
         <AuthProvider>
-            <Router>
-                <Routes>
-                    {/*public routes*/}
-                    <Route path="/" element={<Navigate to="/login" replace />} />
-                    <Route path="/login" element={<Login />} />
-                    {/*<Route path="/register" element={<Register />} />*/}
-                    {/*protected routes*/}
-                    <Route path="/admin"
-                        element={
-                            <ProtectedRoute allowedRoles={['ADMIN']}>
-                                <AdminDashboard />
-                            </ProtectedRoute>
-                        }
-                    />
-                    <Route path="/client"
-                        element={
-                            <ProtectedRoute allowedRoles={['CLIENT']}>
-                                <ClientDashboard />
-                            </ProtectedRoute>
-                        }
-                    />
-                    {/*catch-all route to redirect unknown paths to login*/}
-                    <Route path="*" element={<Navigate to="/login" replace />} />
-                </Routes>
-            </Router>
+            <WebSocketProvider>
+                <Router>
+                    <Routes>
+                        {/*public routes*/}
+                        <Route path="/" element={<Navigate to="/login" replace />} />
+                        <Route path="/login" element={<Login />} />
+                        {/*<Route path="/register" element={<Register />} />*/}
+                        {/*protected routes*/}
+                        <Route path="/admin"
+                            element={
+                                <ProtectedRoute allowedRoles={['ADMIN']}>
+                                    <AdminDashboard />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route path="/client"
+                            element={
+                                <ProtectedRoute allowedRoles={['CLIENT']}>
+                                    <ClientDashboard />
+                                </ProtectedRoute>
+                            }
+                        />
+                        {/*catch-all route to redirect unknown paths to login*/}
+                        <Route path="*" element={<Navigate to="/login" replace />} />
+                    </Routes>
+                </Router>
+            </WebSocketProvider>
         </AuthProvider>
     );
 }

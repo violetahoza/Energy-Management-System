@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
-import websocketService from '../../services/websocket';
 import { useAuth } from '../../context/AuthContext';
 import '../../styles/App.css';
+import { useWebSocket } from '../../context/WebSocketContext';
 
 const NotificationBell = () => {
+    const websocketService = useWebSocket();
     const { user } = useAuth();
     const [alerts, setAlerts] = useState([]);
     const [showDropdown, setShowDropdown] = useState(false);
@@ -11,6 +12,8 @@ const NotificationBell = () => {
     const dropdownRef = useRef(null);
 
     useEffect(() => {
+        if (!websocketService) return;
+
         if (user) {
             const token = localStorage.getItem('token');
 
@@ -21,13 +24,6 @@ const NotificationBell = () => {
             };
 
             websocketService.subscribe('alerts', handleAlert);
-
-            if (!websocketService.isConnected()) {
-                console.log('NotificationBell: Connecting WebSocket for user:', user.userId);
-                websocketService.connect(user.userId, token);
-            } else {
-                console.log('NotificationBell: WebSocket already connected');
-            }
 
             return () => {
                 websocketService.unsubscribe('alerts', handleAlert);

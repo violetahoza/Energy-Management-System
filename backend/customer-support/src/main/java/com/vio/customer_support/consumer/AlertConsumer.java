@@ -26,7 +26,8 @@ public class AlertConsumer {
                     "/queue/alerts",
                     alert
             );
-            log.info("✓ Sent alert to user {} at /user/{}/queue/alerts", alert.getUserId(), alert.getUserId());
+
+            log.info("✓ Sent alert to  user {}", alert.getUserId());
             log.info("========== ALERT SENT SUCCESSFULLY ==========");
         } catch (Exception e) {
             log.error("❌ Failed to send alert via WebSocket", e);

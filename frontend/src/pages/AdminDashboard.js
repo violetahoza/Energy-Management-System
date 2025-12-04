@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { userAPI, deviceAPI } from '../services/api';
-import websocketService from '../services/websocket';
+import { useWebSocket } from '../context/WebSocketContext';
 import '../styles/App.css';
 import Alert from '../components/common/Alert';
 import LoadingSpinner from '../components/common/LoadingSpinner';
@@ -13,6 +13,7 @@ const STORAGE_KEY = 'admin_chat_sessions';
 const AdminDashboard = () => {
     const navigate = useNavigate();
     const { user, logout } = useAuth();
+    const { subscribe, unsubscribe } = useWebSocket();
     const [activeTab, setActiveTab] = useState('users');
     const [users, setUsers] = useState([]);
     const [devices, setDevices] = useState([]);
@@ -55,28 +56,28 @@ const AdminDashboard = () => {
 
                 setChatSessions(prev => {
                     const newSessions = new Map(prev);
-                    const userId = message.recipientUserId || message.sender;
+                    const userId = message.recipientUserId;
+
+                    if (!userId) return prev;
+
                     const userMessages = newSessions.get(userId) || [];
+
+                    const isDuplicate = userMessages.some(m => m.timestamp === message.timestamp && m.content === message.content);
+                    if (isDuplicate) return prev;
+
                     newSessions.set(userId, [...userMessages, message]);
                     return newSessions;
                 });
             };
 
-            websocketService.subscribe('admin-messages', handleAdminMessage);
-
-            if (!websocketService.isConnected()) {
-                console.log('AdminDashboard: Connecting WebSocket as ADMIN');
-                websocketService.connect(user.userId, token, true)
-                    .catch(err => console.error('WebSocket connection error:', err));
-            }
+            subscribe('admin-messages', handleAdminMessage);
 
             return () => {
-                console.log('AdminDashboard: Cleaning up admin-messages subscription');
-                websocketService.unsubscribe('admin-messages', handleAdminMessage);
-                // DO NOT disconnect - keep connection alive
+                console.log('AdminDashboard: Cleaning up subscription');
+                unsubscribe('admin-messages', handleAdminMessage);
             };
         }
-    }, [user]);
+    }, [user, subscribe, unsubscribe]);
 
     useEffect(() => {
         if (user?.role !== 'ADMIN') {
