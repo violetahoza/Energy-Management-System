@@ -6,6 +6,25 @@ The Energy Management System is a microservices-based application that allows au
 
 The system features a hybrid **Chat Support System** (Rule-based + AI + Admin Support) and **Real-time Overconsumption Alerts**.
 
+## Project Structure
+```
+energy-management-system/
+├── backend/
+│   ├── authorization-service/
+│   ├── user-service/
+│   ├── device-service/
+│   ├── monitoring-service/
+│   ├── customer-support/
+│   └── load-balancing/
+├── frontend/
+├── device-data-simulator/
+│   ├── simulator.py
+│   ├── config.py
+│   └── requirements.txt
+├── compose.yaml
+└── README.md
+```
+
 ## Architecture
 
 ### System Components
@@ -14,8 +33,11 @@ The system features a hybrid **Chat Support System** (Rule-based + AI + Admin Su
 - **Authorization Service** (Port 8083): JWT authentication, token validation, and ForwardAuth endpoint for Traefik
 - **User Service** (Port 8081): User profile management and CRUD operations
 - **Device Service** (Port 8082): Device management and user-device assignment
-- **Monitoring Service** (Port 8084): Energy consumption data aggregation and historical analysis
+- **Monitoring Service**: Energy consumption data aggregation and historical analysis
+  - **Multiple Replicas**: Runs 3 instances for load-balanced data processing
+  - **Replica IDs**: Each instance has a unique ID (1, 2, 3) for dedicated queue assignment
 - **Customer Support Service** (Port 8085): Manages real-time WebSockets for chat and alerts, integrates with Google Gemini AI, and handles rule-based responses.
+- **Load Balancing Service** (Port 8086): Distributes device measurement data across monitoring service replicas using configurable strategies
 
 #### Infrastructure
 - **Traefik v3.2**: Reverse proxy and API Gateway with ForwardAuth middleware for centralized authentication
@@ -28,7 +50,7 @@ The system features a hybrid **Chat Support System** (Rule-based + AI + Admin Su
 - **Frontend**: React 18-based single-page application with authentication context and role-based routing
 - **Device Data Simulator**: Python application generating realistic energy consumption data every 10 minutes
 
-### Technology Stack
+## Technology Stack
 
 **Backend**
 - Java 21, Spring Boot 3.x
@@ -74,6 +96,7 @@ Verify installations:
 docker --version
 docker-compose --version
 git --version
+python --version
 ```
 
 ## Configuration
@@ -99,6 +122,22 @@ GEMINI_API_KEY=your_google_gemini_api_key
 ```
 
 **Note**: If the API key is not provided, the AI service will return a default fallback message.
+
+### Load Balancing Configuration
+
+The load balancing service can be configured via environment variables in `compose.yaml`:
+```yaml
+load-balancing:
+  environment:
+    MONITORING_REPLICAS: 3                    # Number of monitoring replicas
+    LOAD_BALANCING_STRATEGY: round-robin      # or 'consistent-hashing'
+    DEVICES_PER_REPLICA: 3                    # For round-robin strategy
+```
+
+**Available Strategies**:
+- `round-robin` (default): Distributes devices in batches (first 3 to replica 1, next 3 to replica 2, etc.)
+- `consistent-hashing`: Uses MD5 hashing to ensure same device always routes to same replica
+
 
 ## Build and Execution
 
@@ -181,6 +220,36 @@ docker-compose up --build -d monitoring-service
 docker-compose up --build -d frontend
 ```
 
+## Running the Device Simulator
+
+The device simulator generates realistic energy consumption data and publishes it to RabbitMQ.
+
+### Start Simulator
+```bash
+cd device-data-simulator
+
+# Install dependencies (first time only)
+pip install -r requirements.txt
+
+# Run simulator (10-minute intervals - default)
+python simulator.py
+
+# Run with custom interval (1 minute for testing)
+python simulator.py 1
+```
+
+### Configuration
+
+Edit `config.py` to customize:
+```python
+# Which devices to simulate
+DEVICE_IDS = '1,2,6,7,8,9,10,11'
+
+# RabbitMQ connection
+RABBITMQ_HOST = 'localhost'
+RABBITMQ_PORT = 5673  # Data collection broker
+```
+
 ## Authentication Flow
 
 1. **Register/Login**: User registers or logs in via frontend
@@ -190,6 +259,17 @@ docker-compose up --build -d frontend
 5. **Token Validation**: Traefik intercepts requests and validates token via ForwardAuth
 6. **User Headers**: Valid tokens result in user info headers (X-User-Id, X-Username, X-User-Role)
 7. **Service Authorization**: Backend services read headers and enforce permissions
+
+## Data Flow: Device Measurements
+
+1. **Simulation**: The device simulator generates measurements (every 10 minutes by default)
+2. **Publishing**: Measurements are published to `device.data.exchange` → `device.data.queue`
+3. **Load Balancing**: The load balancing service consumes messages and applies a distribution strategy
+4. **Routing**: Messages are routed to `ingest.queue.{N}` based on the selected replica
+5. **Processing**: The monitoring replica consumes and processes the measurements
+6. **Aggregation**: Hourly consumption data aggregated and stored in `monitoring_db`
+7. **Alert Check**: If consumption exceeds device max, an overconsumption alert is published
+8. **Notification**: WebSocket delivers real-time alerts to client dashboard
 
 ## Testing the Application
 
@@ -277,6 +357,12 @@ curl -X GET http://localhost/api/devices \
 
 ```bash
 curl -X GET http://localhost/api/devices/1 \
+  -H "Authorization: Bearer $TOKEN"
+```
+
+### Get Daily Consumption
+```bash
+curl -X GET "http://localhost/api/monitoring/devices/1/consumption/daily?date=2024-12-06" \
   -H "Authorization: Bearer $TOKEN"
 ```
 
