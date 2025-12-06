@@ -22,7 +22,6 @@ const TotalUserConsumptionChart = ({ devices }) => {
         try {
             const token = localStorage.getItem('token');
 
-            // Iterație și apeluri paralele către Monitoring Service pentru fiecare dispozitiv
             const results = await Promise.all(
                 devices.map(device =>
                     fetch(`http://localhost/api/monitoring/devices/${device.deviceId}/consumption/daily?date=${date}`, {
@@ -40,7 +39,6 @@ const TotalUserConsumptionChart = ({ devices }) => {
                 return;
             }
 
-            // Agregare pe oră
             const hourlyData = Array.from({ length: 24 }, (_, hour) => {
                 let totalConsumption = 0;
                 let totalMeasurements = 0;
@@ -100,7 +98,7 @@ const TotalUserConsumptionChart = ({ devices }) => {
                 display: true,
                 text: `Total Hourly Energy Consumption - All Devices (${devices?.length || 0})`,
                 font: { size: 16 },
-                color: '#333' // Setat culoarea titlului pentru fundal alb
+                color: '#333'
             },
             tooltip: {
                 callbacks: {
@@ -178,7 +176,6 @@ const TotalUserConsumptionChart = ({ devices }) => {
             {!loading && !error && totalData && (
                 <>
                     <div className="chart-summary-grid">
-                        {/* Summary cards with adjusted colors for Total Consumption Chart (pink gradient) */}
                         <div className="chart-summary-card chart-summary-card-pink">
                             <div className="chart-summary-label">Total Daily</div>
                             <div className="chart-summary-value">{totalData.totalDailyConsumption.toFixed(3)} kWh</div>
@@ -204,28 +201,6 @@ const TotalUserConsumptionChart = ({ devices }) => {
                             <Bar data={getChartData()} options={chartOptions} />
                         )}
                     </div>
-
-                    {/*<div className="chart-table-container">*/}
-                    {/*    <h3>Hourly Breakdown - All Devices</h3>*/}
-                    {/*    <table className="table">*/}
-                    {/*        <thead>*/}
-                    {/*        <tr>*/}
-                    {/*            <th>Hour</th>*/}
-                    {/*            <th>Total (kWh)</th>*/}
-                    {/*            <th>Measurements</th>*/}
-                    {/*        </tr>*/}
-                    {/*        </thead>*/}
-                    {/*        <tbody>*/}
-                    {/*        {totalData.hourlyData.map((hour) => (*/}
-                    {/*            <tr key={hour.hour}>*/}
-                    {/*                <td>{hour.hour}:00 - {hour.hour + 1}:00</td>*/}
-                    {/*                <td>{hour.consumption.toFixed(3)}</td>*/}
-                    {/*                <td>{hour.measurementCount}</td>*/}
-                    {/*            </tr>*/}
-                    {/*        ))}*/}
-                    {/*        </tbody>*/}
-                    {/*    </table>*/}
-                    {/*</div>*/}
 
                     <div className="chart-devices-list">
                         <h4 style={{ marginBottom: '10px' }}>Included Devices:</h4>

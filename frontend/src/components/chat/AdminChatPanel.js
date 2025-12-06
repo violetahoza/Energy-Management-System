@@ -66,14 +66,7 @@ const AdminChatPanel = ({ chatSessions, setChatSessions }) => {
                     <span className={`admin-chat-status ${isConnected ? 'connected' : 'disconnected'}`}>
                         {isConnected ? '🟢 Connected' : '🔴 Disconnected'}
                     </span>
-                    {!isConnected && (
-                        <button
-                            className="btn btn-sm btn-primary"
-                            onClick={handleReconnect}
-                        >
-                            Reconnect
-                        </button>
-                    )}
+                    {!isConnected && (<button className="btn btn-sm btn-primary" onClick={handleReconnect}>Reconnect</button>)}
                 </div>
             </div>
 
@@ -134,20 +127,14 @@ const AdminChatPanel = ({ chatSessions, setChatSessions }) => {
                                     <div className="admin-user-avatar">👤</div>
                                     <div>
                                         <div className="admin-user-name">User {selectedUserId}</div>
-                                        <div className="admin-user-status">
-                                            {isConnected ? '🟢 Online' : '🔴 Offline'}
-                                        </div>
+                                        <div className="admin-user-status">{isConnected ? '🟢 Online' : '🔴 Offline'}</div>
                                     </div>
                                 </div>
-                                <button className="btn btn-sm btn-secondary" onClick={() => clearSession(selectedUserId)} title="Clear this conversation">
-                                    🗑️ Clear
-                                </button>
+                                <button className="btn btn-sm btn-secondary" onClick={() => clearSession(selectedUserId)} title="Clear this conversation">🗑️ Clear</button>
                             </div>
 
                             <div className="admin-messages-container">
-                                {selectedMessages.length === 0 && (
-                                    <div className="admin-no-messages"><p>No messages yet</p></div>
-                                )}
+                                {selectedMessages.length === 0 && (<div className="admin-no-messages"><p>No messages yet</p></div>)}
                                 {selectedMessages.map((msg, index) => (
                                     <div key={`${msg.timestamp}-${index}`} className={`admin-message ${getMessageClassName(msg.type)}`}>
                                         <div className="admin-message-sender">{msg.senderName}</div>
@@ -169,9 +156,7 @@ const AdminChatPanel = ({ chatSessions, setChatSessions }) => {
                                     className="admin-chat-input"
                                     disabled={!isConnected}
                                 />
-                                <button type="submit" className="admin-chat-send-btn" disabled={!isConnected || !inputMessage.trim()}>
-                                    Send
-                                </button>
+                                <button type="submit" className="admin-chat-send-btn" disabled={!isConnected || !inputMessage.trim()}>Send</button>
                             </form>
                         </>
                     ) : (

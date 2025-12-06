@@ -8,7 +8,6 @@ import io.swagger.v3.oas.models.Components;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-// Configuration class for Swagger documentation for the service's APIs
 @Configuration
 public class OpenApiConfig {
 

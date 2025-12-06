@@ -24,7 +24,8 @@ app:
     replicas: ${MONITORING_REPLICAS:3}
 
   load-balancing:
-    strategy: ${LOAD_BALANCING_STRATEGY:consistent-hashing}
+    strategy: ${LOAD_BALANCING_STRATEGY:round-robin}
+    devices-per-replica: ${DEVICES_PER_REPLICA:3}
 
   rabbitmq:
     queue:

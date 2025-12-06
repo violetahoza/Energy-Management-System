@@ -1,6 +1,5 @@
 package com.vio.monitoring_service.consumer;
 
-import com.vio.monitoring_service.config.RabbitMQConfig;
 import com.vio.monitoring_service.event.DeviceDataMessage;
 import com.vio.monitoring_service.model.Measurement;
 import com.vio.monitoring_service.model.MonitoredDevice;

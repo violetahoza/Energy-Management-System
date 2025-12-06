@@ -113,9 +113,7 @@ const ClientDashboard = () => {
                     </div>
 
                     <div className="card">
-                        <div className="card-header">
-                            <h2 className="card-title">Devices</h2>
-                        </div>
+                        <div className="card-header"><h2 className="card-title">Devices</h2></div>
 
                         {loading ? (
                             <LoadingSpinner message="Loading your devices..."/>
@@ -155,19 +153,11 @@ const ClientDashboard = () => {
             {showConsumptionModal && selectedDeviceForChart && (
                 <ConsumptionModal
                     device={selectedDeviceForChart}
-                    onClose={() => {
-                        setShowConsumptionModal(false);
-                        setSelectedDeviceForChart(null);
-                    }}
+                    onClose={() => {setShowConsumptionModal(false);setSelectedDeviceForChart(null);}}
                 />
             )}
 
-            {showTotalConsumptionModal && (
-                <TotalConsumptionModal
-                    devices={devices}
-                    onClose={() => setShowTotalConsumptionModal(false)}
-                />
-            )}
+            {showTotalConsumptionModal && (<TotalConsumptionModal devices={devices} onClose={() => setShowTotalConsumptionModal(false)}/>)}
 
             <ChatWidget />
         </div>
@@ -193,12 +183,8 @@ const DeviceCard = ({device, onViewDetails, onViewConsumption}) => {
             <p className="device-card-description">{device.description}</p>
 
             <div className="device-card-actions">
-                <button className="btn btn-sm btn-secondary" onClick={onViewDetails}>
-                    📋 Details
-                </button>
-                <button className="btn btn-sm btn-primary" onClick={onViewConsumption}>
-                    📊 View Consumption
-                </button>
+                <button className="btn btn-sm btn-secondary" onClick={onViewDetails}>📋 Details</button>
+                <button className="btn btn-sm btn-primary" onClick={onViewConsumption}>📊 View Consumption</button>
             </div>
         </div>
     );
@@ -228,9 +214,7 @@ const DeviceDetailModal = ({ device, onClose, onViewConsumption }) => {
                 </div>
                 <div className="modal-footer">
                     <button className="btn btn-secondary" onClick={onClose}>Close</button>
-                    <button className="btn btn-primary" onClick={onViewConsumption}>
-                        📊 View Energy Consumption
-                    </button>
+                    <button className="btn btn-primary" onClick={onViewConsumption}>📊 View Energy Consumption</button>
                 </div>
             </div>
         </div>
@@ -248,9 +232,7 @@ const ConsumptionModal = ({ device, onClose }) => {
                     </div>
                     <button className="modal-close" onClick={onClose}>✕</button>
                 </div>
-                <div className="modal-body">
-                    <EnergyConsumptionChart device={device} />
-                </div>
+                <div className="modal-body"><EnergyConsumptionChart device={device} /></div>
                 <div className="modal-footer">
                     <button className="btn btn-primary" onClick={onClose}>Close</button>
                 </div>
@@ -270,12 +252,8 @@ const TotalConsumptionModal = ({ devices, onClose }) => {
                     </div>
                     <button className="modal-close" onClick={onClose}>✕</button>
                 </div>
-                <div className="modal-body">
-                    <TotalUserConsumptionChart devices={devices} />
-                </div>
-                <div className="modal-footer">
-                    <button className="btn btn-primary" onClick={onClose}>Close</button>
-                </div>
+                <div className="modal-body"><TotalUserConsumptionChart devices={devices} /></div>
+                <div className="modal-footer"><button className="btn btn-primary" onClick={onClose}>Close</button></div>
             </div>
         </div>
     );

@@ -16,7 +16,6 @@ const EnergyConsumptionChart = ({ device }) => {
         setError('');
         try {
             const token = localStorage.getItem('token');
-            // Folosește direct API-ul, presupunând că Traefik/Gateway-ul rulează pe localhost
             const response = await fetch(
                 `http://localhost/api/monitoring/devices/${device.deviceId}/consumption/daily?date=${date}`,
                 {
@@ -28,7 +27,6 @@ const EnergyConsumptionChart = ({ device }) => {
             );
 
             if (!response.ok) {
-                // Afișează un mesaj clar când nu există date
                 throw new Error(response.status === 404 ? 'No consumption data found for this date. Try another date.' : 'Failed to fetch consumption data');
             }
 
@@ -71,7 +69,7 @@ const EnergyConsumptionChart = ({ device }) => {
                 display: true,
                 text: `Hourly Energy Consumption - ${device.name}`,
                 font: { size: 16 },
-                color: '#333' // Setat culoarea titlului pentru fundal alb
+                color: '#333'
             },
             tooltip: {
                 callbacks: {
@@ -170,28 +168,6 @@ const EnergyConsumptionChart = ({ device }) => {
                             <Bar data={getChartData()} options={chartOptions} />
                         )}
                     </div>
-
-                    {/*<div className="chart-table-container">*/}
-                    {/*    <h3>Hourly Breakdown</h3>*/}
-                    {/*    <table className="table">*/}
-                    {/*        <thead>*/}
-                    {/*        <tr>*/}
-                    {/*            <th>Hour</th>*/}
-                    {/*            <th>Consumption (kWh)</th>*/}
-                    {/*            <th>Measurements</th>*/}
-                    {/*        </tr>*/}
-                    {/*        </thead>*/}
-                    {/*        <tbody>*/}
-                    {/*        {consumptionData.hourlyData.map((hour) => (*/}
-                    {/*            <tr key={hour.hour}>*/}
-                    {/*                <td>{hour.hour}:00 - {hour.hour + 1}:00</td>*/}
-                    {/*                <td>{hour.consumption.toFixed(3)}</td>*/}
-                    {/*                <td>{hour.measurementCount}</td>*/}
-                    {/*            </tr>*/}
-                    {/*        ))}*/}
-                    {/*        </tbody>*/}
-                    {/*    </table>*/}
-                    {/*</div>*/}
                 </>
             )}
         </div>

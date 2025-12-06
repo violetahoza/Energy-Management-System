@@ -18,11 +18,7 @@ const Alert = ({ type = 'error', message, onClose, children }) => {
                 <span className="alert-icon">{icons[type]}</span>
                 <span>{content}</span>
             </div>
-            {onClose && (
-                <button onClick={onClose} className="alert-close" aria-label="Close alert">
-                    ✕
-                </button>
-            )}
+            {onClose && (<button onClick={onClose} className="alert-close" aria-label="Close alert">✕</button>)}
         </div>
     );
 };

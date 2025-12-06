@@ -14,7 +14,8 @@ The **Monitoring Service** aggregates real-time device readings and stores them 
 
 1.  **Device Synchronization**: Consumes `DeviceSyncEvent` messages on the `device.sync.queue.monitoring` to maintain a list of `monitored_devices` and their assigned users. This is crucial for access control to consumption data.
 2.  **Data Aggregation**: Consumes `DeviceDataMessage` events from the `device.data.queue` (connected to a separate broker). It aggregates the raw 1-minute/10-minute measurements into hourly consumption records (`measurements` table).
-3.  **Authorization**: Enforces access control using an `@deviceSecurityService.isDeviceOwnedByUser` check, allowing clients to only view data for devices assigned to them.
+3.  **Alert Generation**: During data processing, the service checks if the current measurement exceeds the device's `maxConsumption`. If a threshold breach is detected, an `OverconsumptionAlert` event is published to the synchronization broker (`overconsumption.exchange`), which is consumed by the **Customer Support Service**.
+4.  **Authorization**: Enforces access control using an `@deviceSecurityService.isDeviceOwnedByUser` check, allowing clients to only view data for devices assigned to them.
 
 ### 🔑 API Endpoints
 

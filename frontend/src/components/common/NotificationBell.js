@@ -76,9 +76,7 @@ const NotificationBell = () => {
                 aria-label="Notifications"
             >
                 🔔
-                {unreadCount > 0 && (
-                    <span className="notification-badge">{unreadCount}</span>
-                )}
+                {unreadCount > 0 && (<span className="notification-badge">{unreadCount}</span>)}
             </button>
 
             {showDropdown && (

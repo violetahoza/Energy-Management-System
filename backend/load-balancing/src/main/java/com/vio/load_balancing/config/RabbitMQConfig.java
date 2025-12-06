@@ -75,7 +75,6 @@ public class RabbitMQConfig {
         return new Declarables(declarables);
     }
 
-
     @Bean
     public MessageConverter jsonMessageConverter() {
         return new Jackson2JsonMessageConverter();

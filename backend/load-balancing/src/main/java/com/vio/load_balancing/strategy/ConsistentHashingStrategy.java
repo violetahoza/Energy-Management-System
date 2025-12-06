@@ -31,14 +31,12 @@ public class ConsistentHashingStrategy implements LoadBalancingStrategy {
             // Make hash positive and map to replica (1 to N)
             int replica = (Math.abs(hash) % totalReplicas) + 1;
 
-            log.debug("Device {} mapped to replica {} using consistent hashing",
-                    message.getDeviceId(), replica);
+            log.debug("Device {} mapped to replica {} using consistent hashing", message.getDeviceId(), replica);
 
             return replica;
 
         } catch (NoSuchAlgorithmException e) {
             log.error("MD5 algorithm not found, falling back to simple modulo", e);
-            // Fallback to simple modulo
             return (int) ((message.getDeviceId() % totalReplicas) + 1);
         }
     }

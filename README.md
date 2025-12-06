@@ -4,6 +4,8 @@
 
 The Energy Management System is a microservices-based application that allows authenticated users to access, monitor, and manage smart energy metering devices with consumption tracking. The system implements role-based access control with two user types: Administrators (full CRUD operations) and Clients (view assigned devices and consumption data).
 
+The system features a hybrid **Chat Support System** (Rule-based + AI + Admin Support) and **Real-time Overconsumption Alerts**.
+
 ## Architecture
 
 ### System Components
@@ -13,6 +15,7 @@ The Energy Management System is a microservices-based application that allows au
 - **User Service** (Port 8081): User profile management and CRUD operations
 - **Device Service** (Port 8082): Device management and user-device assignment
 - **Monitoring Service** (Port 8084): Energy consumption data aggregation and historical analysis
+- **Customer Support Service** (Port 8085): Manages real-time WebSockets for chat and alerts, integrates with Google Gemini AI, and handles rule-based responses.
 
 #### Infrastructure
 - **Traefik v3.2**: Reverse proxy and API Gateway with ForwardAuth middleware for centralized authentication
@@ -30,7 +33,9 @@ The Energy Management System is a microservices-based application that allows au
 **Backend**
 - Java 21, Spring Boot 3.x
 - Spring Security (method-level authorization with @PreAuthorize)
-- Spring Data JPA with Hibernate
+- Spring Data JPA with Hibernate 
+- Spring WebFlux (for AI API integration)
+- Spring WebSocket (STOMP over SockJS)
 - RabbitMQ (AMQP messaging)
 - JWT (JSON Web Tokens)
 - Swagger/OpenAPI documentation
@@ -38,7 +43,12 @@ The Energy Management System is a microservices-based application that allows au
 **Frontend**
 - React 18, React Router v6
 - Axios for API communication
-- Context API for authentication state
+- **SockJS & StompJS** for real-time communication
+- Context API for authentication and WebSocket state
+
+**AI & Automation**
+- **Google Gemini API**: Generative AI for fallback customer support responses.
+- **Rule-Based Engine**: Regex pattern matching for instant common query responses.
 
 **Infrastructure**
 - Traefik v3.2 (API Gateway)
@@ -79,6 +89,16 @@ JWT_EXPIRATION=3600000 # 1 hour in milliseconds
 ```
 
 **Important**: Replace `your-secret-key-here-minimum-32-characters-long` with a secure random string of at least 32 characters.
+
+### Customer Support Service Environment Variables
+
+To enable AI responses, create a `.env` file in `backend/customer-support/` directory with the following content:
+
+```env
+GEMINI_API_KEY=your_google_gemini_api_key
+```
+
+**Note**: If the API key is not provided, the AI service will return a default fallback message.
 
 ## Build and Execution
 

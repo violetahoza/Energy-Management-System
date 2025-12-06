@@ -100,26 +100,18 @@ const ChatWidget = () => {
             <div className={`chat-widget ${isOpen ? 'open' : ''}`}>
                 <div className="chat-header" onClick={() => setIsOpen(!isOpen)}>
                     <span>💬 Customer Support</span>
-                    <span className="chat-status">
-                        {isConnected ? '🟢' : '🔴'}
-                    </span>
+                    <span className="chat-status">{isConnected ? '🟢' : '🔴'}</span>
                 </div>
 
                 {isOpen && (
                     <div className="chat-body">
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px', borderBottom: '1px solid #e0e0e0' }}>
-                            <span style={{ fontSize: '12px', color: '#666' }}>
-                                {isConnected ? '🟢 Connected' : '🔴 Disconnected'}
-                            </span>
-                            <button onClick={clearChat} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '12px', color: '#666' }}>
-                                🗑️ Clear
-                            </button>
+                            <span style={{ fontSize: '12px', color: '#666' }}>{isConnected ? '🟢 Connected' : '🔴 Disconnected'}</span>
+                            <button onClick={clearChat} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '12px', color: '#666' }}>🗑️ Clear</button>
                         </div>
 
                         <div className="chat-messages">
-                            {messages.length === 0 && (
-                                <div className="chat-welcome"><p>👋 Welcome! How can I help you today?</p></div>
-                            )}
+                            {messages.length === 0 && (<div className="chat-welcome"><p>👋 Welcome! How can I help you today?</p></div>)}
                             {messages.map((msg, index) => (
                                 <div key={index} className={`message ${getMessageClassName(msg.type)}`}>
                                     <div className="message-sender">{msg.senderName}</div>
@@ -141,16 +133,12 @@ const ChatWidget = () => {
                                 className="chat-input"
                                 disabled={!isConnected}
                             />
-                            <button type="submit" className="chat-send-btn" disabled={!isConnected || !inputMessage.trim()}>
-                                Send
-                            </button>
+                            <button type="submit" className="chat-send-btn" disabled={!isConnected || !inputMessage.trim()}>Send</button>
                         </form>
                     </div>
                 )}
             </div>
-            {!isOpen && (
-                <button className="chat-toggle-btn" onClick={() => setIsOpen(true)}>💬</button>
-            )}
+            {!isOpen && (<button className="chat-toggle-btn" onClick={() => setIsOpen(true)}>💬</button>)}
         </>
     );
 };

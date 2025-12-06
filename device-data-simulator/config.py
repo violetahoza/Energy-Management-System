@@ -14,7 +14,7 @@ class Config:
     ROUTING_KEY = 'device.data'
 
     # List of Device IDs to simulate
-    DEVICE_IDS = os.getenv('DEVICE_IDS', '1,2,6,7,8,9,10,11').split(',')
+    DEVICE_IDS = os.getenv('DEVICE_IDS', '1,2,6,7,8,9,10,11,27,28').split(',')
 
     # Folder where CSV files will be saved
     DATA_FOLDER = os.getenv('DATA_FOLDER_PATH', 'sensor_data')
