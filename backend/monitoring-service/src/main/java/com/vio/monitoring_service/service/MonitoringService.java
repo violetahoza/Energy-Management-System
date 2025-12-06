@@ -50,8 +50,7 @@ public class MonitoringService {
         // Fill in missing hours with zero consumption (for complete 24h display)
         hourlyData = fillMissingHours(hourlyData);
 
-        log.info("Retrieved {} hourly measurements for device {} on {}, total: {} kWh",
-                hourlyData.size(), deviceId, date, totalDailyConsumption);
+        log.info("Retrieved {} hourly measurements for device {} on {}, total: {} kWh", hourlyData.size(), deviceId, date, totalDailyConsumption);
 
         return DailyConsumptionResponse.builder()
                 .deviceId(deviceId)

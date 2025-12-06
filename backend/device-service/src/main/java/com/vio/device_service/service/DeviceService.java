@@ -33,7 +33,7 @@ public class DeviceService {
                     .map(this::mapToResponse)
                     .toList();
         } catch (Exception e) {
-            log.error("Error fetching all devices: {}", e.getMessage());
+            log.error("❌ Error fetching all devices: {}", e.getMessage());
             throw new RuntimeException("Failed to retrieve devices", e);
         }
     }
@@ -56,7 +56,7 @@ public class DeviceService {
                     .map(this::mapToResponse)
                     .toList();
         } catch (Exception e) {
-            log.error("Error fetching devices for user {}: {}", userId, e.getMessage());
+            log.error("❌ Error fetching devices for user {}: {}", userId, e.getMessage());
             throw new RuntimeException("Failed to retrieve devices for user", e);
         }
     }
@@ -85,12 +85,12 @@ public class DeviceService {
             Device savedDevice = deviceRepository.save(device);
             devicePublisher.publishDeviceSyncEvent(savedDevice.getDeviceId(), savedDevice.getUserId(), savedDevice.getMaxConsumption(),"CREATED");
 
-            log.info("Device created successfully with id: {}", savedDevice.getDeviceId());
+            log.info("✅ Device created successfully with id: {}", savedDevice.getDeviceId());
             return mapToResponse(savedDevice);
         } catch (UserServiceException | IllegalArgumentException e) {
             throw e;
         } catch (Exception e) {
-            log.error("Error creating device: {}", e.getMessage());
+            log.error("❌ Error creating device: {}", e.getMessage());
             throw new RuntimeException("Failed to create device", e);
         }
     }
@@ -143,7 +143,7 @@ public class DeviceService {
                 device.setUpdatedAt(LocalDateTime.now());
                 Device updatedDevice = deviceRepository.save(device);
                 devicePublisher.publishDeviceSyncEvent(updatedDevice.getDeviceId(), updatedDevice.getUserId(), updatedDevice.getMaxConsumption(),"UPDATED");
-                log.info("Device updated successfully with id: {}", updatedDevice.getDeviceId());
+                log.info("✅ Device updated successfully with id: {}", updatedDevice.getDeviceId());
                 return mapToResponse(updatedDevice);
             }
 
@@ -152,7 +152,7 @@ public class DeviceService {
         } catch (DeviceNotFoundException | UserServiceException | IllegalArgumentException e) {
             throw e;
         } catch (Exception e) {
-            log.error("Error updating device {}: {}", deviceId, e.getMessage());
+            log.error("❌ Error updating device {}: {}", deviceId, e.getMessage());
             throw new RuntimeException("Failed to update device", e);
         }
     }
@@ -170,12 +170,12 @@ public class DeviceService {
             device.setUpdatedAt(LocalDateTime.now());
             Device updatedDevice = deviceRepository.save(device);
             devicePublisher.publishDeviceSyncEvent(deviceId, userId, device.getMaxConsumption(),"UPDATED");
-            log.info("Device assigned successfully");
+            log.info("✅ Device assigned successfully");
             return mapToResponse(updatedDevice);
         } catch (DeviceNotFoundException | UserServiceException | IllegalArgumentException e) {
             throw e;
         } catch (Exception e) {
-            log.error("Error assigning device {} to user {}: {}", deviceId, userId, e.getMessage());
+            log.error("❌ Error assigning device {} to user {}: {}", deviceId, userId, e.getMessage());
             throw new RuntimeException("Failed to assign device to user", e);
         }
     }
@@ -192,7 +192,7 @@ public class DeviceService {
                 device.setUpdatedAt(LocalDateTime.now());
                 deviceRepository.save(device);
                 devicePublisher.publishDeviceSyncEvent(deviceId, device.getUserId(), device.getMaxConsumption(),"UPDATED");
-                log.info("Device {} unassigned successfully", deviceId);
+                log.info("✅ Device {} unassigned successfully", deviceId);
             } else {
                 log.info("Device {} was not assigned to any user", deviceId);
             }
@@ -200,7 +200,7 @@ public class DeviceService {
         } catch (DeviceNotFoundException | IllegalArgumentException e) {
             throw e;
         } catch (Exception e) {
-            log.error("Error unassigning device {}: {}", deviceId, e.getMessage());
+            log.error("❌ Error unassigning device {}: {}", deviceId, e.getMessage());
             throw new RuntimeException("Failed to unassign device", e);
         }
     }
@@ -214,11 +214,11 @@ public class DeviceService {
             Device device = deviceRepository.findById(deviceId).orElseThrow(() -> new DeviceNotFoundException(deviceId));
             deviceRepository.delete(device);
             devicePublisher.publishDeviceSyncEvent(deviceId, null, null,"DELETED");
-            log.info("Device deleted successfully with id: {}", deviceId);
+            log.info("✅ Device deleted successfully with id: {}", deviceId);
         } catch (DeviceNotFoundException | IllegalArgumentException e) {
             throw e;
         } catch (Exception e) {
-            log.error("Error deleting device {}: {}", deviceId, e.getMessage());
+            log.error("❌ Error deleting device {}: {}", deviceId, e.getMessage());
             throw new RuntimeException("Failed to delete device", e);
         }
     }
@@ -257,11 +257,11 @@ public class DeviceService {
                 .orElseThrow(() -> new UserNotFoundException("User with id " + userId + " does not exist"));
 
         if (!"CLIENT".equals(syncUser.getRole())) {
-            log.error("User {} has role {} which is not CLIENT", userId, syncUser.getRole());
+            log.error("❌ User {} has role {} which is not CLIENT", userId, syncUser.getRole());
             throw new UserServiceException("Devices can only be assigned to users with CLIENT role");
         }
 
-        log.debug("User {} validation successful: has CLIENT role", userId);
+        log.debug("✅ User {} validation successful: has CLIENT role", userId);
     }
 
     private DeviceResponse mapToResponse(Device device) {

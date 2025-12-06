@@ -21,7 +21,7 @@ public class DeviceEventPublisher {
                 .action(action)
                 .build();
 
-        log.info("Publishing device sync event: action={}, deviceId={}, userId={}, maxConsumption={}", action, deviceId, userId, maxConsumption);
+        log.info("✅ Publishing device sync event: action={}, deviceId={}, userId={}, maxConsumption={}", action, deviceId, userId, maxConsumption);
 
         rabbitTemplate.convertAndSend(
                 RabbitMQConfig.DEVICE_SYNC_EXCHANGE,

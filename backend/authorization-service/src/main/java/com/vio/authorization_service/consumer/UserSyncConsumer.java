@@ -42,7 +42,7 @@ public class UserSyncConsumer {
                     log.warn("Unknown event type: {}", event.getEventType());
             }
         } catch (Exception e) {
-            log.error("Error processing user sync event: {}", e.getMessage(), e);
+            log.error("❌ Error processing user sync event: {}", e.getMessage(), e);
             throw e;
         }
     }
@@ -71,7 +71,7 @@ public class UserSyncConsumer {
 
         credentialRepository.save(credential);
 
-        log.info("Credentials and sync user created successfully for userId: {}", event.getUserId());
+        log.info("✅ Credentials and sync user created successfully for userId: {}", event.getUserId());
     }
 
     private void handleUserUpdated(UserSyncEvent event) {
@@ -131,7 +131,7 @@ public class UserSyncConsumer {
         if (updated) {
             credential.setUpdatedAt(LocalDateTime.now());
             credentialRepository.save(credential);
-            log.info("Credentials and sync user updated successfully for userId: {}", event.getUserId());
+            log.info("✅ Credentials and sync user updated successfully for userId: {}", event.getUserId());
         } else {
             log.info("No updates needed for userId: {}", event.getUserId());
         }
@@ -146,9 +146,9 @@ public class UserSyncConsumer {
                             credentialRepository.delete(credential);
                             log.info("Credential deleted for userId: {}", event.getUserId());
                         },
-                        () -> log.warn("Credential not found for deletion, userId: {}", event.getUserId())
+                        () -> log.warn("❌ Credential not found for deletion, userId: {}", event.getUserId())
                 );
 
-        log.info("Credentials and sync user deletion process completed for userId: {}", event.getUserId());
+        log.info("✅ Credentials and sync user deletion process completed for userId: {}", event.getUserId());
     }
 }

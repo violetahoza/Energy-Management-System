@@ -55,7 +55,7 @@ public class GeminiService {
                 .bodyToMono(Map.class)
                 .map(this::extractTextFromResponse)
                 .doOnError(error -> {
-                    log.error("Error calling Gemini API: {}", error.getMessage());
+                    log.error("❌ Error calling Gemini API: {}", error.getMessage());
                     if (error instanceof WebClientResponseException) {
                         WebClientResponseException we = (WebClientResponseException) error;
                         log.error("Google API Response Status: {} Body: {}", we.getStatusCode(), we.getResponseBodyAsString());
@@ -88,7 +88,7 @@ public class GeminiService {
                 }
             }
         } catch (Exception e) {
-            log.error("Error parsing Gemini response", e);
+            log.error("❌ Error parsing Gemini response", e);
         }
         return "I'm sorry, I couldn't process that request. An administrator will help you shortly.";
     }

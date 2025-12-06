@@ -39,8 +39,7 @@ class WebSocketService {
         this.client = new Client({
             webSocketFactory: () => socket,
             connectHeaders: {
-                'Authorization': `Bearer ${token}`,
-                'X-User-Id': userId.toString()
+                'Authorization': `Bearer ${token}`
             },
             debug: (str) => console.log('STOMP: ' + str),
             reconnectDelay: 5000,

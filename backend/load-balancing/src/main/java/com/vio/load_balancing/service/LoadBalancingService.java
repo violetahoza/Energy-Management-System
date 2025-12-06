@@ -29,9 +29,9 @@ public class LoadBalancingService {
             int replicaNumber = loadBalancingStrategy.selectReplica(message, totalReplicas);
             String routingKey = ingestRoutingKeyPrefix + replicaNumber;
             rabbitTemplate.convertAndSend(ingestExchange, routingKey, message);
-            log.info("Routed device {} data to replica {} (queue: {})", message.getDeviceId(), replicaNumber, routingKey);
+            log.info("✅ Routed device {} data to replica {} (queue: {})", message.getDeviceId(), replicaNumber, routingKey);
         } catch (Exception e) {
-            log.error("Error routing message for device {}: {}", message.getDeviceId(), e.getMessage(), e);
+            log.error("❌ Error routing message for device {}: {}", message.getDeviceId(), e.getMessage(), e);
             throw new RuntimeException("Failed to route message", e);
         }
     }

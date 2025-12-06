@@ -43,7 +43,7 @@ public class RuleBasedResponseService {
 
         for (Map.Entry<Pattern, String> entry : rules.entrySet()) {
             if (entry.getKey().matcher(trimmedMessage).matches()) {
-                log.info("✓ Rule matched for message: {}", trimmedMessage.substring(0, Math.min(50, trimmedMessage.length())));
+                log.info("✅ Rule matched for message: {}", trimmedMessage.substring(0, Math.min(50, trimmedMessage.length())));
                 return entry.getValue();
             }
         }

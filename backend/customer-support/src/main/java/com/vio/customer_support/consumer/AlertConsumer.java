@@ -27,7 +27,7 @@ public class AlertConsumer {
                     alert
             );
 
-            log.info("✓ Sent alert to  user {}", alert.getUserId());
+            log.info("✅ Sent alert to  user {}", alert.getUserId());
             log.info("========== ALERT SENT SUCCESSFULLY ==========");
         } catch (Exception e) {
             log.error("❌ Failed to send alert via WebSocket", e);

@@ -30,15 +30,14 @@ public class UserService {
                     .map(this::buildUserResponse)
                     .collect(Collectors.toList());
         } catch (Exception e) {
-            log.error("Error fetching all users: {}", e.getMessage(), e);
+            log.error("❌ Error fetching all users: {}", e.getMessage(), e);
             throw new RuntimeException("Failed to fetch users", e);
         }
     }
 
     public UserResponse getUserById(Long userId) {
         log.info("Fetching user by id: {}", userId);
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new UserNotFoundException(userId));
+        User user = userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException(userId));
         return buildUserResponse(user);
     }
 
@@ -79,7 +78,7 @@ public class UserService {
 
         eventPublisher.publishUserCreated(syncEvent);
 
-        log.info("User created and sync event published: {}", request.username());
+        log.info("✅ User created and sync event published: {}", request.username());
         return buildUserResponse(savedUser);
     }
 
@@ -137,36 +136,8 @@ public class UserService {
             throw new InvalidUpdateException("No fields to update");
         }
 
-        log.info("User updated successfully: {}", userId);
+        log.info("✅ User updated successfully: {}", userId);
         return buildUserResponse(user);
-    }
-
-    @Transactional
-    public User createUserProfile(UserProfileRequest request) {
-        log.info("Creating user profile only: {}", request.email());
-
-        if (userRepository.existsByEmail(request.email())) {
-            throw new UserEmailAlreadyExistsException(request.email());
-        }
-
-        User user = User.builder()
-                .firstName(request.firstName())
-                .lastName(request.lastName())
-                .email(request.email())
-                .address(request.address())
-                .build();
-
-        User savedUser = userRepository.save(user);
-        log.info("User profile created with id: {}", savedUser.getUserId());
-        return savedUser;
-    }
-
-    @Transactional
-    public void deleteUserProfile(Long userId) {
-        log.info("Deleting user profile: {}", userId);
-        User user = userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException(userId));
-        userRepository.delete(user);
-        log.info("User profile deleted: {}", userId);
     }
 
     @Transactional
@@ -175,7 +146,7 @@ public class UserService {
         User user = userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException(userId));
         eventPublisher.publishUserDeleted(userId);
         userRepository.delete(user);
-        log.info("User deleted successfully: {}", userId);
+        log.info("✅ User deleted successfully: {}", userId);
     }
 
     private void validateUserCreationRequest(UserRequest request) {
@@ -239,7 +210,7 @@ public class UserService {
 
         user.setUpdatedAt(LocalDateTime.now());
         userRepository.save(user);
-        log.info("User profile updated successfully: {}", user.getUserId());
+        log.info("✅ User profile updated successfully: {}", user.getUserId());
     }
 
     private UserResponse buildUserResponse(User user) {

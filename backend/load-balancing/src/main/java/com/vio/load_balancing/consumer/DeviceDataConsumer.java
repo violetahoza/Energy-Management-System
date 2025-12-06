@@ -22,7 +22,7 @@ public class DeviceDataConsumer {
             // Route to appropriate replica
             loadBalancingService.routeMessage(message);
         } catch (Exception e) {
-            log.error("Failed to process device data for device {}: {}", message.getDeviceId(), e.getMessage(), e);
+            log.error("❌ Failed to process device data for device {}: {}", message.getDeviceId(), e.getMessage(), e);
             throw e;
         }
     }

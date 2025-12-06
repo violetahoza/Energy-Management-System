@@ -33,7 +33,7 @@ public class DeviceDataConsumer {
 
         try {
             if (!monitoredDeviceRepository.existsById(event.getDeviceId())) {
-                log.warn("[Replica {}] Device {} is not in monitored devices list. Synchronization may be pending.", replicaId, event.getDeviceId());
+                log.warn("❌ [Replica {}] Device {} is not in monitored devices list. Synchronization may be pending.", replicaId, event.getDeviceId());
                 return;
             }
 
@@ -79,9 +79,9 @@ public class DeviceDataConsumer {
             }
 
             measurementRepository.save(measurement);
-            log.info("[Replica {}] Successfully processed device data for device {} - Date: {}, Hour: {}, Total: {} kWh", replicaId, event.getDeviceId(), date, hour, measurement.getHourlyConsumption());
+            log.info("✅ [Replica {}] Successfully processed device data for device {} - Date: {}, Hour: {}, Total: {} kWh", replicaId, event.getDeviceId(), date, hour, measurement.getHourlyConsumption());
         } catch (Exception e) {
-            log.error("[Replica {}] Error processing device data for deviceId {}: {}", replicaId, event.getDeviceId(), e.getMessage(), e);
+            log.error("❌ [Replica {}] Error processing device data for deviceId {}: {}", replicaId, event.getDeviceId(), e.getMessage(), e);
             throw e;
         }
     }

@@ -38,10 +38,9 @@ public class UserEventPublisher {
                     RabbitMQConfig.USER_SYNC_ROUTING_KEY,
                     event
             );
-            log.info("Published user sync event: {} for userId: {}",
-                    event.getEventType(), event.getUserId());
+            log.info("✅ Published user sync event: {} for userId: {}", event.getEventType(), event.getUserId());
         } catch (Exception e) {
-            log.error("Failed to publish user sync event: {}", e.getMessage(), e);
+            log.error("❌ Failed to publish user sync event: {}", e.getMessage(), e);
         }
     }
 }

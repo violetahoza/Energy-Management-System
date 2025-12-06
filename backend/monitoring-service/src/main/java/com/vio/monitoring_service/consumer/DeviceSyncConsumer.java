@@ -38,7 +38,7 @@ public class DeviceSyncConsumer {
                     log.warn("Unknown action type: {}", event.getAction());
             }
         } catch (Exception e) {
-            log.error("Error processing device sync event for deviceId {}: {}", event.getDeviceId(), e.getMessage(), e);
+            log.error("❌ Error processing device sync event for deviceId {}: {}", event.getDeviceId(), e.getMessage(), e);
             throw e;
         }
     }
@@ -62,7 +62,7 @@ public class DeviceSyncConsumer {
                 .build();
 
         monitoredDeviceRepository.save(monitoredDevice);
-        log.info("Successfully synchronized device {} with userId {} to monitoring service", deviceId, userId);
+        log.info("✅ Successfully synchronized device {} with userId {} to monitoring service", deviceId, userId);
     }
 
     private void handleDeviceDeleted(Long deviceId) {
@@ -72,7 +72,7 @@ public class DeviceSyncConsumer {
         }
 
         monitoredDeviceRepository.deleteById(deviceId);
-        log.info("Successfully deleted device {} from monitoring service", deviceId);
+        log.info("✅ Successfully deleted device {} from monitoring service", deviceId);
     }
 
     private void handleDeviceUpdated(Long deviceId, Long userId, Double maxConsumption) {
@@ -89,6 +89,6 @@ public class DeviceSyncConsumer {
         device.setMaxConsumption(maxConsumption);
         monitoredDeviceRepository.save(device);
 
-        log.info("Successfully updated device {}", deviceId);
+        log.info("✅ Successfully updated device {}", deviceId);
     }
 }

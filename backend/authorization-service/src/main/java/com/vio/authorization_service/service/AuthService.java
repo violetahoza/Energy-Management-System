@@ -40,7 +40,7 @@ public class AuthService {
                 credential.getRole()
         );
 
-        log.info("User logged in successfully: {}", request.username());
+        log.info("✅ User logged in successfully: {}", request.username());
 
         return new AuthResponse(
                 token,
@@ -61,36 +61,36 @@ public class AuthService {
         Date expirationDate = jwtUtil.extractExpiration(token);
         tokenBlacklistService.blacklistToken(token, expirationDate);
 
-        log.info("User logged out successfully");
+        log.info("✅ User logged out successfully");
     }
 
     public AuthResponse validateAuthorizationHeader(String authorizationHeader) {
         log.info("Validating authorization header");
 
         if (authorizationHeader == null || authorizationHeader.trim().isEmpty()) {
-            log.warn("Missing Authorization header");
+            log.warn("❌ Missing Authorization header");
             throw new InvalidTokenException("Missing Authorization header");
         }
 
         if (!authorizationHeader.startsWith("Bearer ")) {
-            log.warn("Invalid Authorization header format");
+            log.warn("❌ Invalid Authorization header format");
             throw new InvalidTokenException("Invalid Authorization header format");
         }
 
         String jwtToken = authorizationHeader.substring(7);
 
         if (jwtToken.trim().isEmpty()) {
-            log.warn("Empty JWT token");
+            log.warn("❌ Empty JWT token");
             throw new InvalidTokenException("Empty token");
         }
 
         if (tokenBlacklistService.isTokenBlacklisted(jwtToken)) {
-            log.warn("Token is blacklisted");
+            log.warn("❌ Token is blacklisted");
             throw new TokenBlacklistedException();
         }
 
         if (!jwtUtil.validateToken(jwtToken)) {
-            log.warn("Token validation failed");
+            log.warn("❌ Token validation failed");
             throw new InvalidTokenException("Invalid or expired token");
         }
 
@@ -98,12 +98,10 @@ public class AuthService {
             String username = jwtUtil.extractUsername(jwtToken);
             Long userId = jwtUtil.extractUserId(jwtToken);
             String role = jwtUtil.extractRole(jwtToken);
-
-            log.info("Token validated successfully for user: {} (role: {})",
-                    username, role);
+            log.info("✅ Token validated successfully for user: {} (role: {})", username, role);
             return new AuthResponse(jwtToken, userId, username, role, "Token is valid");
         } catch (Exception e) {
-            log.error("Error extracting user info from token: {}", e.getMessage());
+            log.error("❌ Error extracting user info from token: {}", e.getMessage());
             throw new InvalidTokenException("Failed to extract user information from token");
         }
     }

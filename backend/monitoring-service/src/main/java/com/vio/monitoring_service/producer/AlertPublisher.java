@@ -30,6 +30,6 @@ public class AlertPublisher {
                 .build();
 
         rabbitTemplate.convertAndSend(RabbitMQConfig.OVERCONSUMPTION_EXCHANGE, RabbitMQConfig.OVERCONSUMPTION_ROUTING_KEY, alert);
-        log.info("Published overconsumption alert for device {} to user {} via sync broker", deviceId, userId);
+        log.info("✅ Published overconsumption alert for device {} to user {} via sync broker", deviceId, userId);
     }
 }

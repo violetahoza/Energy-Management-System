@@ -59,7 +59,6 @@ public class AuthController {
             @ApiResponse(responseCode = "401", description = "Token is invalid, expired, blacklisted, or missing")
     })
     public ResponseEntity<?> validateToken(@RequestHeader(value = "Authorization", required = false) String authorizationHeader) {
-
         log.info("ForwardAuth validation request received");
 
         try {
@@ -81,7 +80,7 @@ public class AuthController {
                     ));
 
         } catch (Exception e) {
-            log.error("Token validation failed: {}", e.getMessage());
+            log.error("❌ Token validation failed: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", e.getMessage()));
         }
     }

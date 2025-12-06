@@ -326,11 +326,6 @@ services:
       - "traefik.http.routers.support-ws.priority=200"
       - "traefik.http.routers.support-ws.middlewares=cors-headers"
       - "traefik.http.routers.support-ws.service=support"
-      - "traefik.http.routers.support-api.rule=PathPrefix(`/api/support`)"
-      - "traefik.http.routers.support-api.entrypoints=web"
-      - "traefik.http.routers.support-api.priority=100"
-      - "traefik.http.routers.support-api.middlewares=auth-middleware,cors-headers"
-      - "traefik.http.routers.support-api.service=support"
       - "traefik.http.services.support.loadbalancer.server.port=8085"
     restart: always
 
